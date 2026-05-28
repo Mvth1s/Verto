@@ -1,0 +1,40 @@
+# Node
+node_modules/
+dist/
+.pnpm-store/
+
+# Vite
+*.local
+
+# Rust / Tauri
+target/
+apps/desktop/src-tauri/target/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Release
+*.AppImage
+*.deb
+*.rpm
+*.dmg
+*.exe
+*.msi
