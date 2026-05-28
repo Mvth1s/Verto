@@ -72,15 +72,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
 </script>
 
 <template>
-  <div class="window" role="application" aria-label="Verto Desktop">
-    <div class="titlebar">
-      <div class="traffic">
-        <span class="r"></span><span class="y"></span><span class="g"></span>
-      </div>
-      <div class="titlebar-center">Verto — {{ categoryName }}</div>
-    </div>
-
-    <div class="shell">
+  <div class="shell" role="application" aria-label="Verto Desktop">
       <!-- SIDEBAR -->
       <aside class="sidebar">
         <div class="brand">
@@ -312,7 +304,6 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
           <span class="shortcut">⌘↵</span>
         </button>
       </aside>
-    </div>
   </div>
 </template>
 
@@ -336,48 +327,21 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
-    background: #0a0a0b;
+    background: var(--bg);
     color: var(--text);
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-  }
-  #app { width: 100%; min-height: 100vh; display: grid; place-items: center; padding: 32px; }
-
-  /* Window chrome */
-  .window {
-    width: 1280px;
-    height: 800px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    height: 100%;
     overflow: hidden;
-    display: grid;
-    grid-template-rows: 36px 1fr;
-    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02) inset;
   }
-  .titlebar {
-    display: flex;
-    align-items: center;
-    padding: 0 14px;
-    border-bottom: 1px solid var(--border-soft);
-    background: linear-gradient(180deg, #1f1f22, #1a1a1c);
-  }
-  .traffic { display: flex; gap: 8px; }
-  .traffic span { width: 12px; height: 12px; border-radius: 50%; display: block; }
-  .traffic .r { background: #ff5f57; }
-  .traffic .y { background: #febc2e; }
-  .traffic .g { background: #28c840; }
-  .titlebar-center { flex: 1; text-align: center; font-size: 12px; color: var(--text-3); letter-spacing: 0.02em; }
+  #app { width: 100%; height: 100%; }
 
   /* Main grid */
   .shell {
     display: grid;
     grid-template-columns: 200px 1fr 280px;
-    height: 100%;
-    min-height: 0;
+    height: 100vh;
+    overflow: hidden;
   }
 
   /* Sidebar */
