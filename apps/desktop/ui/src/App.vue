@@ -325,6 +325,13 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
   }
 
   * { box-sizing: border-box; }
+
+  /* Scrollbars — fines et discrètes */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
   html, body {
     margin: 0; padding: 0;
     background: var(--bg);
@@ -351,6 +358,8 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
     flex-direction: column;
     padding: 18px 12px 14px;
     background: #161618;
+    overflow-y: auto;
+    min-width: 0;
   }
   .brand {
     display: flex;
@@ -449,7 +458,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
     display: flex;
     flex-direction: column;
     min-width: 0;
-    overflow: hidden;
+    overflow-y: auto;
   }
   .main-header {
     display: flex;
@@ -466,7 +475,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
     background: var(--surface-2);
     border-radius: 10px;
     flex: 1;
-    min-height: 0;
+    min-height: 140px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -623,7 +632,8 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
     display: flex;
     flex-direction: column;
     background: #161618;
-    overflow: hidden;
+    overflow-y: auto;
+    min-width: 0;
   }
   .panel-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); font-weight: 500; margin-bottom: 22px; }
   .field { margin-bottom: 22px; }
