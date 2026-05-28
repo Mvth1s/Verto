@@ -2,9 +2,9 @@ name: Lint
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   lint-frontend:
@@ -47,7 +47,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            libssl-dev \
+            pkg-config \
+            libayatana-appindicator3-dev \
             librsvg2-dev
 
       - name: Rust cache

@@ -31,12 +31,8 @@ pub async fn convert_image(
 
     // Offload blocking I/O to a dedicated thread
     tauri::async_runtime::spawn_blocking(move || {
-        let result = image_converter::convert(
-            &input_path,
-            &output_format,
-            quality,
-            output_path.as_deref(),
-        )?;
+        let result =
+            image_converter::convert(&input_path, &output_format, quality, output_path.as_deref())?;
 
         Ok(ConversionResult {
             saved_bytes: result.input_size as i64 - result.output_size as i64,
