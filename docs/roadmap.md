@@ -9,18 +9,18 @@
 
 ---
 
-## v0.1.0 — Foundation *(alpha)*
+## v0.1.0 — Foundation *(alpha)* ✅
 
 **Goal**: Project works, image conversion functional, CI in place.
 
-- [ ] Monorepo initialized (Tauri v2 + Vue 3 + pnpm workspaces)
-- [ ] Desktop app boots on Linux
-- [ ] Drag & drop working (images only)
-- [ ] Image conversion: JPEG ↔ PNG ↔ WebP (via `image` crate)
-- [ ] Basic conversion queue with per-file status
-- [ ] Output format selector
-- [ ] GitHub Actions: lint + build (Linux only)
-- [ ] Landing page skeleton deployed on Vercel
+- [x] Monorepo initialized (Tauri v2 + Vue 3 + pnpm workspaces)
+- [x] Desktop app boots on Linux
+- [x] Drag & drop working (images only)
+- [x] Image conversion: JPEG ↔ PNG ↔ WebP (via `image` crate)
+- [x] Basic conversion queue with per-file status
+- [x] Output format selector
+- [x] GitHub Actions: lint + build (Linux only)
+- [ ] Landing page deployed on Vercel
 
 ---
 

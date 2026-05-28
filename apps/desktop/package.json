@@ -1,0 +1,41 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint ui/src",
+    "format": "prettier --write ui/src",
+    "format:check": "prettier --check ui/src"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "pinia": "^2.1.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@tailwindcss/vite": "^4.0.0",
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/test-utils": "^2.4.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^9.33.0",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.60.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.0.0",
+    "vue-eslint-parser": "^9.4.3",
+    "vue-tsc": "^2.0.0"
+  }
+}
