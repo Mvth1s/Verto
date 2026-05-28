@@ -42,9 +42,7 @@ export const useConversionStore = defineStore('conversion', () => {
 
   const waiting = computed(() => queue.value.filter((f) => f.status === 'waiting'))
   const done = computed(() => queue.value.filter((f) => f.status === 'done'))
-  const totalSaved = computed(() =>
-    queue.value.reduce((acc, f) => acc + (f.savedBytes ?? 0), 0),
-  )
+  const totalSaved = computed(() => queue.value.reduce((acc, f) => acc + (f.savedBytes ?? 0), 0))
 
   function addFiles(files: { name: string; path: string }[]) {
     for (const f of files) {
@@ -83,11 +81,7 @@ export const useConversionStore = defineStore('conversion', () => {
     for (const file of toConvert) {
       file.status = 'converting'
 
-      const outputPath = buildOutputPath(
-        file.path,
-        settings.outputFormat,
-        settings.outputDirectory,
-      )
+      const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
 
       try {
         const result = await invoke<ConversionResult>('convert_image', {
