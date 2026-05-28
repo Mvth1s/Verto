@@ -53,11 +53,11 @@ pnpm --filter desktop test:watch
 # Coverage
 pnpm --filter desktop test:coverage
 
-# All Rust tests
-cd apps/desktop/src-tauri && cargo test
+# All Rust tests (--lib skips doctests, évite l'erreur libLLVM système)
+cd apps/desktop/src-tauri && cargo test --lib
 
 # Single Rust test
-cd apps/desktop/src-tauri && cargo test test_jpeg_to_png_conversion
+cd apps/desktop/src-tauri && cargo test --lib test_jpeg_to_png
 ```
 
 ---
