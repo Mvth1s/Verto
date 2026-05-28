@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { useSettingsStore } from './settings'
 
 export type FileStatus = 'waiting' | 'converting' | 'done' | 'error'
+export type FileCategory = 'image' | 'document'
 
 export interface FileItem {
   id: string
@@ -12,6 +13,7 @@ export interface FileItem {
   inputFormat: string
   inputSize: number
   status: FileStatus
+  category: FileCategory
   outputPath?: string
   outputSize?: number
   savedBytes?: number
@@ -24,6 +26,9 @@ interface ConversionResult {
   output_size: number
   saved_bytes: number
 }
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif']
+const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
 
 function buildOutputPath(
   inputPath: string,
@@ -45,10 +50,10 @@ export const useConversionStore = defineStore('conversion', () => {
   const done = computed(() => queue.value.filter((f) => f.status === 'done'))
   const totalSaved = computed(() => queue.value.reduce((acc, f) => acc + (f.savedBytes ?? 0), 0))
 
-  function addFiles(files: { name: string; path: string }[]) {
+  function addFiles(files: { name: string; path: string }[], category: FileCategory = 'image') {
+    const supported = category === 'image' ? IMAGE_EXTENSIONS : DOCUMENT_EXTENSIONS
     for (const f of files) {
       const ext = f.name.split('.').pop()?.toLowerCase() ?? ''
-      const supported = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif']
       if (!supported.includes(ext)) continue
       if (queue.value.some((item) => item.path === f.path)) continue
 
@@ -59,8 +64,18 @@ export const useConversionStore = defineStore('conversion', () => {
         inputFormat: ext,
         inputSize: 0,
         status: 'waiting',
+        category,
       })
     }
+  }
+
+  async function addDirectory(dirPath: string, category: FileCategory) {
+    const supported = category === 'image' ? IMAGE_EXTENSIONS : DOCUMENT_EXTENSIONS
+    const paths = await invoke<string[]>('list_directory', { dirPath, recursive: true })
+    const files = paths
+      .filter((p) => supported.includes(p.split('.').pop()?.toLowerCase() ?? ''))
+      .map((p) => ({ name: p.split('/').pop() ?? p, path: p }))
+    addFiles(files, category)
   }
 
   function removeFile(id: string) {
@@ -84,9 +99,9 @@ export const useConversionStore = defineStore('conversion', () => {
     cancelRequested.value = true
   }
 
-  async function convertAll() {
+  async function convertAll(category: FileCategory = 'image') {
     const settings = useSettingsStore()
-    const toConvert = queue.value.filter((f) => f.status === 'waiting')
+    const toConvert = queue.value.filter((f) => f.status === 'waiting' && f.category === category)
     if (toConvert.length === 0) return
 
     cancelRequested.value = false
@@ -100,12 +115,19 @@ export const useConversionStore = defineStore('conversion', () => {
       const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
 
       try {
-        const result = await invoke<ConversionResult>('convert_image', {
-          inputPath: file.path,
-          outputFormat: settings.outputFormat,
-          quality: settings.quality,
-          outputPath,
-        })
+        const result =
+          category === 'document'
+            ? await invoke<ConversionResult>('convert_document', {
+                inputPath: file.path,
+                outputFormat: settings.outputFormat,
+                outputPath,
+              })
+            : await invoke<ConversionResult>('convert_image', {
+                inputPath: file.path,
+                outputFormat: settings.outputFormat,
+                quality: settings.quality,
+                outputPath,
+              })
 
         file.status = 'done'
         file.outputPath = result.output_path
@@ -129,6 +151,7 @@ export const useConversionStore = defineStore('conversion', () => {
     done,
     totalSaved,
     addFiles,
+    addDirectory,
     removeFile,
     retryFile,
     clearDone,

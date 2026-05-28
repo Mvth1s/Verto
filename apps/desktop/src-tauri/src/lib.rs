@@ -4,7 +4,12 @@ mod converters;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![commands::image::convert_image])
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![
+            commands::image::convert_image,
+            commands::document::convert_document,
+            commands::fs::list_directory,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
