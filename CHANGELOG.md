@@ -9,6 +9,12 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+- File picker on dropzone click via `@tauri-apps/plugin-dialog`
+- Browse button to select output folder via folder picker dialog
+- Cancel button to stop the conversion queue mid-run
+- Retry action on failed queue items (click the refresh icon to re-queue)
+
 ---
 
 ## [0.1.0] - 2026-05-28

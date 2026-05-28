@@ -39,6 +39,7 @@ function buildOutputPath(
 export const useConversionStore = defineStore('conversion', () => {
   const queue = ref<FileItem[]>([])
   const isConverting = ref(false)
+  const cancelRequested = ref(false)
 
   const waiting = computed(() => queue.value.filter((f) => f.status === 'waiting'))
   const done = computed(() => queue.value.filter((f) => f.status === 'done'))
@@ -67,8 +68,20 @@ export const useConversionStore = defineStore('conversion', () => {
     if (idx !== -1) queue.value.splice(idx, 1)
   }
 
+  function retryFile(id: string) {
+    const file = queue.value.find((f) => f.id === id)
+    if (file && file.status === 'error') {
+      file.status = 'waiting'
+      file.error = undefined
+    }
+  }
+
   function clearDone() {
     queue.value = queue.value.filter((f) => f.status !== 'done')
+  }
+
+  function cancelConversion() {
+    cancelRequested.value = true
   }
 
   async function convertAll() {
@@ -76,9 +89,12 @@ export const useConversionStore = defineStore('conversion', () => {
     const toConvert = queue.value.filter((f) => f.status === 'waiting')
     if (toConvert.length === 0) return
 
+    cancelRequested.value = false
     isConverting.value = true
 
     for (const file of toConvert) {
+      if (cancelRequested.value) break
+
       file.status = 'converting'
 
       const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
@@ -103,6 +119,7 @@ export const useConversionStore = defineStore('conversion', () => {
     }
 
     isConverting.value = false
+    cancelRequested.value = false
   }
 
   return {
@@ -113,7 +130,9 @@ export const useConversionStore = defineStore('conversion', () => {
     totalSaved,
     addFiles,
     removeFile,
+    retryFile,
     clearDone,
+    cancelConversion,
     convertAll,
   }
 })

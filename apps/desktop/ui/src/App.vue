@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
 
@@ -36,6 +37,38 @@ function formatPercent(input: number, output: number): string {
   if (input === 0) return ''
   const ratio = (input - output) / input
   return `−${(ratio * 100).toFixed(0)}% · ${formatBytes(output)}`
+}
+
+async function openFilePicker() {
+  const selected = await open({
+    multiple: true,
+    filters: [
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'] },
+    ],
+  })
+  if (!selected) return
+  const paths = Array.isArray(selected) ? selected : [selected]
+  conversion.addFiles(
+    paths.map((p: string) => ({
+      name: p.split('/').pop() ?? p,
+      path: p,
+    })),
+  )
+}
+
+async function openFolderPicker() {
+  const selected = await open({ directory: true, multiple: false })
+  if (selected && typeof selected === 'string') {
+    settings.outputDirectory = selected
+  }
+}
+
+function handleQueueAction(fileId: string, status: string) {
+  if (status === 'error') {
+    conversion.retryFile(fileId)
+  } else if (status === 'waiting') {
+    conversion.removeFile(fileId)
+  }
 }
 
 // Drag-and-drop via Tauri window events
@@ -145,6 +178,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       <div
         class="dropzone"
         :class="{ dragover: isDragover }"
+        @click="openFilePicker"
         @dragenter.prevent="isDragover = true"
         @dragover.prevent="isDragover = true"
         @dragleave.prevent="isDragover = false"
@@ -212,10 +246,16 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
           </div>
           <div
             class="qaction"
-            :class="{ check: file.status === 'done' }"
+            :class="{ check: file.status === 'done', retry: file.status === 'error' }"
             role="button"
-            :title="file.status === 'error' ? file.error : 'Remove'"
-            @click="conversion.removeFile(file.id)"
+            :title="
+              file.status === 'error'
+                ? `Retry · ${file.error}`
+                : file.status === 'waiting'
+                  ? 'Remove'
+                  : undefined
+            "
+            @click="handleQueueAction(file.id, file.status)"
           >
             <svg v-if="file.status === 'done'" viewBox="0 0 24 24">
               <polyline points="20 6 9 17 4 12" />
@@ -225,9 +265,8 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
               <path d="M12 8v4l3 2" />
             </svg>
             <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
             </svg>
             <svg v-else viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -281,7 +320,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
           <div class="folder-path">
             {{ settings.outputDirectory ?? 'Same as source' }}
           </div>
-          <button class="folder-browse">Browse</button>
+          <button class="folder-browse" @click="openFolderPicker">Browse</button>
         </div>
       </div>
 
@@ -326,13 +365,20 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       </div>
 
       <button
+        v-if="!conversion.isConverting"
         class="btn-primary"
-        :disabled="conversion.waiting.length === 0 || conversion.isConverting"
+        :disabled="conversion.waiting.length === 0"
         @click="conversion.convertAll"
       >
         <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 8" /></svg>
-        <span>{{ conversion.isConverting ? 'Converting…' : 'Convert' }}</span>
+        <span>Convert</span>
         <span class="shortcut">⌘↵</span>
+      </button>
+      <button v-else class="btn-cancel" @click="conversion.cancelConversion">
+        <svg viewBox="0 0 24 24">
+          <rect x="6" y="6" width="12" height="12" rx="1" />
+        </svg>
+        <span>Cancel</span>
       </button>
     </aside>
   </div>
@@ -1096,5 +1142,46 @@ body {
   padding: 1px 6px;
   border-radius: 3px;
   font-weight: 500;
+}
+
+.btn-cancel {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.btn-cancel:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.btn-cancel svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: currentColor;
+}
+
+.qaction.retry {
+  color: var(--accent-bright);
+}
+.qaction.retry:hover {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
 }
 </style>
