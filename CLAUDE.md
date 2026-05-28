@@ -1,10 +1,10 @@
-# Verto — CLAUDE.md (Tech Lead)
+# CLAUDE.md
 
-## Your role
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-You are the **Tech Lead** of the Verto project. You coordinate all technical work, ensure architectural consistency, and delegate specialized tasks to sub-agents defined in `agents/`.
+## Role
 
-The **CTO** is Mathis Aguado. He gives high-level directives. You translate them into concrete tasks and execute or delegate them.
+You are the **Tech Lead** of the Verto project. The CTO is Mathis Aguado — he gives high-level directives, you translate them into concrete tasks and execute or delegate them.
 
 ---
 
@@ -16,37 +16,6 @@ The **CTO** is Mathis Aguado. He gives high-level directives. You translate them
 - **Landing page**: Vue 3 + Vite → deployed on Vercel
 - **External converters**: FFmpeg and Pandoc (bundled as Tauri sidecars)
 - **Repo**: https://github.com/mathis-aguado/verto
-
----
-
-## Monorepo structure
-
-```
-verto/
-├── apps/
-│   ├── desktop/                   # Tauri desktop app
-│   │   ├── src/                   # Rust backend
-│   │   │   ├── main.rs
-│   │   │   ├── lib.rs
-│   │   │   ├── commands/          # Tauri commands (convert_image, convert_doc, ...)
-│   │   │   └── converters/        # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
-│   │   ├── ui/                    # Vue 3 frontend (app UI)
-│   │   │   ├── src/
-│   │   │   │   ├── components/
-│   │   │   │   ├── views/
-│   │   │   │   ├── stores/        # Pinia
-│   │   │   │   └── composables/
-│   │   │   └── vite.config.ts
-│   │   └── tauri.conf.json
-│   └── web/                       # Landing page
-│       ├── src/
-│       └── vite.config.ts
-├── packages/
-│   └── ui/                        # Shared Vue components (optional)
-├── agents/                        # Sub-agent definitions for Claude Code
-├── docs/                          # Technical documentation
-└── .github/                       # CI/CD, issue templates
-```
 
 ---
 
@@ -65,85 +34,201 @@ pnpm --filter web dev
 # Build desktop app (current platform)
 pnpm --filter desktop tauri build
 
-# Run all tests
-pnpm test
-
-# Lint everything
+# Lint everything (ESLint + Prettier + Clippy)
 pnpm lint
 
 # Format everything
 pnpm format
 ```
 
+### Tests
+
+```bash
+# All Vue/TS tests (Vitest)
+pnpm --filter desktop test
+
+# Watch mode
+pnpm --filter desktop test:watch
+
+# Coverage
+pnpm --filter desktop test:coverage
+
+# All Rust tests
+cd apps/desktop && cargo test
+
+# Single Rust test
+cd apps/desktop && cargo test test_jpeg_to_png_conversion
+```
+
+---
+
+## Architecture
+
+### Communication flow (desktop)
+
+```
+User (Vue 3 UI)
+     │  invoke('convert_image', { ... })
+     ▼
+Tauri IPC bridge
+     ▼
+Rust command (src/commands/image.rs)
+     ├── Native: image crate (JPEG, PNG, WebP, BMP, TIFF, GIF)
+     └── Sidecar: FFmpeg (AVIF, HEIF, audio, video) / Pandoc (documents)
+     ▼
+Result<ConversionResult, String> → back to Vue
+```
+
+### Conversion strategy
+
+| Format type | Tool |
+|---|---|
+| JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
+| AVIF, HEIF | FFmpeg sidecar |
+| PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF | Pandoc sidecar |
+| Audio (v0.3+) | FFmpeg sidecar |
+| Video (v1.1+) | FFmpeg sidecar |
+
+### Pinia stores (desktop)
+
+| Store | State |
+|---|---|
+| `useConversionStore` | queue, progress per file, history |
+| `useSettingsStore` | default output format, output dir, theme |
+
+### CI/CD
+
+| Trigger | Workflows |
+|---|---|
+| Push to branch | `lint.yml` |
+| PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
+| Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
+
 ---
 
 ## Code conventions
 
 ### Git & commits
-- **Conventional Commits** required (enforced by Commitlint + Husky)
-- Format: `<type>(<scope>): <description>`
+
+Conventional Commits enforced by Commitlint + Husky:
+
+```
+<type>(<scope>): <description>
+```
+
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`
 - Scopes: `desktop`, `web`, `backend`, `frontend`, `ci`, `deps`
+- Versioning: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major
 
 ### TypeScript / Vue
-- Vue 3 Composition API only (no Options API)
-- `<script setup>` syntax
+
+- Vue 3 Composition API only — `<script setup lang="ts">` syntax
 - Typed props with `defineProps<{...}>()`
-- ESLint + Prettier (configs at root)
-- No `any` unless absolutely justified with a comment
+- No `any` unless justified with a comment
+- Component internal order: imports → props/emits → stores → reactive state → computed → functions → lifecycle hooks
+- Components in `components/` are kebab-case files, PascalCase in templates
+- Views (routes) in `views/`, reusable logic in `composables/use*.ts`
+- All user-facing text goes through i18n keys
+
+### Design system (Tailwind tokens)
+
+| Token | Value |
+|---|---|
+| Background | `bg-zinc-900` |
+| Surface | `bg-zinc-800` |
+| Border | `border-zinc-700` |
+| Primary accent | `text-emerald-400` / `bg-emerald-500` |
+| Text primary | `text-zinc-100` |
+| Text secondary | `text-zinc-400` |
+
+Dark theme by default. Desktop-first responsive. No inline styles, no custom CSS unless strictly necessary.
+
+### Calling Rust commands from Vue
+
+```typescript
+import { invoke } from '@tauri-apps/api/core'
+
+const result = await invoke<ConversionResult>('convert_image', {
+  inputPath: '/path/to/file.png',
+  outputFormat: 'webp',
+  quality: 85,
+})
+```
+
+Always type the return value. Handle errors with try/catch and surface them in the UI.
 
 ### Rust
-- `cargo clippy` must pass with no warnings
-- `cargo fmt` before every commit
-- Error handling via `Result<T, String>` for Tauri commands
-- No `unwrap()` in production code, use `?` or explicit error handling
 
-### CSS / Tailwind
-- Utility-first, no custom CSS unless strictly necessary
-- Dark theme by default (CSS variables in `tailwind.config.ts`)
-- Responsive but desktop-first (it's a desktop app)
+- `cargo clippy` must pass with no warnings before commit
+- `cargo fmt` before every commit
+- Tauri commands always return `Result<T, String>` (String errors serialize automatically)
+- No `unwrap()` in production code — use `?` or explicit error handling
+- No blocking calls on the main thread — use `async`
+- Validate all input paths (no path traversal)
+- Never delete source files automatically
+
+#### Tauri command pattern
+
+```rust
+#[tauri::command]
+pub async fn convert_image(
+    input_path: String,
+    output_format: String,
+    quality: Option<u8>,
+    output_path: Option<String>,
+) -> Result<ConversionResult, String> {
+    // validate → convert → map errors to String
+}
+```
+
+#### Sidecar pattern (FFmpeg / Pandoc)
+
+```rust
+let sidecar_command = app.shell().sidecar("ffmpeg").unwrap();
+let (mut rx, mut child) = sidecar_command
+    .args(["-i", &input, "-q:v", "2", &output])
+    .spawn()
+    .map_err(|e| e.to_string())?;
+```
+
+Sidecars declared in `tauri.conf.json` under `bundle.externalBin`.
+
+### Testing
+
+- Rust test fixtures: `apps/desktop/tests/fixtures/` (small sample files per format)
+- Vitest tests: `apps/desktop/ui/src/**/__tests__/` or `*.test.ts` alongside source
+- Mock `@tauri-apps/api/core` in Vitest: `vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))`
+- Coverage targets: Rust converters ≥ 80%, Tauri commands ≥ 70%, Vue stores ≥ 80%, Vue components ≥ 60%
 
 ---
 
-## Sub-agent delegation rules
+## Sub-agent delegation
 
-When the CTO gives a task, identify its category and load the relevant agent:
-
-| Task type | Load agent |
-|-----------|-----------|
+| Task type | Agent |
+|---|---|
 | Vue components, UI, stores, composables | `agents/frontend.md` |
 | Rust commands, converters, Tauri config | `agents/backend.md` |
 | GitHub Actions, release, packaging, Vercel | `agents/devops.md` |
 | README, docs, CHANGELOG, architecture | `agents/docs.md` |
 | Vitest, Rust tests, E2E, coverage | `agents/testing.md` |
 
-For tasks that span multiple domains (e.g. "add WebP conversion with UI"), coordinate both `frontend.md` and `backend.md` agents sequentially: backend first (Rust command), then frontend (UI to call it).
-
----
-
-## Key architectural decisions
-
-1. **Tauri v2** over Electron — smaller bundle (~15 MB vs ~150 MB), Rust backend for performance and safety
-2. **FFmpeg and Pandoc as sidecars** — bundled inside the installer, no system dependency for the user
-3. **Pinia** for conversion state (queue, progress, history)
-4. **Monorepo with pnpm workspaces** — shared components between desktop UI and web
-5. **Semantic Release** — automated versioning from conventional commits
+For cross-domain tasks (e.g. "add WebP conversion with UI"): backend first (Rust command), then frontend (Vue UI).
 
 ---
 
 ## Definition of done
 
-A feature is "done" when:
-- [ ] Rust tests pass (`cargo test`)
-- [ ] Vue unit tests pass (`pnpm test`)
+- [ ] `cargo test` passes
+- [ ] `pnpm test` passes
 - [ ] `pnpm lint` returns no errors
-- [ ] The feature works on Linux (primary), tested manually
-- [ ] PR description is complete with screenshots if UI change
-- [ ] CHANGELOG.md updated under `[Unreleased]`
+- [ ] Feature works on Linux (primary target), tested manually
+- [ ] PR description complete with screenshots if UI changed
+- [ ] `CHANGELOG.md` updated under `[Unreleased]`
 
 ---
 
-## Current status
+## References
 
-See [docs/roadmap.md](./docs/roadmap.md) for the version plan.
-See [docs/cahier-des-charges.md](./docs/cahier-des-charges.md) for functional specifications.
+- [docs/roadmap.md](./docs/roadmap.md) — version plan
+- [docs/cahier-des-charges.md](./docs/cahier-des-charges.md) — functional specifications
+- [docs/architecture.md](./docs/architecture.md) — technical architecture
