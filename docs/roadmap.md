@@ -31,11 +31,11 @@
 - [ ] Document conversion: Markdown → PDF, HTML; DOCX → PDF (via Pandoc sidecar)
 - [ ] Pandoc bundled as Tauri sidecar (Linux, Windows, macOS)
 - [ ] Batch conversion: drag & drop of folders
-- [ ] Cancel pending conversion
-- [ ] Retry failed conversion
+- [x] Cancel pending conversion
+- [x] Retry failed conversion
 - [ ] Per-category navigation (sidebar: Images / Documents)
 - [ ] Build matrix: Linux + Windows + macOS in CI
-- [ ] Preferences: default output format, default output directory
+- [x] Preferences: default output format, default output directory
 - [ ] Landing page complete with download links
 
 ---
