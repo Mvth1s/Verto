@@ -1,5 +1,5 @@
-use std::path::Path;
 use image::ImageFormat;
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct ConversionResult {
@@ -48,8 +48,7 @@ pub fn convert(
             let q = quality.unwrap_or(85);
             let mut file = std::fs::File::create(&out_path).map_err(|e| e.to_string())?;
             img.write_with_encoder(image::codecs::jpeg::JpegEncoder::new_with_quality(
-                &mut file,
-                q,
+                &mut file, q,
             ))
             .map_err(|e| e.to_string())?;
         }
@@ -194,7 +193,10 @@ mod tests {
 
         let high_size = high.unwrap().output_size;
         let low_size = low.unwrap().output_size;
-        assert!(high_size > low_size, "High quality should produce larger file");
+        assert!(
+            high_size > low_size,
+            "High quality should produce larger file"
+        );
 
         let _ = std::fs::remove_file(&output_high);
         let _ = std::fs::remove_file(&output_low);
