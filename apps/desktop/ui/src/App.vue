@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
+import type { FileCategory } from './stores/conversion'
 
 type Category = 'images' | 'documents'
+
+const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
+const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
 
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
@@ -15,11 +19,27 @@ const settings = useSettingsStore()
 
 const categoryName = computed(() => (activeCategory.value === 'images' ? 'Images' : 'Documents'))
 
+const activeFormats = computed(() =>
+  activeCategory.value === 'images' ? IMAGE_FORMATS : DOCUMENT_FORMATS,
+)
+
+const activeQueue = computed(() =>
+  conversion.queue.filter(
+    (f) => f.category === (activeCategory.value === 'images' ? 'image' : 'document'),
+  ),
+)
+
+const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status === 'waiting'))
+
 const queueSummary = computed(() => {
-  const total = conversion.queue.length
-  const doneCount = conversion.done.length
+  const total = activeQueue.value.length
+  const doneCount = activeQueue.value.filter((f) => f.status === 'done').length
   if (total === 0) return 'No files'
   return `${doneCount} of ${total} complete · ${formatBytes(conversion.totalSaved)} saved`
+})
+
+watch(activeCategory, (cat) => {
+  settings.outputFormat = cat === 'images' ? IMAGE_FORMATS[0] : DOCUMENT_FORMATS[0]
 })
 
 function setCategory(cat: Category) {
@@ -39,20 +59,33 @@ function formatPercent(input: number, output: number): string {
   return `−${(ratio * 100).toFixed(0)}% · ${formatBytes(output)}`
 }
 
+function isLikelyDirectory(path: string): boolean {
+  const name = path.split('/').pop() ?? ''
+  return !name.includes('.')
+}
+
 async function openFilePicker() {
-  const selected = await open({
-    multiple: true,
-    filters: [
-      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'] },
-    ],
-  })
+  const filters =
+    activeCategory.value === 'images'
+      ? [
+          {
+            name: 'Images',
+            extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'],
+          },
+        ]
+      : [
+          {
+            name: 'Documents',
+            extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
+          },
+        ]
+  const selected = await open({ multiple: true, filters })
   if (!selected) return
   const paths = Array.isArray(selected) ? selected : [selected]
+  const category: FileCategory = activeCategory.value === 'images' ? 'image' : 'document'
   conversion.addFiles(
-    paths.map((p: string) => ({
-      name: p.split('/').pop() ?? p,
-      path: p,
-    })),
+    paths.map((p: string) => ({ name: p.split('/').pop() ?? p, path: p })),
+    category,
   )
 }
 
@@ -84,13 +117,15 @@ onMounted(async () => {
       isDragover.value = false
     } else if (event.payload.type === 'drop') {
       isDragover.value = false
-      const paths = event.payload.paths ?? []
-      conversion.addFiles(
-        paths.map((p: string) => ({
-          name: p.split('/').pop() ?? p,
-          path: p,
-        })),
-      )
+      const paths: string[] = event.payload.paths ?? []
+      const category: FileCategory = activeCategory.value === 'images' ? 'image' : 'document'
+      for (const p of paths) {
+        if (isLikelyDirectory(p)) {
+          conversion.addDirectory(p, category)
+        } else {
+          conversion.addFiles([{ name: p.split('/').pop() ?? p, path: p }], category)
+        }
+      }
     }
   })
 })
@@ -98,8 +133,6 @@ onMounted(async () => {
 onUnmounted(() => {
   unlistenDrop?.()
 })
-
-const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
 </script>
 
 <template>
@@ -125,14 +158,17 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
           </svg>
           <span>Images</span>
         </div>
-        <div class="nav-item disabled" @click="setCategory('documents')">
+        <div
+          class="nav-item"
+          :class="{ active: activeCategory === 'documents' }"
+          @click="setCategory('documents')"
+        >
           <svg viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <path d="M14 2v6h6" />
             <path d="M8 13h8M8 17h5" />
           </svg>
           <span>Documents</span>
-          <span class="soon">Soon</span>
         </div>
         <div class="nav-item disabled">
           <svg viewBox="0 0 24 24">
@@ -156,7 +192,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
-        <div class="pill-version"><span class="dot"></span>v0.1.0</div>
+        <div class="pill-version"><span class="dot"></span>v0.2.0</div>
         <button class="icon-btn" aria-label="Settings">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
@@ -200,12 +236,12 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
         <div class="drop-kbd"><kbd>⌘</kbd><kbd>O</kbd></div>
       </div>
 
-      <div v-if="conversion.queue.length > 0" class="queue">
+      <div v-if="activeQueue.length > 0" class="queue">
         <div class="queue-header">
           <div class="queue-title">Queue</div>
           <div class="queue-actions">
             <button
-              v-if="conversion.done.length > 0"
+              v-if="activeQueue.some((f) => f.status === 'done')"
               class="queue-clear"
               @click="conversion.clearDone"
             >
@@ -216,7 +252,7 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
         </div>
 
         <div
-          v-for="file in conversion.queue"
+          v-for="file in activeQueue"
           :key="file.id"
           class="queue-row"
           :class="{ 'with-progress': file.status === 'converting' }"
@@ -287,13 +323,13 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       <div class="field">
         <div class="field-label">Format</div>
         <select v-model="settings.outputFormat" class="select">
-          <option v-for="fmt in IMAGE_FORMATS" :key="fmt" :value="fmt">
+          <option v-for="fmt in activeFormats" :key="fmt" :value="fmt">
             {{ fmt.toUpperCase() }}
           </option>
         </select>
       </div>
 
-      <div class="field">
+      <div v-if="activeCategory === 'images'" class="field">
         <div class="field-label">
           <span>Quality</span>
           <span class="val">{{ settings.quality }}%</span>
@@ -348,11 +384,11 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       <div class="summary">
         <div class="summary-item">
           <div class="summary-key">Files</div>
-          <div class="summary-val">{{ conversion.queue.length }}</div>
+          <div class="summary-val">{{ activeQueue.length }}</div>
         </div>
         <div class="summary-item">
           <div class="summary-key">Waiting</div>
-          <div class="summary-val">{{ conversion.waiting.length }}</div>
+          <div class="summary-val">{{ activeWaiting.length }}</div>
         </div>
         <div class="summary-item">
           <div class="summary-key">Format</div>
@@ -367,8 +403,8 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
       <button
         v-if="!conversion.isConverting"
         class="btn-primary"
-        :disabled="conversion.waiting.length === 0"
-        @click="conversion.convertAll"
+        :disabled="activeWaiting.length === 0"
+        @click="conversion.convertAll(activeCategory === 'images' ? 'image' : 'document')"
       >
         <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 8" /></svg>
         <span>Convert</span>
