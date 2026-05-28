@@ -54,15 +54,39 @@ pnpm --filter desktop test:watch
 pnpm --filter desktop test:coverage
 
 # All Rust tests
-cd apps/desktop && cargo test
+cd apps/desktop/src-tauri && cargo test
 
 # Single Rust test
-cd apps/desktop && cargo test test_jpeg_to_png_conversion
+cd apps/desktop/src-tauri && cargo test test_jpeg_to_png_conversion
 ```
 
 ---
 
 ## Architecture
+
+### Structure apps/desktop
+
+```
+apps/desktop/
+├── src-tauri/          # Crate Rust (Cargo.toml, build.rs, tauri.conf.json)
+│   ├── src/
+│   │   ├── main.rs
+│   │   ├── lib.rs
+│   │   ├── commands/   # Tauri commands (convert_image, convert_doc, …)
+│   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
+│   └── capabilities/
+│       └── default.json
+├── ui/                 # Vue 3 frontend
+│   ├── index.html
+│   └── src/
+│       ├── components/
+│       ├── views/
+│       ├── stores/
+│       └── composables/
+├── vite.config.ts      # root: 'ui' — pointe Vite vers ui/
+├── package.json        # workspace package "desktop"
+└── tsconfig*.json
+```
 
 ### Communication flow (desktop)
 
@@ -72,7 +96,7 @@ User (Vue 3 UI)
      ▼
 Tauri IPC bridge
      ▼
-Rust command (src/commands/image.rs)
+Rust command (src-tauri/src/commands/image.rs)
      ├── Native: image crate (JPEG, PNG, WebP, BMP, TIFF, GIF)
      └── Sidecar: FFmpeg (AVIF, HEIF, audio, video) / Pandoc (documents)
      ▼
