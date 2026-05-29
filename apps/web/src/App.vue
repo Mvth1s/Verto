@@ -116,6 +116,9 @@
           </div>
           <div class="win-body">
             <div class="ws-sidebar">
+              <div class="ws-brand">
+                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
+              </div>
               <div class="ws-item active"><span class="ico"></span>Images</div>
               <div class="ws-item"><span class="ico"></span>Documents</div>
               <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Audio</div>
@@ -781,6 +784,16 @@ header.nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.ws-brand {
+  padding: 0 2px 8px;
+}
+.ws-brand-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
 }
 .ws-item {
   display: flex;
