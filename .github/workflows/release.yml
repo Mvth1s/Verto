@@ -49,6 +49,9 @@ jobs:
     needs: release
     if: needs.release.outputs.new_release_published == 'true'
 
+    permissions:
+      contents: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -116,6 +119,20 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Sync version from Semantic Release to tauri.conf.json
+        shell: bash
+        env:
+          NEW_VERSION: ${{ needs.release.outputs.new_release_version }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = 'apps/desktop/src-tauri/tauri.conf.json';
+            const c = JSON.parse(fs.readFileSync(p, 'utf8'));
+            c.version = process.env.NEW_VERSION;
+            fs.writeFileSync(p, JSON.stringify(c, null, 2) + '\n');
+            console.log('tauri.conf.json version set to', process.env.NEW_VERSION);
+          "
 
       - name: Build and upload release artifacts
         uses: tauri-apps/tauri-action@v0
