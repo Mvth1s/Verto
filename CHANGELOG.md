@@ -14,6 +14,12 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Browse button to select output folder via folder picker dialog
 - Cancel button to stop the conversion queue mid-run
 - Retry action on failed queue items (click the refresh icon to re-queue)
+- Document conversion via Pandoc sidecar: MD, DOCX, HTML, RST, ODT, EPUB ↔ all supported formats
+- Batch conversion: drop a folder to recursively enqueue all supported files
+- Documents category in sidebar — format selector and queue filtered by active category
+- Tauri command `convert_document` and `list_directory`
+- Pandoc sidecar scripts for Linux/macOS (`download-pandoc.sh`) and Windows (`download-pandoc.ps1`)
+- Build matrix (Linux × Windows × macOS) now downloads Pandoc sidecar before building
 
 ---
 
