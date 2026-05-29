@@ -32,6 +32,9 @@ jobs:
       - name: Prettier check
         run: pnpm format:check
 
+      - name: Vitest
+        run: pnpm --filter desktop test -- --run
+
   lint-rust:
     runs-on: ubuntu-22.04
     steps:
@@ -65,3 +68,6 @@ jobs:
 
       - name: Rustfmt check
         run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check
+
+      - name: Rust tests
+        run: cargo test --lib --manifest-path apps/desktop/src-tauri/Cargo.toml
