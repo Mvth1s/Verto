@@ -11,6 +11,23 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [0.2.0] - 2026-05-29
+
+### Added
+- File picker on dropzone click via `@tauri-apps/plugin-dialog`
+- Browse button to select output folder via folder picker dialog
+- Cancel button to stop the conversion queue mid-run
+- Retry action on failed queue items (click the refresh icon to re-queue)
+- Document conversion via Pandoc sidecar: MD, DOCX, HTML, RST, ODT, EPUB ↔ all supported formats
+- Batch conversion: drop a folder to recursively enqueue all supported files
+- Documents category in sidebar — format selector and queue filtered by active category
+- Tauri commands `convert_document` and `list_directory`
+- Pandoc sidecar download scripts for Linux/macOS (`download-pandoc.sh`) and Windows (`download-pandoc.ps1`)
+- Build matrix (Linux × Windows × macOS) downloads Pandoc sidecar before building
+- 30 Vitest unit tests for `useConversionStore` and `useSettingsStore`
+
+---
+
 ## [0.1.0] - 2026-05-28
 
 ### Added

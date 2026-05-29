@@ -57,6 +57,9 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri -> target
 
+      - name: Download Pandoc sidecar
+        run: bash apps/desktop/scripts/download-pandoc.sh
+
       - name: Clippy
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
 
