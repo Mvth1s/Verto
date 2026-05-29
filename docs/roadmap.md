@@ -20,7 +20,7 @@
 - [x] Basic conversion queue with per-file status
 - [x] Output format selector
 - [x] GitHub Actions: lint + build (Linux only)
-- [ ] Landing page deployed on Vercel
+- [x] Landing page deployed on Vercel
 
 ---
 
@@ -36,7 +36,7 @@
 - [x] Per-category navigation (sidebar: Images / Documents)
 - [x] Build matrix: Linux + Windows + macOS in CI
 - [x] Preferences: default output format, default output directory
-- [ ] Landing page complete with download links
+- [x] Landing page complete with download links
 
 ---
 
