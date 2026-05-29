@@ -4,7 +4,7 @@
   <header class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#" style="text-decoration: none; color: inherit">
-        <div class="brand-mark">V</div>
+        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
@@ -490,16 +490,12 @@ header.nav {
   align-items: center;
   gap: 10px;
 }
-.brand-mark {
-  width: 24px;
-  height: 24px;
+.brand-logo {
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
-  background: var(--accent);
-  color: #052e22;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 14px;
+  display: block;
+  object-fit: cover;
 }
 .brand-name {
   font-weight: 600;

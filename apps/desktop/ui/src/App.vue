@@ -140,8 +140,7 @@ onUnmounted(() => {
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">V</div>
-        <div class="brand-name">Verto</div>
+        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
       </div>
 
       <div class="nav-label">Convert</div>
@@ -495,26 +494,14 @@ body {
   min-width: 0;
 }
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
   padding: 6px 10px 22px;
 }
-.brand-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--accent);
-  display: grid;
-  place-items: center;
-  color: #052e22;
-  font-weight: 700;
-  font-size: 13px;
-}
-.brand-name {
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+.brand-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 10px;
+  display: block;
+  object-fit: cover;
 }
 
 .nav-label {
