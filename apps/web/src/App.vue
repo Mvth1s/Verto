@@ -12,26 +12,69 @@ interface GithubRelease {
   assets: GithubAsset[]
 }
 
+interface Fallback {
+  label: string
+  ext: string
+}
+
 const RELEASES_URL = 'https://github.com/Mvth1s/Verto/releases/latest'
+const API_URL = 'https://api.github.com/repos/Mvth1s/Verto/releases/latest'
+const CACHE_KEY = 'verto_release'
+const CACHE_TTL = 3_600_000 // 1 hour
+
+const LINUX_FALLBACKS: Fallback[] = [
+  { label: 'Download .AppImage', ext: '.AppImage' },
+  { label: 'Download .deb', ext: '.deb' },
+  { label: 'Download .rpm', ext: '.rpm' },
+]
+const WINDOWS_FALLBACKS: Fallback[] = [
+  { label: 'Download .exe', ext: '.exe' },
+  { label: 'Download .msi', ext: '.msi' },
+]
+const MACOS_FALLBACKS: Fallback[] = [{ label: 'Download .dmg', ext: '.dmg' }]
+
 const release = ref<GithubRelease | null>(null)
 
 onMounted(async () => {
+  // Serve from cache when fresh
   try {
-    const res = await fetch('https://api.github.com/repos/Mvth1s/Verto/releases/latest', {
-      headers: { Accept: 'application/vnd.github+json' },
-    })
-    if (res.ok) release.value = await res.json()
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (raw) {
+      const { data, ts } = JSON.parse(raw) as { data: GithubRelease; ts: number }
+      if (Date.now() - ts < CACHE_TTL && data.tag_name && data.assets?.length) {
+        release.value = data
+        return
+      }
+    }
   } catch {
-    // silently fallback to releases page links
+    // ignore — fallback to API or static links
+  }
+
+  // Fetch from GitHub API
+  try {
+    const res = await fetch(API_URL, { headers: { Accept: 'application/vnd.github+json' } })
+    if (res.ok) {
+      const data: GithubRelease = await res.json()
+      if (data.tag_name) {
+        release.value = data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }))
+      }
+    }
+  } catch {
+    // ignore — fallback to API or static links
   }
 })
 
 const version = computed(() => release.value?.tag_name ?? null)
 
-function assets(pred: (name: string) => boolean): GithubAsset[] {
+function findAssets(pred: (name: string) => boolean): GithubAsset[] {
   return (
     release.value?.assets.filter(
-      (a) => pred(a.name) && !a.name.endsWith('.sig') && !a.name.endsWith('.tar.gz'),
+      (a) =>
+        pred(a.name) &&
+        !a.name.endsWith('.sig') &&
+        !a.name.endsWith('.tar.gz') &&
+        !a.name.endsWith('.zip'),
     ) ?? []
   )
 }
@@ -40,25 +83,25 @@ function sizeMB(bytes: number): string {
   return `~${Math.round(bytes / 1024 / 1024)} MB`
 }
 
-const linuxAssets = computed(() =>
-  assets((n) => n.endsWith('.AppImage') || n.endsWith('.deb') || n.endsWith('.rpm')),
-)
-
-const windowsAssets = computed(() =>
-  assets((n) => n.endsWith('-setup.exe') || (n.endsWith('.msi') && !n.endsWith('.msi.zip'))),
-)
-
-const macosAssets = computed(() => assets((n) => n.endsWith('.dmg')))
-
-function ext(name: string): string {
+function extOf(name: string): string {
   if (name.endsWith('.AppImage')) return '.AppImage'
   if (name.endsWith('-setup.exe')) return '.exe'
   if (name.endsWith('.msi')) return '.msi'
   if (name.endsWith('.deb')) return '.deb'
   if (name.endsWith('.rpm')) return '.rpm'
   if (name.endsWith('.dmg')) return '.dmg'
-  return name.split('.').pop() ?? name
+  return '.' + (name.split('.').pop() ?? name)
 }
+
+const linuxAssets = computed(() =>
+  findAssets((n) => n.endsWith('.AppImage') || n.endsWith('.deb') || n.endsWith('.rpm')),
+)
+
+const windowsAssets = computed(() =>
+  findAssets((n) => n.endsWith('-setup.exe') || n.endsWith('.msi')),
+)
+
+const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
 </script>
 
 <template>
@@ -387,14 +430,14 @@ function ext(name: string): string {
           <div class="dl-formats">
             <template v-if="linuxAssets.length">
               <div v-for="a in linuxAssets" :key="a.name" class="row">
-                <span>{{ ext(a.name) }}</span
+                <span>{{ extOf(a.name) }}</span
                 ><span class="size">{{ sizeMB(a.size) }}</span>
               </div>
             </template>
             <template v-else>
-              <div class="row"><span>.AppImage</span><span class="size">~18 MB</span></div>
-              <div class="row"><span>.deb</span><span class="size">~17 MB</span></div>
-              <div class="row"><span>.rpm</span><span class="size">~17 MB</span></div>
+              <div v-for="f in LINUX_FALLBACKS" :key="f.ext" class="row">
+                <span>{{ f.ext }}</span>
+              </div>
             </template>
           </div>
           <div class="dl-links">
@@ -412,17 +455,26 @@ function ext(name: string): string {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ ext(a.name) }}
+                Download {{ extOf(a.name) }}
               </a>
             </template>
-            <a v-else class="dl-btn" :href="RELEASES_URL" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              View releases
-            </a>
+            <template v-else>
+              <a
+                v-for="(f, i) in LINUX_FALLBACKS"
+                :key="f.ext"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="RELEASES_URL"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {{ f.label }}
+              </a>
+            </template>
           </div>
         </div>
 
@@ -444,13 +496,14 @@ function ext(name: string): string {
           <div class="dl-formats">
             <template v-if="windowsAssets.length">
               <div v-for="a in windowsAssets" :key="a.name" class="row">
-                <span>{{ ext(a.name) }}</span
+                <span>{{ extOf(a.name) }}</span
                 ><span class="size">{{ sizeMB(a.size) }}</span>
               </div>
             </template>
             <template v-else>
-              <div class="row"><span>.exe (installer)</span><span class="size">~20 MB</span></div>
-              <div class="row"><span>.msi</span><span class="size">~20 MB</span></div>
+              <div v-for="f in WINDOWS_FALLBACKS" :key="f.ext" class="row">
+                <span>{{ f.ext }}</span>
+              </div>
             </template>
           </div>
           <div class="dl-links">
@@ -468,17 +521,26 @@ function ext(name: string): string {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ ext(a.name) }}
+                Download {{ extOf(a.name) }}
               </a>
             </template>
-            <a v-else class="dl-btn outline" :href="RELEASES_URL" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              View releases
-            </a>
+            <template v-else>
+              <a
+                v-for="(f, i) in WINDOWS_FALLBACKS"
+                :key="f.ext"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="RELEASES_URL"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {{ f.label }}
+              </a>
+            </template>
           </div>
         </div>
 
@@ -502,12 +564,14 @@ function ext(name: string): string {
           <div class="dl-formats">
             <template v-if="macosAssets.length">
               <div v-for="a in macosAssets" :key="a.name" class="row">
-                <span>{{ ext(a.name) }}</span
+                <span>{{ extOf(a.name) }}</span
                 ><span class="size">{{ sizeMB(a.size) }}</span>
               </div>
             </template>
             <template v-else>
-              <div class="row"><span>.dmg</span><span class="size">~22 MB</span></div>
+              <div v-for="f in MACOS_FALLBACKS" :key="f.ext" class="row">
+                <span>{{ f.ext }}</span>
+              </div>
             </template>
           </div>
           <div class="dl-links">
@@ -525,17 +589,26 @@ function ext(name: string): string {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ ext(a.name) }}
+                Download {{ extOf(a.name) }}
               </a>
             </template>
-            <a v-else class="dl-btn outline" :href="RELEASES_URL" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              View releases
-            </a>
+            <template v-else>
+              <a
+                v-for="(f, i) in MACOS_FALLBACKS"
+                :key="f.ext"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="RELEASES_URL"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {{ f.label }}
+              </a>
+            </template>
           </div>
         </div>
       </div>
