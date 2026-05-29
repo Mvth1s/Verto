@@ -113,7 +113,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
       </a>
       <div class="nav-right">
         <a class="nav-link" href="#features">Features</a>
-        <a class="nav-link" href="#download">Download</a>
+        <a class="nav-link" href="#privacy">Privacy</a>
         <a class="nav-link" href="https://github.com/Mvth1s/Verto" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24">
             <path
@@ -121,7 +121,6 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             />
           </svg>
           GitHub
-          <span class="star-count">★ 2.4k</span>
         </a>
         <a class="btn btn-primary" href="#download">
           <svg viewBox="0 0 24 24">
@@ -293,14 +292,13 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </div>
           <div class="feature-title">Images</div>
           <div class="feature-body">
-            JPEG, PNG, WebP, AVIF, TIFF, HEIC, GIF and more. Batch-convert hundreds of files in
-            seconds.
+            Convert between JPEG, PNG, WebP, GIF, BMP and TIFF using the native Rust
+            <code>image</code> crate — no external binary required.
           </div>
           <div class="feature-list">
             <span class="chip">.jpeg</span><span class="chip">.png</span
-            ><span class="chip">.webp</span><span class="chip">.avif</span
-            ><span class="chip">.tiff</span><span class="chip">.heic</span
-            ><span class="chip">.gif</span>
+            ><span class="chip">.webp</span><span class="chip">.gif</span
+            ><span class="chip">.bmp</span><span class="chip">.tiff</span>
           </div>
         </div>
         <div class="feature">
@@ -313,13 +311,49 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </div>
           <div class="feature-title">Documents</div>
           <div class="feature-body">
-            PDF, DOCX, Markdown, HTML, EPUB, RTF. Round-trip your text without a cloud service in
-            the loop.
+            Cross-convert Markdown, DOCX, HTML, RST, ODT and EPUB in any direction using a bundled
+            Pandoc sidecar — no internet, no Pandoc install.
           </div>
           <div class="feature-list">
-            <span class="chip">.pdf</span><span class="chip">.docx</span
-            ><span class="chip">.md</span><span class="chip">.html</span
-            ><span class="chip">.epub</span><span class="chip">.rtf</span>
+            <span class="chip">.md</span><span class="chip">.docx</span
+            ><span class="chip">.html</span><span class="chip">.rst</span
+            ><span class="chip">.odt</span><span class="chip">.epub</span>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+              <rect x="3" y="3" width="4" height="4" rx="1" />
+              <rect x="3" y="9" width="4" height="4" rx="1" />
+              <rect x="3" y="15" width="4" height="4" rx="1" />
+            </svg>
+          </div>
+          <div class="feature-title">Batch &amp; Folders</div>
+          <div class="feature-body">
+            Drop a folder and Verto recursively enqueues every supported file. Convert dozens of
+            documents or images in one click.
+          </div>
+          <div class="feature-list">
+            <span class="chip">recursive scan</span><span class="chip">drag &amp; drop</span
+            ><span class="chip">file picker</span>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </div>
+          <div class="feature-title">Queue control</div>
+          <div class="feature-body">
+            Cancel a running batch mid-way, retry individual failed items, and browse a custom
+            output directory — all without restarting the app.
+          </div>
+          <div class="feature-list">
+            <span class="chip">cancel</span><span class="chip">retry</span
+            ><span class="chip">custom output dir</span>
           </div>
         </div>
         <div class="feature">
@@ -331,8 +365,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </div>
           <div class="feature-title">100% Local</div>
           <div class="feature-body">
-            Your files never leave your machine. No uploads, no servers, no third-party APIs. Works
-            on a plane.
+            Every conversion runs as a local process. No network stack involved, ever. Works
+            offline, air-gapped, on a plane.
           </div>
           <div class="feature-list">
             <span class="chip">offline-first</span><span class="chip">no telemetry</span
@@ -348,12 +382,12 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </div>
           <div class="feature-title">Open source</div>
           <div class="feature-body">
-            MIT licensed. No black boxes, no creepy phone-home. Audit the source, file an issue,
-            send a PR.
+            MIT licensed. Rust backend, Vue 3 frontend, Tauri v2. No black boxes. Audit the source,
+            file an issue, send a PR.
           </div>
           <div class="feature-list">
-            <span class="chip">MIT</span><span class="chip">Rust + Tauri</span
-            ><span class="chip">2.4k ★</span>
+            <span class="chip">MIT</span><span class="chip">Rust + Tauri v2</span
+            ><span class="chip">Vue 3</span>
           </div>
         </div>
       </div>
@@ -361,7 +395,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   </section>
 
   <!-- PRIVACY -->
-  <section class="privacy">
+  <section id="privacy" class="privacy">
     <div class="container">
       <div class="section-eyebrow" style="text-align: center">Privacy</div>
       <h2 class="privacy-title">Your files stay on your machine.</h2>
@@ -396,6 +430,44 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             </svg>
           </div>
           <div>Cloud / Server</div>
+        </div>
+      </div>
+      <div class="privacy-details">
+        <div class="pv-detail">
+          <span class="pv-check">✓</span>
+          <div>
+            <strong>No network calls, ever.</strong> The app never opens a socket after launch.
+            Conversions run as local child processes (Pandoc, image crate) — nothing leaves your
+            machine.
+          </div>
+        </div>
+        <div class="pv-detail">
+          <span class="pv-check">✓</span>
+          <div>
+            <strong>No account required.</strong> No sign-up, no licence key, no activation. Just
+            download and run.
+          </div>
+        </div>
+        <div class="pv-detail">
+          <span class="pv-check">✓</span>
+          <div>
+            <strong>No telemetry or crash reporting.</strong> We don't know you exist. There is no
+            analytics SDK, no Sentry, no usage tracking of any kind.
+          </div>
+        </div>
+        <div class="pv-detail">
+          <span class="pv-check">✓</span>
+          <div>
+            <strong>Bundled converters.</strong> Pandoc ships inside the binary. No system
+            dependency to install, no risk of a malicious system-wide binary being used instead.
+          </div>
+        </div>
+        <div class="pv-detail">
+          <span class="pv-check">✓</span>
+          <div>
+            <strong>Source is auditable.</strong> MIT licensed, hosted on GitHub. Every conversion
+            path is in the open — no compiled blobs, no obfuscated code.
+          </div>
         </div>
       </div>
     </div>
@@ -1193,7 +1265,7 @@ section {
 /* FEATURES */
 .features-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1px;
   background: var(--border-soft);
   border: 1px solid var(--border-soft);
@@ -1370,6 +1442,33 @@ section {
   background-image: linear-gradient(90deg, var(--text-4) 50%, transparent 50%);
   background-size: 8px 1px;
   display: block;
+}
+.privacy-details {
+  margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.pv-detail {
+  display: flex;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.6;
+  text-align: left;
+}
+.pv-detail strong {
+  color: var(--text);
+}
+.pv-check {
+  color: var(--accent-bright);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* DOWNLOAD */
