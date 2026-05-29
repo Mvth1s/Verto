@@ -7,7 +7,7 @@ import { useSettingsStore } from './stores/settings'
 
 type Category = 'images' | 'documents' | 'audio'
 
-const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
+const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
 const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
 
@@ -105,6 +105,19 @@ async function openFolderPicker() {
   const selected = await open({ directory: true, multiple: false })
   if (selected && typeof selected === 'string') {
     settings.outputDirectory = selected
+  }
+}
+
+function applyPreset(preset: 'web' | 'print' | 'lossless') {
+  if (preset === 'web') {
+    settings.outputFormat = 'jpeg'
+    settings.quality = 75
+  } else if (preset === 'print') {
+    settings.outputFormat = 'jpeg'
+    settings.quality = 95
+  } else {
+    settings.outputFormat = 'png'
+    settings.quality = 100
   }
 }
 
@@ -345,6 +358,15 @@ onUnmounted(() => {
         </select>
       </div>
 
+      <div v-if="activeCategory === 'images'" class="field">
+        <div class="field-label">Presets</div>
+        <div class="presets">
+          <button class="preset-btn" @click="applyPreset('web')">Web</button>
+          <button class="preset-btn" @click="applyPreset('print')">Print</button>
+          <button class="preset-btn" @click="applyPreset('lossless')">Lossless</button>
+        </div>
+      </div>
+
       <div v-if="activeCategory === 'audio'" class="field">
         <div class="field-label">
           <span>Bitrate</span>
@@ -385,6 +407,55 @@ onUnmounted(() => {
         <div v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)" class="field-hint">
           Quality applies to JPEG only
         </div>
+      </div>
+
+      <div v-if="activeCategory === 'images'" class="field">
+        <div class="field-label">
+          <span>Resize</span>
+          <div
+            class="toggle"
+            :class="{ on: settings.resizeEnabled }"
+            @click="settings.resizeEnabled = !settings.resizeEnabled"
+          ></div>
+        </div>
+        <template v-if="settings.resizeEnabled">
+          <div class="resize-row">
+            <input
+              v-model.number="settings.resizeWidth"
+              class="resize-input"
+              type="number"
+              placeholder="W"
+              min="1"
+            />
+            <button
+              class="ratio-btn"
+              :class="{ active: settings.keepAspectRatio }"
+              :title="settings.keepAspectRatio ? 'Ratio locked' : 'Free resize'"
+              @click="settings.keepAspectRatio = !settings.keepAspectRatio"
+            >
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <path v-if="settings.keepAspectRatio" d="M7 11V7a5 5 0 0 1 10 0v4" />
+                <path v-else d="M7 11V7a5 5 0 0 1 4.9-5M17 11V7a5 5 0 0 0-1.9-3.9" />
+              </svg>
+            </button>
+            <input
+              v-model.number="settings.resizeHeight"
+              class="resize-input"
+              type="number"
+              placeholder="H"
+              min="1"
+              :disabled="settings.keepAspectRatio"
+            />
+          </div>
+          <div class="field-hint">
+            {{
+              settings.keepAspectRatio
+                ? 'Width only — height computed from ratio'
+                : 'Exact dimensions'
+            }}
+          </div>
+        </template>
       </div>
 
       <div class="field">
@@ -1236,6 +1307,96 @@ body {
   stroke: currentColor;
   stroke-width: 1.8;
   fill: currentColor;
+}
+
+/* Quality presets */
+.presets {
+  display: flex;
+  gap: 6px;
+}
+.preset-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.preset-btn:hover {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+
+/* Resize */
+.resize-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.resize-input {
+  width: 0;
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.resize-input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.resize-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* hide number spinner arrows */
+.resize-input::-webkit-inner-spin-button,
+.resize-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+.resize-input[type='number'] {
+  -moz-appearance: textfield;
+}
+.ratio-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-3);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.ratio-btn.active {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+.ratio-btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
 }
 
 .qaction.retry {

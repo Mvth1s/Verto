@@ -27,7 +27,7 @@ interface ConversionResult {
   saved_bytes: number
 }
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif']
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'avif']
 const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
 const AUDIO_EXTENSIONS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus']
 
@@ -142,6 +142,9 @@ export const useConversionStore = defineStore('conversion', () => {
             inputPath: file.path,
             outputFormat: settings.outputFormat,
             quality: settings.quality,
+            resizeWidth: settings.resizeEnabled ? settings.resizeWidth : null,
+            resizeHeight:
+              settings.resizeEnabled && !settings.keepAspectRatio ? settings.resizeHeight : null,
             outputPath,
           })
         }

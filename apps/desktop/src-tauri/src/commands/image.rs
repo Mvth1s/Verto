@@ -1,3 +1,4 @@
+use crate::converters::ffmpeg as ffmpeg_converter;
 use crate::converters::image as image_converter;
 use serde::Serialize;
 use std::path::Path;
@@ -10,11 +11,16 @@ pub struct ConversionResult {
     pub saved_bytes: i64,
 }
 
+const FFMPEG_IMAGE_FORMATS: &[&str] = &["avif"];
+
 #[tauri::command]
 pub async fn convert_image(
+    app: tauri::AppHandle,
     input_path: String,
     output_format: String,
     quality: Option<u8>,
+    resize_width: Option<u32>,
+    resize_height: Option<u32>,
     output_path: Option<String>,
 ) -> Result<ConversionResult, String> {
     let input = Path::new(&input_path);
@@ -22,25 +28,68 @@ pub async fn convert_image(
         return Err("Input path must be absolute".to_string());
     }
 
-    if let Some(ref out) = output_path {
-        let out_p = Path::new(out);
-        if !out_p.is_absolute() {
-            return Err("Output path must be absolute".to_string());
+    let out_path = match output_path {
+        Some(ref p) => {
+            if !Path::new(p).is_absolute() {
+                return Err("Output path must be absolute".to_string());
+            }
+            p.clone()
         }
-    }
+        None => input
+            .with_extension(&output_format)
+            .to_string_lossy()
+            .into_owned(),
+    };
 
-    // Offload blocking I/O to a dedicated thread
-    tauri::async_runtime::spawn_blocking(move || {
+    let input_ext = input
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    let use_ffmpeg = FFMPEG_IMAGE_FORMATS.contains(&output_format.as_str())
+        || FFMPEG_IMAGE_FORMATS.contains(&input_ext.as_str());
+
+    if use_ffmpeg {
+        let resize = match (resize_width, resize_height) {
+            (None, None) => None,
+            pair => Some(pair),
+        };
         let result =
-            image_converter::convert(&input_path, &output_format, quality, output_path.as_deref())?;
+            ffmpeg_converter::convert_image(&app, &input_path, &output_format, &out_path, resize)
+                .await?;
 
-        Ok(ConversionResult {
+        return Ok(ConversionResult {
             saved_bytes: result.input_size as i64 - result.output_size as i64,
             output_path: result.output_path,
             input_size: result.input_size,
             output_size: result.output_size,
-        })
+        });
+    }
+
+    let resize = match (resize_width, resize_height) {
+        (Some(w), Some(h)) => Some((w, h)),
+        (Some(w), None) => Some((w, u32::MAX)),
+        (None, Some(h)) => Some((u32::MAX, h)),
+        (None, None) => None,
+    };
+    let out_path_clone = out_path.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        image_converter::convert(
+            &input_path,
+            &output_format,
+            quality,
+            Some(&out_path_clone),
+            resize,
+        )
     })
     .await
-    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())??;
+
+    Ok(ConversionResult {
+        saved_bytes: result.input_size as i64 - result.output_size as i64,
+        output_path: result.output_path,
+        input_size: result.input_size,
+        output_size: result.output_size,
+    })
 }
