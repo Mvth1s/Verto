@@ -94,6 +94,14 @@ jobs:
             librsvg2-dev \
             patchelf
 
+      - name: Download Pandoc sidecar (Linux / macOS)
+        if: matrix.platform.os != 'windows-latest'
+        run: bash apps/desktop/scripts/download-pandoc.sh
+
+      - name: Download Pandoc sidecar (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        run: pwsh apps/desktop/scripts/download-pandoc.ps1
+
       - name: Install dependencies
         run: pnpm install
 
