@@ -50,11 +50,7 @@ pub async fn convert(
         .map_err(|e| format!("Failed to read input metadata: {}", e))?
         .len();
 
-    let mut args = vec![
-        "-y".to_string(),
-        "-i".to_string(),
-        input_path.to_string(),
-    ];
+    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
 
     if let Some(br) = bitrate {
         args.push("-b:a".to_string());
