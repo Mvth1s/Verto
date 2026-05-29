@@ -36,7 +36,11 @@ describe('useConversionStore', () => {
       const store = useConversionStore()
       store.addFiles([{ name: 'photo.jpg', path: '/tmp/photo.jpg' }], 'image')
       expect(store.queue).toHaveLength(1)
-      expect(store.queue[0]).toMatchObject({ name: 'photo.jpg', category: 'image', status: 'waiting' })
+      expect(store.queue[0]).toMatchObject({
+        name: 'photo.jpg',
+        category: 'image',
+        status: 'waiting',
+      })
     })
 
     it('adds document file with correct category', () => {
@@ -94,16 +98,27 @@ describe('useConversionStore', () => {
 
   describe('addDirectory', () => {
     it('calls list_directory recursively and filters by category', async () => {
-      mockInvoke.mockResolvedValueOnce(['/tmp/dir/photo.jpg', '/tmp/dir/doc.md', '/tmp/dir/file.txt'])
+      mockInvoke.mockResolvedValueOnce([
+        '/tmp/dir/photo.jpg',
+        '/tmp/dir/doc.md',
+        '/tmp/dir/file.txt',
+      ])
       const store = useConversionStore()
       await store.addDirectory('/tmp/dir', 'image')
-      expect(mockInvoke).toHaveBeenCalledWith('list_directory', { dirPath: '/tmp/dir', recursive: true })
+      expect(mockInvoke).toHaveBeenCalledWith('list_directory', {
+        dirPath: '/tmp/dir',
+        recursive: true,
+      })
       expect(store.queue).toHaveLength(1)
       expect(store.queue[0].name).toBe('photo.jpg')
     })
 
     it('filters document files in document category', async () => {
-      mockInvoke.mockResolvedValueOnce(['/tmp/dir/photo.jpg', '/tmp/dir/doc.md', '/tmp/dir/article.html'])
+      mockInvoke.mockResolvedValueOnce([
+        '/tmp/dir/photo.jpg',
+        '/tmp/dir/doc.md',
+        '/tmp/dir/article.html',
+      ])
       const store = useConversionStore()
       await store.addDirectory('/tmp/dir', 'document')
       expect(store.queue).toHaveLength(2)
