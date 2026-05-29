@@ -128,7 +128,11 @@ mod tests {
     #[test]
     fn test_disallowed_formats_rejected() {
         for fmt in &["txt", "mp3", "png", "zip", "rtf", ""] {
-            assert!(!ALLOWED_FORMATS.contains(fmt), "{} should not be allowed", fmt);
+            assert!(
+                !ALLOWED_FORMATS.contains(fmt),
+                "{} should not be allowed",
+                fmt
+            );
         }
     }
 
