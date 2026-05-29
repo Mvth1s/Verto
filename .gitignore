@@ -22,6 +22,9 @@ Thumbs.db
 .vscode/
 *.iml
 
+# Claude Code
+.claude/
+
 # Logs
 *.log
 npm-debug.log*
