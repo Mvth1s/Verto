@@ -98,6 +98,84 @@ pub async fn convert(
     })
 }
 
+const AVIF_FORMATS: &[&str] = &["avif"];
+
+pub async fn convert_image(
+    app: &tauri::AppHandle,
+    input_path: &str,
+    output_format: &str,
+    output_path: &str,
+    resize: Option<(Option<u32>, Option<u32>)>,
+) -> Result<ConversionResult, String> {
+    if !std::path::Path::new(input_path).exists() {
+        return Err(format!("Input file not found: {}", input_path));
+    }
+
+    if !AVIF_FORMATS.contains(&output_format) {
+        return Err(format!(
+            "ffmpeg image converter only handles: {}",
+            AVIF_FORMATS.join(", ")
+        ));
+    }
+
+    let input_size = std::fs::metadata(input_path)
+        .map_err(|e| format!("Failed to read input metadata: {}", e))?
+        .len();
+
+    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+
+    if let Some((w, h)) = resize {
+        let scale = match (w, h) {
+            (Some(w), Some(h)) => format!("scale={}:{}", w, h),
+            (Some(w), None) => format!("scale={}:-2", w),
+            (None, Some(h)) => format!("scale=-2:{}", h),
+            (None, None) => unreachable!(),
+        };
+        args.push("-vf".to_string());
+        args.push(scale);
+    }
+
+    args.push(output_path.to_string());
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("ffmpeg")
+        .map_err(|e| e.to_string())?
+        .args(&args)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    let mut stderr_buf = String::new();
+    let mut exit_code: Option<i32> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stderr(line) => {
+                stderr_buf.push_str(&String::from_utf8_lossy(&line));
+            }
+            CommandEvent::Terminated(payload) => {
+                exit_code = payload.code;
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    if exit_code != Some(0) {
+        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+    }
+
+    let output_size = std::fs::metadata(output_path)
+        .map_err(|e| format!("Failed to read output metadata: {}", e))?
+        .len();
+
+    Ok(ConversionResult {
+        output_path: output_path.to_string(),
+        input_size,
+        output_size,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
