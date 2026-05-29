@@ -4,7 +4,7 @@
   <header class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#" style="text-decoration: none; color: inherit">
-        <div class="brand-mark">V</div>
+        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
@@ -116,6 +116,9 @@
           </div>
           <div class="win-body">
             <div class="ws-sidebar">
+              <div class="ws-brand">
+                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
+              </div>
               <div class="ws-item active"><span class="ico"></span>Images</div>
               <div class="ws-item"><span class="ico"></span>Documents</div>
               <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Audio</div>
@@ -490,16 +493,12 @@ header.nav {
   align-items: center;
   gap: 10px;
 }
-.brand-mark {
-  width: 24px;
-  height: 24px;
+.brand-logo {
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
-  background: var(--accent);
-  color: #052e22;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 14px;
+  display: block;
+  object-fit: cover;
 }
 .brand-name {
   font-weight: 600;
@@ -785,6 +784,16 @@ header.nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.ws-brand {
+  padding: 0 2px 8px;
+}
+.ws-brand-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
 }
 .ws-item {
   display: flex;
