@@ -12,6 +12,12 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+- 7 Rust unit tests for the Pandoc converter: `test_allowed_formats_accepted`, `test_disallowed_formats_rejected`, `test_output_path_replaces_extension`, `test_output_path_docx_to_md`, `test_md_to_html`, `test_md_to_docx`, `test_nonexistent_input_fails`
+- Markdown fixture `tests/fixtures/sample.md` for Pandoc integration tests
+- CI: `lint-frontend` job runs `pnpm --filter desktop test -- --run` (30 Vitest tests) on every push
+- CI: `lint-rust` job runs `cargo test --lib` (14 Rust tests: 7 image + 7 pandoc) on every push
+
 ---
 
 ## [1.1.0] - 2026-05-29
