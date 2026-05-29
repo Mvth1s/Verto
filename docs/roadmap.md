@@ -28,13 +28,13 @@
 
 **Goal**: Documents conversion, batch support, Windows/macOS builds.
 
-- [ ] Document conversion: Markdown → PDF, HTML; DOCX → PDF (via Pandoc sidecar)
-- [ ] Pandoc bundled as Tauri sidecar (Linux, Windows, macOS)
-- [ ] Batch conversion: drag & drop of folders
+- [x] Document conversion: Markdown → PDF, HTML; DOCX → PDF (via Pandoc sidecar)
+- [x] Pandoc bundled as Tauri sidecar (Linux, Windows, macOS)
+- [x] Batch conversion: drag & drop of folders
 - [x] Cancel pending conversion
 - [x] Retry failed conversion
-- [ ] Per-category navigation (sidebar: Images / Documents)
-- [ ] Build matrix: Linux + Windows + macOS in CI
+- [x] Per-category navigation (sidebar: Images / Documents)
+- [x] Build matrix: Linux + Windows + macOS in CI
 - [x] Preferences: default output format, default output directory
 - [ ] Landing page complete with download links
 
