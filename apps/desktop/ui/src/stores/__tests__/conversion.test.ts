@@ -22,6 +22,12 @@ const DOC_RESULT = {
   output_size: 800,
   saved_bytes: -300,
 }
+const AUDIO_RESULT = {
+  output_path: '/tmp/out/track.mp3',
+  input_size: 1_000_000,
+  output_size: 150_000,
+  saved_bytes: 850_000,
+}
 
 describe('useConversionStore', () => {
   beforeEach(() => {
@@ -70,6 +76,24 @@ describe('useConversionStore', () => {
     it('rejects image extension in document category', () => {
       const store = useConversionStore()
       store.addFiles([{ name: 'photo.jpg', path: '/tmp/photo.jpg' }], 'document')
+      expect(store.queue).toHaveLength(0)
+    })
+
+    it('adds audio file with correct category', () => {
+      const store = useConversionStore()
+      store.addFiles([{ name: 'track.wav', path: '/tmp/track.wav' }], 'audio')
+      expect(store.queue[0]).toMatchObject({ category: 'audio', inputFormat: 'wav' })
+    })
+
+    it('rejects audio extension in image category', () => {
+      const store = useConversionStore()
+      store.addFiles([{ name: 'track.mp3', path: '/tmp/track.mp3' }], 'image')
+      expect(store.queue).toHaveLength(0)
+    })
+
+    it('rejects image extension in audio category', () => {
+      const store = useConversionStore()
+      store.addFiles([{ name: 'photo.jpg', path: '/tmp/photo.jpg' }], 'audio')
       expect(store.queue).toHaveLength(0)
     })
 
@@ -122,6 +146,19 @@ describe('useConversionStore', () => {
       const store = useConversionStore()
       await store.addDirectory('/tmp/dir', 'document')
       expect(store.queue).toHaveLength(2)
+    })
+
+    it('filters audio files in audio category', async () => {
+      mockInvoke.mockResolvedValueOnce([
+        '/tmp/dir/photo.jpg',
+        '/tmp/dir/track.mp3',
+        '/tmp/dir/album.flac',
+        '/tmp/dir/doc.md',
+      ])
+      const store = useConversionStore()
+      await store.addDirectory('/tmp/dir', 'audio')
+      expect(store.queue).toHaveLength(2)
+      expect(store.queue.every((f) => f.category === 'audio')).toBe(true)
     })
   })
 
@@ -267,6 +304,46 @@ describe('useConversionStore', () => {
         expect.objectContaining({ inputPath: '/tmp/doc.md', outputFormat: 'html' }),
       )
       expect(store.queue[0].status).toBe('done')
+    })
+
+    it('invokes convert_audio for audio category with bitrate', async () => {
+      const settings = useSettingsStore()
+      settings.outputFormat = 'mp3'
+      settings.bitrate = 192
+      settings.outputDirectory = '/tmp/out'
+      mockInvoke.mockResolvedValue(AUDIO_RESULT)
+
+      const store = useConversionStore()
+      store.addFiles([{ name: 'track.wav', path: '/tmp/track.wav' }], 'audio')
+      await store.convertAll('audio')
+
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'convert_audio',
+        expect.objectContaining({
+          inputPath: '/tmp/track.wav',
+          outputFormat: 'mp3',
+          bitrate: 192,
+        }),
+      )
+      expect(store.queue[0].status).toBe('done')
+      expect(store.queue[0].outputPath).toBe(AUDIO_RESULT.output_path)
+    })
+
+    it('passes undefined bitrate for lossless audio formats', async () => {
+      const settings = useSettingsStore()
+      settings.outputFormat = 'flac'
+      settings.bitrate = 320
+      settings.outputDirectory = '/tmp/out'
+      mockInvoke.mockResolvedValue(AUDIO_RESULT)
+
+      const store = useConversionStore()
+      store.addFiles([{ name: 'track.wav', path: '/tmp/track.wav' }], 'audio')
+      await store.convertAll('audio')
+
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'convert_audio',
+        expect.objectContaining({ outputFormat: 'flac', bitrate: undefined }),
+      )
     })
 
     it('sets status to error when invoke rejects', async () => {

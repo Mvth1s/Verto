@@ -64,6 +64,14 @@ jobs:
         if: matrix.platform.os == 'windows-latest'
         run: pwsh apps/desktop/scripts/download-pandoc.ps1
 
+      - name: Download FFmpeg sidecar (Linux / macOS)
+        if: matrix.platform.os != 'windows-latest'
+        run: bash apps/desktop/scripts/download-ffmpeg.sh
+
+      - name: Download FFmpeg sidecar (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        run: pwsh apps/desktop/scripts/download-ffmpeg.ps1
+
       - name: Generate icon.icns (macOS)
         if: matrix.platform.os == 'macos-latest'
         run: |
