@@ -10,12 +10,7 @@
       <div class="nav-right">
         <a class="nav-link" href="#features">Features</a>
         <a class="nav-link" href="#download">Download</a>
-        <a
-          class="nav-link"
-          href="https://github.com/mathis-aguado/verto"
-          target="_blank"
-          rel="noopener"
-        >
+        <a class="nav-link" href="https://github.com/Mvth1s/Verto" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24">
             <path
               d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
@@ -63,7 +58,7 @@
           </a>
           <a
             class="btn btn-outline btn-lg"
-            href="https://github.com/mathis-aguado/verto"
+            href="https://github.com/Mvth1s/Verto"
             target="_blank"
             rel="noopener"
           >
@@ -321,7 +316,7 @@
             </div>
             <div>
               <div class="dl-os-name">Linux</div>
-              <div class="dl-os-version">v0.1.0 · x86_64</div>
+              <div class="dl-os-version">v0.2.0 · x86_64</div>
             </div>
           </div>
           <div class="dl-formats">
@@ -329,14 +324,19 @@
             <div class="row"><span>.deb</span><span class="size">~17 MB</span></div>
             <div class="row"><span>.rpm</span><span class="size">~17 MB</span></div>
           </div>
-          <button class="dl-btn">
+          <a
+            class="dl-btn"
+            href="https://github.com/Mvth1s/Verto/releases/latest"
+            target="_blank"
+            rel="noopener"
+          >
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download .AppImage
-          </button>
+          </a>
         </div>
         <div class="dl-card">
           <div class="dl-os">
@@ -349,7 +349,7 @@
             </div>
             <div>
               <div class="dl-os-name">Windows</div>
-              <div class="dl-os-version">v0.1.0 · x86_64</div>
+              <div class="dl-os-version">v0.2.0 · x86_64</div>
             </div>
           </div>
           <div class="dl-formats">
@@ -357,14 +357,19 @@
             <div class="row"><span>.msi</span><span class="size">~20 MB</span></div>
             <div class="row"><span>.zip (portable)</span><span class="size">~19 MB</span></div>
           </div>
-          <button class="dl-btn outline">
+          <a
+            class="dl-btn outline"
+            href="https://github.com/Mvth1s/Verto/releases/latest"
+            target="_blank"
+            rel="noopener"
+          >
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download .exe
-          </button>
+          </a>
         </div>
         <div class="dl-card">
           <div class="dl-os">
@@ -377,7 +382,7 @@
             </div>
             <div>
               <div class="dl-os-name">macOS</div>
-              <div class="dl-os-version">v0.1.0 · Universal</div>
+              <div class="dl-os-version">v0.2.0 · Universal</div>
             </div>
           </div>
           <div class="dl-formats">
@@ -385,14 +390,19 @@
             <div class="row"><span>.dmg (Apple Silicon)</span><span class="size">~17 MB</span></div>
             <div class="row"><span>brew install</span><span class="size">cask</span></div>
           </div>
-          <button class="dl-btn outline">
+          <a
+            class="dl-btn outline"
+            href="https://github.com/Mvth1s/Verto/releases/latest"
+            target="_blank"
+            rel="noopener"
+          >
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download .dmg
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -400,19 +410,17 @@
 
   <footer>
     <div class="container footer-inner">
-      <div class="footer-meta">Verto · MIT License · 2025</div>
+      <div class="footer-meta">Verto · MIT License · 2026</div>
       <div class="footer-links">
-        <a href="https://github.com/mathis-aguado/verto" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/Mvth1s/Verto" target="_blank" rel="noopener">GitHub</a>
         <a
-          href="https://github.com/mathis-aguado/verto/blob/main/CHANGELOG.md"
+          href="https://github.com/Mvth1s/Verto/blob/main/CHANGELOG.md"
           target="_blank"
           rel="noopener"
           >CHANGELOG</a
         >
-        <a href="https://github.com/mathis-aguado/verto/issues" target="_blank" rel="noopener"
-          >Issues</a
-        >
-        <a href="https://github.com/mathis-aguado/verto/releases" target="_blank" rel="noopener"
+        <a href="https://github.com/Mvth1s/Verto/issues" target="_blank" rel="noopener">Issues</a>
+        <a href="https://github.com/Mvth1s/Verto/releases" target="_blank" rel="noopener"
           >Releases</a
         >
       </div>
