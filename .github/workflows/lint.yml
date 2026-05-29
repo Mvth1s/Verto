@@ -33,7 +33,7 @@ jobs:
         run: pnpm format:check
 
       - name: Vitest
-        run: pnpm --filter desktop test --run
+        run: pnpm --filter desktop test -- --run
 
   lint-rust:
     runs-on: ubuntu-22.04
