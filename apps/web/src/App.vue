@@ -1,4 +1,65 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+interface GithubAsset {
+  name: string
+  browser_download_url: string
+  size: number
+}
+
+interface GithubRelease {
+  tag_name: string
+  assets: GithubAsset[]
+}
+
+const RELEASES_URL = 'https://github.com/Mvth1s/Verto/releases/latest'
+const release = ref<GithubRelease | null>(null)
+
+onMounted(async () => {
+  try {
+    const res = await fetch('https://api.github.com/repos/Mvth1s/Verto/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' },
+    })
+    if (res.ok) release.value = await res.json()
+  } catch {
+    // silently fallback to releases page links
+  }
+})
+
+const version = computed(() => release.value?.tag_name ?? null)
+
+function assets(pred: (name: string) => boolean): GithubAsset[] {
+  return (
+    release.value?.assets.filter(
+      (a) => pred(a.name) && !a.name.endsWith('.sig') && !a.name.endsWith('.tar.gz'),
+    ) ?? []
+  )
+}
+
+function sizeMB(bytes: number): string {
+  return `~${Math.round(bytes / 1024 / 1024)} MB`
+}
+
+const linuxAssets = computed(() =>
+  assets((n) => n.endsWith('.AppImage') || n.endsWith('.deb') || n.endsWith('.rpm')),
+)
+
+const windowsAssets = computed(() =>
+  assets((n) => n.endsWith('-setup.exe') || (n.endsWith('.msi') && !n.endsWith('.msi.zip'))),
+)
+
+const macosAssets = computed(() => assets((n) => n.endsWith('.dmg')))
+
+function ext(name: string): string {
+  if (name.endsWith('.AppImage')) return '.AppImage'
+  if (name.endsWith('-setup.exe')) return '.exe'
+  if (name.endsWith('.msi')) return '.msi'
+  if (name.endsWith('.deb')) return '.deb'
+  if (name.endsWith('.rpm')) return '.rpm'
+  if (name.endsWith('.dmg')) return '.dmg'
+  return name.split('.').pop() ?? name
+}
+</script>
 
 <template>
   <header class="nav">
@@ -308,6 +369,7 @@
         </p>
       </div>
       <div class="download-grid">
+        <!-- Linux -->
         <div class="dl-card">
           <div class="dl-os">
             <div class="dl-os-icon">
@@ -319,28 +381,52 @@
             </div>
             <div>
               <div class="dl-os-name">Linux</div>
-              <div class="dl-os-version">v0.2.0 · x86_64</div>
+              <div class="dl-os-version">{{ version ? `${version} · x86_64` : 'x86_64' }}</div>
             </div>
           </div>
           <div class="dl-formats">
-            <div class="row"><span>.AppImage</span><span class="size">~18 MB</span></div>
-            <div class="row"><span>.deb</span><span class="size">~17 MB</span></div>
-            <div class="row"><span>.rpm</span><span class="size">~17 MB</span></div>
+            <template v-if="linuxAssets.length">
+              <div v-for="a in linuxAssets" :key="a.name" class="row">
+                <span>{{ ext(a.name) }}</span
+                ><span class="size">{{ sizeMB(a.size) }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="row"><span>.AppImage</span><span class="size">~18 MB</span></div>
+              <div class="row"><span>.deb</span><span class="size">~17 MB</span></div>
+              <div class="row"><span>.rpm</span><span class="size">~17 MB</span></div>
+            </template>
           </div>
-          <a
-            class="dl-btn"
-            href="https://github.com/Mvth1s/Verto/releases/latest"
-            target="_blank"
-            rel="noopener"
-          >
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download .AppImage
-          </a>
+          <div class="dl-links">
+            <template v-if="linuxAssets.length">
+              <a
+                v-for="(a, i) in linuxAssets"
+                :key="a.name"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="a.browser_download_url"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download {{ ext(a.name) }}
+              </a>
+            </template>
+            <a v-else class="dl-btn" :href="RELEASES_URL" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              View releases
+            </a>
+          </div>
         </div>
+
+        <!-- Windows -->
         <div class="dl-card">
           <div class="dl-os">
             <div class="dl-os-icon">
@@ -352,28 +438,51 @@
             </div>
             <div>
               <div class="dl-os-name">Windows</div>
-              <div class="dl-os-version">v0.2.0 · x86_64</div>
+              <div class="dl-os-version">{{ version ? `${version} · x86_64` : 'x86_64' }}</div>
             </div>
           </div>
           <div class="dl-formats">
-            <div class="row"><span>.exe (installer)</span><span class="size">~20 MB</span></div>
-            <div class="row"><span>.msi</span><span class="size">~20 MB</span></div>
-            <div class="row"><span>.zip (portable)</span><span class="size">~19 MB</span></div>
+            <template v-if="windowsAssets.length">
+              <div v-for="a in windowsAssets" :key="a.name" class="row">
+                <span>{{ ext(a.name) }}</span
+                ><span class="size">{{ sizeMB(a.size) }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="row"><span>.exe (installer)</span><span class="size">~20 MB</span></div>
+              <div class="row"><span>.msi</span><span class="size">~20 MB</span></div>
+            </template>
           </div>
-          <a
-            class="dl-btn outline"
-            href="https://github.com/Mvth1s/Verto/releases/latest"
-            target="_blank"
-            rel="noopener"
-          >
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download .exe
-          </a>
+          <div class="dl-links">
+            <template v-if="windowsAssets.length">
+              <a
+                v-for="(a, i) in windowsAssets"
+                :key="a.name"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="a.browser_download_url"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download {{ ext(a.name) }}
+              </a>
+            </template>
+            <a v-else class="dl-btn outline" :href="RELEASES_URL" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              View releases
+            </a>
+          </div>
         </div>
+
+        <!-- macOS -->
         <div class="dl-card">
           <div class="dl-os">
             <div class="dl-os-icon">
@@ -385,27 +494,49 @@
             </div>
             <div>
               <div class="dl-os-name">macOS</div>
-              <div class="dl-os-version">v0.2.0 · Universal</div>
+              <div class="dl-os-version">
+                {{ version ? `${version} · Apple Silicon` : 'Apple Silicon' }}
+              </div>
             </div>
           </div>
           <div class="dl-formats">
-            <div class="row"><span>.dmg (universal)</span><span class="size">~22 MB</span></div>
-            <div class="row"><span>.dmg (Apple Silicon)</span><span class="size">~17 MB</span></div>
-            <div class="row"><span>brew install</span><span class="size">cask</span></div>
+            <template v-if="macosAssets.length">
+              <div v-for="a in macosAssets" :key="a.name" class="row">
+                <span>{{ ext(a.name) }}</span
+                ><span class="size">{{ sizeMB(a.size) }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="row"><span>.dmg</span><span class="size">~22 MB</span></div>
+            </template>
           </div>
-          <a
-            class="dl-btn outline"
-            href="https://github.com/Mvth1s/Verto/releases/latest"
-            target="_blank"
-            rel="noopener"
-          >
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download .dmg
-          </a>
+          <div class="dl-links">
+            <template v-if="macosAssets.length">
+              <a
+                v-for="(a, i) in macosAssets"
+                :key="a.name"
+                :class="['dl-btn', i > 0 ? 'outline' : '']"
+                :href="a.browser_download_url"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download {{ ext(a.name) }}
+              </a>
+            </template>
+            <a v-else class="dl-btn outline" :href="RELEASES_URL" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              View releases
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -1239,6 +1370,12 @@ section {
 }
 .dl-formats .size {
   color: var(--text-3);
+}
+.dl-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
 }
 .dl-btn {
   margin-top: 6px;
