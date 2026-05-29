@@ -87,3 +87,141 @@ pub async fn convert(
         output_size,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn fixture(name: &str) -> String {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name)
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    /// Locate the downloaded Pandoc sidecar binary, whichever platform we're on.
+    fn pandoc_bin() -> Option<PathBuf> {
+        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries");
+        [
+            "pandoc-x86_64-unknown-linux-gnu",
+            "pandoc-aarch64-unknown-linux-gnu",
+            "pandoc-x86_64-apple-darwin",
+            "pandoc-aarch64-apple-darwin",
+            "pandoc-x86_64-pc-windows-msvc.exe",
+        ]
+        .iter()
+        .map(|name| base.join(name))
+        .find(|p| p.exists() && p.metadata().map(|m| m.len() > 0).unwrap_or(false))
+    }
+
+    // ── Format validation ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_allowed_formats_accepted() {
+        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf"] {
+            assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
+        }
+    }
+
+    #[test]
+    fn test_disallowed_formats_rejected() {
+        for fmt in &["txt", "mp3", "png", "zip", "rtf", ""] {
+            assert!(!ALLOWED_FORMATS.contains(fmt), "{} should not be allowed", fmt);
+        }
+    }
+
+    // ── Output path computation ───────────────────────────────────────────────
+
+    #[test]
+    fn test_output_path_replaces_extension() {
+        let p = PathBuf::from("/tmp/note.md").with_extension("html");
+        assert_eq!(p.to_str().unwrap(), "/tmp/note.html");
+    }
+
+    #[test]
+    fn test_output_path_docx_to_md() {
+        let p = PathBuf::from("/home/user/report.docx").with_extension("md");
+        assert_eq!(p.to_str().unwrap(), "/home/user/report.md");
+    }
+
+    // ── Integration: real Pandoc sidecar ─────────────────────────────────────
+
+    #[test]
+    fn test_md_to_html() {
+        let pandoc = match pandoc_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        let input = fixture("sample.md");
+        if !PathBuf::from(&input).exists() {
+            return;
+        }
+
+        let output = std::env::temp_dir()
+            .join("verto_test_pandoc_md_to_html.html")
+            .to_string_lossy()
+            .into_owned();
+
+        let status = std::process::Command::new(&pandoc)
+            .args([&input, "-o", &output])
+            .status()
+            .expect("failed to run pandoc");
+
+        assert!(status.success(), "pandoc md→html failed");
+        assert!(PathBuf::from(&output).exists());
+        let content = std::fs::read_to_string(&output).unwrap();
+        assert!(content.contains('<'), "output should contain HTML tags");
+        let _ = std::fs::remove_file(&output);
+    }
+
+    #[test]
+    fn test_md_to_docx() {
+        let pandoc = match pandoc_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        let input = fixture("sample.md");
+        if !PathBuf::from(&input).exists() {
+            return;
+        }
+
+        let output = std::env::temp_dir()
+            .join("verto_test_pandoc_md_to_docx.docx")
+            .to_string_lossy()
+            .into_owned();
+
+        let status = std::process::Command::new(&pandoc)
+            .args([&input, "-o", &output])
+            .status()
+            .expect("failed to run pandoc");
+
+        assert!(status.success(), "pandoc md→docx failed");
+        assert!(PathBuf::from(&output).exists());
+        // DOCX is a ZIP archive — verify PK magic bytes
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(&bytes[..2], b"PK", "docx should be a valid ZIP/OOXML");
+        let _ = std::fs::remove_file(&output);
+    }
+
+    #[test]
+    fn test_nonexistent_input_fails() {
+        let pandoc = match pandoc_bin() {
+            Some(p) => p,
+            None => return,
+        };
+
+        let output = std::env::temp_dir()
+            .join("verto_test_pandoc_nonexistent.html")
+            .to_string_lossy()
+            .into_owned();
+
+        let status = std::process::Command::new(&pandoc)
+            .args(["/nonexistent/path/file.md", "-o", &output])
+            .status()
+            .expect("failed to run pandoc");
+
+        assert!(!status.success(), "pandoc should fail on nonexistent input");
+    }
+}
