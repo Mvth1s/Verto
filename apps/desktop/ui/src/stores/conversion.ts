@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { useSettingsStore } from './settings'
 
 export type FileStatus = 'waiting' | 'converting' | 'done' | 'error'
-export type FileCategory = 'image' | 'document'
+export type FileCategory = 'image' | 'document' | 'audio'
 
 export interface FileItem {
   id: string
@@ -29,6 +29,13 @@ interface ConversionResult {
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif']
 const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
+const AUDIO_EXTENSIONS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus']
+
+function supportedExtensions(category: FileCategory): string[] {
+  if (category === 'image') return IMAGE_EXTENSIONS
+  if (category === 'document') return DOCUMENT_EXTENSIONS
+  return AUDIO_EXTENSIONS
+}
 
 function buildOutputPath(
   inputPath: string,
@@ -51,7 +58,7 @@ export const useConversionStore = defineStore('conversion', () => {
   const totalSaved = computed(() => queue.value.reduce((acc, f) => acc + (f.savedBytes ?? 0), 0))
 
   function addFiles(files: { name: string; path: string }[], category: FileCategory = 'image') {
-    const supported = category === 'image' ? IMAGE_EXTENSIONS : DOCUMENT_EXTENSIONS
+    const supported = supportedExtensions(category)
     for (const f of files) {
       const ext = f.name.split('.').pop()?.toLowerCase() ?? ''
       if (!supported.includes(ext)) continue
@@ -70,7 +77,7 @@ export const useConversionStore = defineStore('conversion', () => {
   }
 
   async function addDirectory(dirPath: string, category: FileCategory) {
-    const supported = category === 'image' ? IMAGE_EXTENSIONS : DOCUMENT_EXTENSIONS
+    const supported = supportedExtensions(category)
     const paths = await invoke<string[]>('list_directory', { dirPath, recursive: true })
     const files = paths
       .filter((p) => supported.includes(p.split('.').pop()?.toLowerCase() ?? ''))
@@ -115,19 +122,29 @@ export const useConversionStore = defineStore('conversion', () => {
       const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
 
       try {
-        const result =
-          category === 'document'
-            ? await invoke<ConversionResult>('convert_document', {
-                inputPath: file.path,
-                outputFormat: settings.outputFormat,
-                outputPath,
-              })
-            : await invoke<ConversionResult>('convert_image', {
-                inputPath: file.path,
-                outputFormat: settings.outputFormat,
-                quality: settings.quality,
-                outputPath,
-              })
+        let result: ConversionResult
+        if (category === 'document') {
+          result = await invoke<ConversionResult>('convert_document', {
+            inputPath: file.path,
+            outputFormat: settings.outputFormat,
+            outputPath,
+          })
+        } else if (category === 'audio') {
+          const isLossless = ['flac', 'wav'].includes(settings.outputFormat)
+          result = await invoke<ConversionResult>('convert_audio', {
+            inputPath: file.path,
+            outputFormat: settings.outputFormat,
+            bitrate: isLossless ? undefined : settings.bitrate,
+            outputPath,
+          })
+        } else {
+          result = await invoke<ConversionResult>('convert_image', {
+            inputPath: file.path,
+            outputFormat: settings.outputFormat,
+            quality: settings.quality,
+            outputPath,
+          })
+        }
 
         file.status = 'done'
         file.outputPath = result.output_path

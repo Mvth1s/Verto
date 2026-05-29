@@ -4,12 +4,12 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
-import type { FileCategory } from './stores/conversion'
 
-type Category = 'images' | 'documents'
+type Category = 'images' | 'documents' | 'audio'
 
 const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
+const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
 
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
@@ -17,16 +17,26 @@ const isDragover = ref(false)
 const conversion = useConversionStore()
 const settings = useSettingsStore()
 
-const categoryName = computed(() => (activeCategory.value === 'images' ? 'Images' : 'Documents'))
+const categoryName = computed(() => {
+  if (activeCategory.value === 'images') return 'Images'
+  if (activeCategory.value === 'documents') return 'Documents'
+  return 'Audio'
+})
 
-const activeFormats = computed(() =>
-  activeCategory.value === 'images' ? IMAGE_FORMATS : DOCUMENT_FORMATS,
-)
+const activeFormats = computed(() => {
+  if (activeCategory.value === 'images') return IMAGE_FORMATS
+  if (activeCategory.value === 'documents') return DOCUMENT_FORMATS
+  return AUDIO_FORMATS
+})
+
+const activeFileCategory = computed(() => {
+  if (activeCategory.value === 'images') return 'image' as const
+  if (activeCategory.value === 'documents') return 'document' as const
+  return 'audio' as const
+})
 
 const activeQueue = computed(() =>
-  conversion.queue.filter(
-    (f) => f.category === (activeCategory.value === 'images' ? 'image' : 'document'),
-  ),
+  conversion.queue.filter((f) => f.category === activeFileCategory.value),
 )
 
 const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status === 'waiting'))
@@ -39,7 +49,9 @@ const queueSummary = computed(() => {
 })
 
 watch(activeCategory, (cat) => {
-  settings.outputFormat = cat === 'images' ? IMAGE_FORMATS[0] : DOCUMENT_FORMATS[0]
+  if (cat === 'images') settings.outputFormat = IMAGE_FORMATS[0]
+  else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMATS[0]
+  else settings.outputFormat = AUDIO_FORMATS[0]
 })
 
 function setCategory(cat: Category) {
@@ -65,27 +77,27 @@ function isLikelyDirectory(path: string): boolean {
 }
 
 async function openFilePicker() {
-  const filters =
-    activeCategory.value === 'images'
-      ? [
-          {
-            name: 'Images',
-            extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'],
-          },
-        ]
-      : [
-          {
-            name: 'Documents',
-            extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
-          },
-        ]
+  let filters: { name: string; extensions: string[] }[]
+  if (activeCategory.value === 'images') {
+    filters = [
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'] },
+    ]
+  } else if (activeCategory.value === 'documents') {
+    filters = [
+      {
+        name: 'Documents',
+        extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
+      },
+    ]
+  } else {
+    filters = [{ name: 'Audio', extensions: ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus'] }]
+  }
   const selected = await open({ multiple: true, filters })
   if (!selected) return
   const paths = Array.isArray(selected) ? selected : [selected]
-  const category: FileCategory = activeCategory.value === 'images' ? 'image' : 'document'
   conversion.addFiles(
     paths.map((p: string) => ({ name: p.split('/').pop() ?? p, path: p })),
-    category,
+    activeFileCategory.value,
   )
 }
 
@@ -99,7 +111,7 @@ async function openFolderPicker() {
 function handleQueueAction(fileId: string, status: string) {
   if (status === 'error') {
     conversion.retryFile(fileId)
-  } else if (status === 'waiting') {
+  } else if (status === 'waiting' || status === 'done') {
     conversion.removeFile(fileId)
   }
 }
@@ -118,12 +130,14 @@ onMounted(async () => {
     } else if (event.payload.type === 'drop') {
       isDragover.value = false
       const paths: string[] = event.payload.paths ?? []
-      const category: FileCategory = activeCategory.value === 'images' ? 'image' : 'document'
       for (const p of paths) {
         if (isLikelyDirectory(p)) {
-          conversion.addDirectory(p, category)
+          conversion.addDirectory(p, activeFileCategory.value)
         } else {
-          conversion.addFiles([{ name: p.split('/').pop() ?? p, path: p }], category)
+          conversion.addFiles(
+            [{ name: p.split('/').pop() ?? p, path: p }],
+            activeFileCategory.value,
+          )
         }
       }
     }
@@ -169,14 +183,17 @@ onUnmounted(() => {
           </svg>
           <span>Documents</span>
         </div>
-        <div class="nav-item disabled">
+        <div
+          class="nav-item"
+          :class="{ active: activeCategory === 'audio' }"
+          @click="setCategory('audio')"
+        >
           <svg viewBox="0 0 24 24">
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
           </svg>
           <span>Audio</span>
-          <span class="soon">Soon</span>
         </div>
         <div class="nav-item disabled">
           <svg viewBox="0 0 24 24">
@@ -191,7 +208,7 @@ onUnmounted(() => {
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
-        <div class="pill-version"><span class="dot"></span>v0.2.0</div>
+        <div class="pill-version"><span class="dot"></span>v0.3.0</div>
         <button class="icon-btn" aria-label="Settings">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
@@ -328,6 +345,27 @@ onUnmounted(() => {
         </select>
       </div>
 
+      <div v-if="activeCategory === 'audio'" class="field">
+        <div class="field-label">
+          <span>Bitrate</span>
+          <span class="val">{{ settings.bitrate }} kbps</span>
+        </div>
+        <select
+          v-model.number="settings.bitrate"
+          class="select"
+          :disabled="['flac', 'wav'].includes(settings.outputFormat)"
+        >
+          <option :value="64">64 kbps</option>
+          <option :value="128">128 kbps</option>
+          <option :value="192">192 kbps</option>
+          <option :value="256">256 kbps</option>
+          <option :value="320">320 kbps</option>
+        </select>
+        <div v-if="['flac', 'wav'].includes(settings.outputFormat)" class="field-hint">
+          Bitrate applies to lossy formats only
+        </div>
+      </div>
+
       <div v-if="activeCategory === 'images'" class="field">
         <div class="field-label">
           <span>Quality</span>
@@ -403,7 +441,7 @@ onUnmounted(() => {
         v-if="!conversion.isConverting"
         class="btn-primary"
         :disabled="activeWaiting.length === 0"
-        @click="conversion.convertAll(activeCategory === 'images' ? 'image' : 'document')"
+        @click="conversion.convertAll(activeFileCategory)"
       >
         <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 8" /></svg>
         <span>Convert</span>

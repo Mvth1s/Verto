@@ -9,13 +9,14 @@ pub struct ConversionResult {
     pub output_size: u64,
 }
 
-const ALLOWED_FORMATS: &[&str] = &["html", "pdf", "docx", "md", "rst", "odt", "epub"];
+const ALLOWED_FORMATS: &[&str] = &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"];
 
 pub async fn convert(
     app: &tauri::AppHandle,
     input_path: &str,
     output_format: &str,
     output_path: Option<&str>,
+    bitrate: Option<u32>,
 ) -> Result<ConversionResult, String> {
     if !std::path::Path::new(input_path).exists() {
         return Err(format!("Input file not found: {}", input_path));
@@ -49,11 +50,20 @@ pub async fn convert(
         .map_err(|e| format!("Failed to read input metadata: {}", e))?
         .len();
 
+    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+
+    if let Some(br) = bitrate {
+        args.push("-b:a".to_string());
+        args.push(format!("{}k", br));
+    }
+
+    args.push(out_path.clone());
+
     let (mut rx, _child) = app
         .shell()
-        .sidecar("pandoc")
+        .sidecar("ffmpeg")
         .map_err(|e| e.to_string())?
-        .args([input_path, "-o", &out_path])
+        .args(&args)
         .spawn()
         .map_err(|e| e.to_string())?;
 
@@ -74,7 +84,7 @@ pub async fn convert(
     }
 
     if exit_code != Some(0) {
-        return Err(format!("pandoc failed: {}", stderr_buf.trim()));
+        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
     }
 
     let output_size = std::fs::metadata(&out_path)
@@ -93,41 +103,60 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    fn fixture(name: &str) -> String {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures")
-            .join(name)
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// Locate the downloaded Pandoc sidecar binary, whichever platform we're on.
-    fn pandoc_bin() -> Option<PathBuf> {
+    fn ffmpeg_bin() -> Option<PathBuf> {
         let base = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries");
         [
-            "pandoc-x86_64-unknown-linux-gnu",
-            "pandoc-aarch64-unknown-linux-gnu",
-            "pandoc-x86_64-apple-darwin",
-            "pandoc-aarch64-apple-darwin",
-            "pandoc-x86_64-pc-windows-msvc.exe",
+            "ffmpeg-x86_64-unknown-linux-gnu",
+            "ffmpeg-aarch64-unknown-linux-gnu",
+            "ffmpeg-x86_64-apple-darwin",
+            "ffmpeg-aarch64-apple-darwin",
+            "ffmpeg-x86_64-pc-windows-msvc.exe",
         ]
         .iter()
         .map(|name| base.join(name))
         .find(|p| p.exists() && p.metadata().map(|m| m.len() > 0).unwrap_or(false))
     }
 
+    fn create_minimal_wav(path: &PathBuf) {
+        const SAMPLE_RATE: u32 = 44100;
+        const NUM_SAMPLES: u32 = 4410; // 0.1 second
+        const CHANNELS: u16 = 1;
+        const BITS: u16 = 16;
+        let byte_rate = SAMPLE_RATE * CHANNELS as u32 * (BITS as u32 / 8);
+        let block_align = CHANNELS * (BITS / 8);
+        let data_size = NUM_SAMPLES * CHANNELS as u32 * (BITS as u32 / 8);
+        let riff_size = 36 + data_size;
+
+        let mut buf = Vec::with_capacity(44 + data_size as usize);
+        buf.extend_from_slice(b"RIFF");
+        buf.extend_from_slice(&riff_size.to_le_bytes());
+        buf.extend_from_slice(b"WAVE");
+        buf.extend_from_slice(b"fmt ");
+        buf.extend_from_slice(&16u32.to_le_bytes());
+        buf.extend_from_slice(&1u16.to_le_bytes()); // PCM
+        buf.extend_from_slice(&CHANNELS.to_le_bytes());
+        buf.extend_from_slice(&SAMPLE_RATE.to_le_bytes());
+        buf.extend_from_slice(&byte_rate.to_le_bytes());
+        buf.extend_from_slice(&block_align.to_le_bytes());
+        buf.extend_from_slice(&BITS.to_le_bytes());
+        buf.extend_from_slice(b"data");
+        buf.extend_from_slice(&data_size.to_le_bytes());
+        buf.extend(std::iter::repeat(0u8).take(data_size as usize));
+        std::fs::write(path, &buf).unwrap();
+    }
+
     // ── Format validation ─────────────────────────────────────────────────────
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf"] {
+        for fmt in &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }
 
     #[test]
     fn test_disallowed_formats_rejected() {
-        for fmt in &["txt", "mp3", "png", "zip", "rtf", ""] {
+        for fmt in &["jpg", "png", "docx", "html", "txt", ""] {
             assert!(
                 !ALLOWED_FORMATS.contains(fmt),
                 "{} should not be allowed",
@@ -140,92 +169,88 @@ mod tests {
 
     #[test]
     fn test_output_path_replaces_extension() {
-        let p = PathBuf::from("/tmp/note.md").with_extension("html");
-        assert_eq!(p.to_str().unwrap(), "/tmp/note.html");
+        let p = PathBuf::from("/tmp/track.wav").with_extension("mp3");
+        assert_eq!(p.to_str().unwrap(), "/tmp/track.mp3");
     }
 
     #[test]
-    fn test_output_path_docx_to_md() {
-        let p = PathBuf::from("/home/user/report.docx").with_extension("md");
-        assert_eq!(p.to_str().unwrap(), "/home/user/report.md");
+    fn test_output_path_flac_to_ogg() {
+        let p = PathBuf::from("/home/user/music.flac").with_extension("ogg");
+        assert_eq!(p.to_str().unwrap(), "/home/user/music.ogg");
     }
 
-    // ── Integration: real Pandoc sidecar ─────────────────────────────────────
+    // ── Integration: real FFmpeg sidecar ──────────────────────────────────────
 
     #[test]
-    fn test_md_to_html() {
-        let pandoc = match pandoc_bin() {
+    fn test_wav_to_mp3() {
+        let ffmpeg = match ffmpeg_bin() {
             Some(p) => p,
             None => return,
         };
-        let input = fixture("sample.md");
-        if !PathBuf::from(&input).exists() {
-            return;
-        }
+        let wav = std::env::temp_dir().join("verto_test_ffmpeg_input.wav");
+        create_minimal_wav(&wav);
 
         let output = std::env::temp_dir()
-            .join("verto_test_pandoc_md_to_html.html")
+            .join("verto_test_ffmpeg_wav_to_mp3.mp3")
             .to_string_lossy()
             .into_owned();
 
-        let status = std::process::Command::new(&pandoc)
-            .args([&input, "-o", &output])
+        let status = std::process::Command::new(&ffmpeg)
+            .args(["-y", "-i", wav.to_str().unwrap(), &output])
             .status()
-            .expect("failed to run pandoc");
+            .expect("failed to run ffmpeg");
 
-        assert!(status.success(), "pandoc md→html failed");
+        assert!(status.success(), "ffmpeg wav→mp3 failed");
         assert!(PathBuf::from(&output).exists());
-        let content = std::fs::read_to_string(&output).unwrap();
-        assert!(content.contains('<'), "output should contain HTML tags");
-        let _ = std::fs::remove_file(&output);
-    }
-
-    #[test]
-    fn test_md_to_docx() {
-        let pandoc = match pandoc_bin() {
-            Some(p) => p,
-            None => return,
-        };
-        let input = fixture("sample.md");
-        if !PathBuf::from(&input).exists() {
-            return;
-        }
-
-        let output = std::env::temp_dir()
-            .join("verto_test_pandoc_md_to_docx.docx")
-            .to_string_lossy()
-            .into_owned();
-
-        let status = std::process::Command::new(&pandoc)
-            .args([&input, "-o", &output])
-            .status()
-            .expect("failed to run pandoc");
-
-        assert!(status.success(), "pandoc md→docx failed");
-        assert!(PathBuf::from(&output).exists());
-        // DOCX is a ZIP archive — verify PK magic bytes
         let bytes = std::fs::read(&output).unwrap();
-        assert_eq!(&bytes[..2], b"PK", "docx should be a valid ZIP/OOXML");
+        assert!(!bytes.is_empty(), "mp3 output should not be empty");
         let _ = std::fs::remove_file(&output);
+        let _ = std::fs::remove_file(&wav);
+    }
+
+    #[test]
+    fn test_wav_to_flac() {
+        let ffmpeg = match ffmpeg_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        let wav = std::env::temp_dir().join("verto_test_ffmpeg_input2.wav");
+        create_minimal_wav(&wav);
+
+        let output = std::env::temp_dir()
+            .join("verto_test_ffmpeg_wav_to_flac.flac")
+            .to_string_lossy()
+            .into_owned();
+
+        let status = std::process::Command::new(&ffmpeg)
+            .args(["-y", "-i", wav.to_str().unwrap(), &output])
+            .status()
+            .expect("failed to run ffmpeg");
+
+        assert!(status.success(), "ffmpeg wav→flac failed");
+        assert!(PathBuf::from(&output).exists());
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(&bytes[..4], b"fLaC", "output should be a valid FLAC file");
+        let _ = std::fs::remove_file(&output);
+        let _ = std::fs::remove_file(&wav);
     }
 
     #[test]
     fn test_nonexistent_input_fails() {
-        let pandoc = match pandoc_bin() {
+        let ffmpeg = match ffmpeg_bin() {
             Some(p) => p,
             None => return,
         };
-
         let output = std::env::temp_dir()
-            .join("verto_test_pandoc_nonexistent.html")
+            .join("verto_test_ffmpeg_nonexistent.mp3")
             .to_string_lossy()
             .into_owned();
 
-        let status = std::process::Command::new(&pandoc)
-            .args(["/nonexistent/path/file.md", "-o", &output])
+        let status = std::process::Command::new(&ffmpeg)
+            .args(["-y", "-i", "/nonexistent/path/audio.wav", &output])
             .status()
-            .expect("failed to run pandoc");
+            .expect("failed to run ffmpeg");
 
-        assert!(!status.success(), "pandoc should fail on nonexistent input");
+        assert!(!status.success(), "ffmpeg should fail on nonexistent input");
     }
 }

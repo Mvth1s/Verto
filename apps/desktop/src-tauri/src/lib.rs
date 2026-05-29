@@ -8,6 +8,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::image::convert_image,
             commands::document::convert_document,
+            commands::audio::convert_audio,
             commands::fs::list_directory,
         ])
         .run(tauri::generate_context!())

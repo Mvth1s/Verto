@@ -8,8 +8,8 @@ Simple, fast, open-source file conversion for Linux, Windows and macOS — no in
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)](#installation)
-[![Release](https://img.shields.io/github/v/release/mathis-aguado/verto)](https://github.com/mathis-aguado/verto/releases)
-[![Build](https://github.com/mathis-aguado/verto/actions/workflows/build.yml/badge.svg)](https://github.com/mathis-aguado/verto/actions)
+[![Release](https://img.shields.io/github/v/release/Mvth1s/Verto)](https://github.com/Mvth1s/Verto/releases)
+[![Build](https://github.com/Mvth1s/Verto/actions/workflows/build.yml/badge.svg)](https://github.com/Mvth1s/Verto/actions)
 
 </div>
 
@@ -17,66 +17,86 @@ Simple, fast, open-source file conversion for Linux, Windows and macOS — no in
 
 ## What is Verto?
 
-Verto is a desktop application that converts files — images, documents, audio, video — entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
+Verto is a desktop application that converts files — images and documents — entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
 
-It was born out of a simple frustration: never remembering the right `ffmpeg` or `convert` command for a one-off file conversion.
+It was born out of a simple frustration: never remembering the right `ffmpeg` or `pandoc` command for a one-off file conversion.
 
 ## Supported conversions
 
-| Category  | Formats                                           |
-|-----------|---------------------------------------------------|
-| Images    | JPEG, PNG, WebP, AVIF, GIF, BMP, TIFF             |
-| Documents | PDF, DOCX, Markdown, HTML, ODT                    |
-| Audio     | MP3, FLAC, OGG, WAV, AAC *(roadmap v0.3)*        |
-| Video     | MP4, MKV, WebM, MOV *(roadmap v1.1)*             |
+| Category  | Formats                                            | Engine              |
+|-----------|----------------------------------------------------|---------------------|
+| Images    | JPEG, PNG, WebP, GIF, BMP, TIFF                    | `image` Rust crate  |
+| Documents | MD, DOCX, HTML, RST, ODT, EPUB                     | Pandoc sidecar      |
+| Audio     | MP3, FLAC, OGG, WAV, AAC *(roadmap v0.3)*          | FFmpeg sidecar      |
+| Video     | MP4, MKV, WebM, MOV *(roadmap v1.1)*               | FFmpeg sidecar      |
 
 ## Features
 
-- 🖱️ Drag & drop or file picker
-- 📦 Batch conversion
-- 🔒 100% local — files never leave your machine
-- ⚙️ Per-format options (quality, resolution, compression)
-- 🌍 Cross-platform: Linux, Windows, macOS
-- 🪶 Lightweight (~15 MB installer)
+- Drag & drop files or folders (batch conversion)
+- File picker for individual files, folder browser for output directory
+- Cancel in-progress queue / retry failed items
+- Images and Documents categories — separate queues and format selectors
+- Quality slider for JPEG/WebP
+- 100% local — files never leave your machine
+- Cross-platform: Linux, Windows, macOS
 
 ## Installation
+
+Download the latest release from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases).
 
 ### Linux
 
 ```bash
-# AppImage
-chmod +x Verto_x.x.x_amd64.AppImage && ./Verto_x.x.x_amd64.AppImage
+# AppImage (no install required)
+chmod +x Verto_*.AppImage && ./Verto_*.AppImage
 
-# .deb
-sudo dpkg -i verto_x.x.x_amd64.deb
+# Debian/Ubuntu
+sudo dpkg -i Verto_*_amd64.deb
+
+# Fedora/RHEL
+sudo rpm -i Verto-*.x86_64.rpm
 ```
 
 ### Windows
 
-Download and run `Verto_x.x.x_x64-setup.exe` from the [releases page](https://github.com/mathis-aguado/verto/releases).
+Run `Verto_*_x64-setup.exe` (NSIS installer) or `Verto_*_x64_en-US.msi`.
 
 ### macOS
 
-Download and open `Verto_x.x.x_x64.dmg` from the [releases page](https://github.com/mathis-aguado/verto/releases).
+Open `Verto_*_aarch64.dmg` and drag Verto to your Applications folder.
 
 ## Development
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (stable)
+- [Rust](https://rustup.rs/) (stable toolchain)
 - [Node.js](https://nodejs.org/) ≥ 20
 - [pnpm](https://pnpm.io/) ≥ 9
-- [Tauri CLI](https://tauri.app/start/prerequisites/)
-- FFmpeg (system or bundled via sidecar)
-- Pandoc (system or bundled via sidecar)
+- [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
 
 ### Setup
 
 ```bash
-git clone https://github.com/mathis-aguado/verto.git
-cd verto
+git clone https://github.com/Mvth1s/Verto.git
+cd Verto
 pnpm install
-pnpm tauri dev
+
+# Download Pandoc sidecar (required for document conversion)
+bash apps/desktop/scripts/download-pandoc.sh
+
+# Run the desktop app in dev mode
+pnpm --filter desktop tauri dev
+```
+
+### Commands
+
+```bash
+pnpm --filter desktop tauri dev      # Desktop app (hot-reload)
+pnpm --filter web dev                # Landing page
+pnpm --filter desktop test           # Vitest unit tests
+pnpm lint                            # ESLint + Clippy
+pnpm format                          # Prettier + rustfmt
+cd apps/desktop/src-tauri && cargo test --lib  # Rust unit tests
 ```
 
 ### Project structure
@@ -84,13 +104,14 @@ pnpm tauri dev
 ```
 verto/
 ├── apps/
-│   ├── desktop/        # Tauri app (Rust backend + Vue 3 frontend)
-│   └── web/            # Landing page (Vue 3 + Vite → Vercel)
-├── packages/
-│   └── ui/             # Shared Vue components
-├── agents/             # Claude Code sub-agent definitions
-├── docs/               # Technical documentation
-└── .github/            # CI/CD workflows, issue templates
+│   ├── desktop/              # Tauri v2 app
+│   │   ├── src-tauri/        # Rust backend (commands, converters, sidecars)
+│   │   └── ui/               # Vue 3 frontend
+│   └── web/                  # Landing page (Vue 3 + Vite → Vercel)
+├── assets/                   # Source assets (logo, etc.)
+├── agents/                   # Claude Code sub-agent definitions
+├── docs/                     # Architecture, roadmap, specs
+└── .github/                  # CI/CD: lint, build matrix, Semantic Release
 ```
 
 See [docs/architecture.md](./docs/architecture.md) for the full technical overview.
@@ -99,6 +120,8 @@ See [docs/architecture.md](./docs/architecture.md) for the full technical overvi
 
 Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
 
+Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) — enforced by Commitlint + Husky.
+
 ## License
 
-[MIT](./LICENSE) — Mathis Aguado, 2025
+[MIT](./LICENSE) — Mathis Aguado, 2026
