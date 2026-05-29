@@ -111,7 +111,7 @@ async function openFolderPicker() {
 function handleQueueAction(fileId: string, status: string) {
   if (status === 'error') {
     conversion.retryFile(fileId)
-  } else if (status === 'waiting') {
+  } else if (status === 'waiting' || status === 'done') {
     conversion.removeFile(fileId)
   }
 }
