@@ -44,10 +44,10 @@
 
 **Goal**: Audio conversion via FFmpeg sidecar.
 
-- [ ] FFmpeg bundled as Tauri sidecar (Linux, Windows, macOS)
-- [ ] Audio conversion: MP3, FLAC, OGG, WAV, AAC
-- [ ] Audio category in sidebar
-- [ ] Bitrate option
+- [x] FFmpeg bundled as Tauri sidecar (Linux, Windows, macOS)
+- [x] Audio conversion: MP3, FLAC, OGG, WAV, AAC
+- [x] Audio category in sidebar
+- [x] Bitrate option
 
 ---
 

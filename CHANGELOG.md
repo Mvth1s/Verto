@@ -13,10 +13,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
-- 7 Rust unit tests for the Pandoc converter: `test_allowed_formats_accepted`, `test_disallowed_formats_rejected`, `test_output_path_replaces_extension`, `test_output_path_docx_to_md`, `test_md_to_html`, `test_md_to_docx`, `test_nonexistent_input_fails`
+- Audio conversion: MP3, FLAC, OGG, WAV, AAC via FFmpeg sidecar (`convert_audio` Tauri command)
+- FFmpeg sidecar download scripts for Linux/macOS (`download-ffmpeg.sh`) and Windows (`download-ffmpeg.ps1`)
+- Audio category in sidebar — activates dedicated file picker, queue filter, and format selector
+- Bitrate selector (64–320 kbps) in right panel, disabled for lossless formats (FLAC, WAV)
+- 7 Rust unit/integration tests for FFmpeg converter (`test_allowed_formats_accepted`, `test_disallowed_formats_rejected`, `test_output_path_replaces_extension`, `test_output_path_flac_to_ogg`, `test_wav_to_mp3`, `test_wav_to_flac`, `test_nonexistent_input_fails`)
+- 5 new Vitest tests for audio category in conversion store (addFiles, addDirectory, convertAll, lossless bitrate passthrough)
+- 7 Rust unit tests for the Pandoc converter
 - Markdown fixture `tests/fixtures/sample.md` for Pandoc integration tests
-- CI: `lint-frontend` job runs `pnpm --filter desktop test -- --run` (30 Vitest tests) on every push
-- CI: `lint-rust` job runs `cargo test --lib` (14 Rust tests: 7 image + 7 pandoc) on every push
+- CI: `lint-frontend` and `lint-rust` jobs run tests on every push (35 Vitest + 21 Rust tests)
+- CI: build matrix downloads both Pandoc and FFmpeg sidecars before compiling
 
 ---
 
