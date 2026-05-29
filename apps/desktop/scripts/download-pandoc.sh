@@ -20,7 +20,6 @@ if [ "$OS" = "Linux" ]; then
         exit 1
     fi
     URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-${PANDOC_ARCH}.tar.gz"
-    BINARY_IN_ARCHIVE="pandoc-${PANDOC_VERSION}/bin/pandoc"
     EXT="tar.gz"
 elif [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "x86_64" ]; then
@@ -34,7 +33,6 @@ elif [ "$OS" = "Darwin" ]; then
         exit 1
     fi
     URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-${PANDOC_MACOS_ARCH}-macOS.zip"
-    BINARY_IN_ARCHIVE="pandoc-${PANDOC_VERSION}/bin/pandoc"
     EXT="zip"
 else
     echo "OS non supporté: $OS (utilisez download-pandoc.ps1 sur Windows)"
@@ -54,11 +52,17 @@ curl -sSL "$URL" -o "$TMP/pandoc.$EXT"
 
 if [ "$EXT" = "tar.gz" ]; then
     tar -xzf "$TMP/pandoc.$EXT" -C "$TMP"
+    cp "$TMP/pandoc-${PANDOC_VERSION}/bin/pandoc" "$DEST"
 else
     unzip -q "$TMP/pandoc.$EXT" -d "$TMP"
+    PANDOC_BIN=$(find "$TMP" -name "pandoc" -type f | head -1)
+    if [ -z "$PANDOC_BIN" ]; then
+        echo "Erreur: binaire pandoc introuvable dans l'archive"
+        exit 1
+    fi
+    cp "$PANDOC_BIN" "$DEST"
 fi
 
-cp "$TMP/$BINARY_IN_ARCHIVE" "$DEST"
 chmod +x "$DEST"
 rm -rf "$TMP"
 echo "Pandoc installé dans $DEST"
