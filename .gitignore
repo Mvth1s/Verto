@@ -42,4 +42,4 @@ pnpm-debug.log*
 *.dmg
 *.exe
 *.msi
-ui/coverage/
+**/ui/coverage/
