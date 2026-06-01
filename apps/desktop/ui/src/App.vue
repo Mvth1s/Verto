@@ -81,9 +81,7 @@ const activeFileCategory = computed(() => {
   return 'video' as const
 })
 
-const availableCodecs = computed(() =>
-  VIDEO_CODECS_FOR_FORMAT[settings.outputFormat] ?? ['h264'],
-)
+const availableCodecs = computed(() => VIDEO_CODECS_FOR_FORMAT[settings.outputFormat] ?? ['h264'])
 
 const activeQueue = computed(() =>
   conversion.queue.filter((f) => f.category === activeFileCategory.value),
@@ -153,7 +151,9 @@ async function openFilePicker() {
   } else if (activeCategory.value === 'audio') {
     filters = [{ name: 'Audio', extensions: ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus'] }]
   } else {
-    filters = [{ name: 'Video', extensions: ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v'] }]
+    filters = [
+      { name: 'Video', extensions: ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v'] },
+    ]
   }
   const selected = await open({ multiple: true, filters })
   if (!selected) return
