@@ -42,6 +42,11 @@ function toggleLocale() {
   i18nLocale.value = locale.value
 }
 
+function setLocale(l: Locale) {
+  locale.value = l
+  i18nLocale.value = l
+}
+
 async function checkForUpdates() {
   try {
     const result = await invoke<{ version: string; body: string | null } | null>(
@@ -302,20 +307,14 @@ onUnmounted(() => {
                 <button
                   class="lang-choice"
                   :class="{ active: locale === 'en' }"
-                  @click="
-                    locale = 'en'
-                    i18nLocale = 'en'
-                  "
+                  @click="setLocale('en')"
                 >
                   EN
                 </button>
                 <button
                   class="lang-choice"
                   :class="{ active: locale === 'fr' }"
-                  @click="
-                    locale = 'fr'
-                    i18nLocale = 'fr'
-                  "
+                  @click="setLocale('fr')"
                 >
                   FR
                 </button>
