@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "features": "Features",
+    "privacy": "Privacy",
+    "download": "Download"
+  },
+  "hero": {
+    "eyebrow": "Open source · Local · Free",
+    "headline": "Convert anything.",
+    "subline": "Locally.",
+    "body": "No internet. No account. No telemetry. Just drag, drop, and convert — on your own machine.",
+    "cta_linux": "Download for Linux",
+    "cta_github": "View on GitHub",
+    "available_for": "Available for"
+  },
+  "features": {
+    "title": "Features",
+    "images_title": "Images",
+    "images_desc": "JPEG, PNG, WebP, AVIF, BMP, TIFF, GIF — convert between any format with quality control, resize, and presets.",
+    "documents_title": "Documents",
+    "documents_desc": "Markdown, DOCX, HTML, PDF, ODT, EPUB — powered by Pandoc, no cloud required.",
+    "audio_title": "Audio",
+    "audio_desc": "MP3, FLAC, OGG, WAV, AAC — lossless or lossy, bitrate control included.",
+    "video_title": "Video",
+    "video_desc": "MP4, MKV, WebM, MOV — H.264, H.265, VP9 codecs with resolution options.",
+    "local_title": "100% Local",
+    "local_desc": "No upload. No cloud. Everything runs on your machine. Your files never leave.",
+    "opensource_title": "Open source",
+    "opensource_desc": "MIT licensed. Audit the code, contribute, or fork it. No black boxes."
+  },
+  "privacy": {
+    "eyebrow": "Privacy",
+    "title": "Your files stay on your machine.",
+    "body": "Verto runs entirely offline. No telemetry, no analytics, no network requests — ever. Your files are processed locally and never leave your device.",
+    "point_1": "No internet connection required",
+    "point_2": "No account, no sign-up",
+    "point_3": "No telemetry or analytics",
+    "point_4": "Source code fully auditable"
+  },
+  "download": {
+    "eyebrow": "Download",
+    "linux": "Linux",
+    "windows": "Windows",
+    "macos": "macOS",
+    "see_all": "See all releases on GitHub →",
+    "loading": "Loading…",
+    "fallback": "Download"
+  },
+  "footer": {
+    "license": "MIT License",
+    "source": "Source code"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "features": "Fonctionnalités",
+    "privacy": "Confidentialité",
+    "download": "Télécharger"
+  },
+  "hero": {
+    "eyebrow": "Open source · Local · Gratuit",
+    "headline": "Convertissez tout.",
+    "subline": "Localement.",
+    "body": "Sans internet. Sans compte. Sans télémétrie. Glissez, déposez, et convertissez — sur votre machine.",
+    "cta_linux": "Télécharger pour Linux",
+    "cta_github": "Voir sur GitHub",
+    "available_for": "Disponible sur"
+  },
+  "features": {
+    "title": "Fonctionnalités",
+    "images_title": "Images",
+    "images_desc": "JPEG, PNG, WebP, AVIF, BMP, TIFF, GIF — convertissez entre n'importe quel format avec contrôle de qualité, redimensionnement et préréglages.",
+    "documents_title": "Documents",
+    "documents_desc": "Markdown, DOCX, HTML, PDF, ODT, EPUB — propulsé par Pandoc, sans cloud.",
+    "audio_title": "Audio",
+    "audio_desc": "MP3, FLAC, OGG, WAV, AAC — sans perte ou avec perte, contrôle du débit inclus.",
+    "video_title": "Vidéo",
+    "video_desc": "MP4, MKV, WebM, MOV — codecs H.264, H.265, VP9 avec options de résolution.",
+    "local_title": "100 % Local",
+    "local_desc": "Pas d'envoi. Pas de cloud. Tout s'exécute sur votre machine. Vos fichiers ne partent jamais.",
+    "opensource_title": "Open source",
+    "opensource_desc": "Licence MIT. Auditez le code, contribuez ou forkez. Aucune boîte noire."
+  },
+  "privacy": {
+    "eyebrow": "Confidentialité",
+    "title": "Vos fichiers restent sur votre machine.",
+    "body": "Verto fonctionne entièrement hors ligne. Aucune télémétrie, aucune analytique, aucune requête réseau — jamais. Vos fichiers sont traités localement et ne quittent jamais votre appareil.",
+    "point_1": "Aucune connexion internet requise",
+    "point_2": "Aucun compte, aucune inscription",
+    "point_3": "Aucune télémétrie ni analytique",
+    "point_4": "Code source entièrement auditable"
+  },
+  "download": {
+    "eyebrow": "Télécharger",
+    "linux": "Linux",
+    "windows": "Windows",
+    "macos": "macOS",
+    "see_all": "Voir toutes les versions sur GitHub →",
+    "loading": "Chargement…",
+    "fallback": "Télécharger"
+  },
+  "footer": {
+    "license": "Licence MIT",
+    "source": "Code source"
+  }
+}

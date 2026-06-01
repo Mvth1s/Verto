@@ -1,5 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { type Locale } from './i18n'
+
+const { t, locale: i18nLocale } = useI18n()
+const locale = ref<Locale>('en')
+
+function setLocale(l: Locale) {
+  locale.value = l
+  i18nLocale.value = l
+}
 
 interface GithubAsset {
   name: string
@@ -112,8 +122,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
-        <a class="nav-link" href="#features">Features</a>
-        <a class="nav-link" href="#privacy">Privacy</a>
+        <a class="nav-link" href="#features">{{ t('nav.features') }}</a>
+        <a class="nav-link" href="#privacy">{{ t('nav.privacy') }}</a>
         <a class="nav-link" href="https://github.com/Mvth1s/Verto" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24">
             <path
@@ -122,13 +132,17 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </svg>
           GitHub
         </a>
+        <div class="lang-toggle">
+          <button :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
+          <button :class="{ active: locale === 'fr' }" @click="setLocale('fr')">FR</button>
+        </div>
         <a class="btn btn-primary" href="#download">
           <svg viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Download
+          {{ t('nav.download') }}
         </a>
       </div>
     </div>
@@ -138,18 +152,12 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="eyebrow">
-          <span class="dot"></span>Open source<span class="sep">·</span>Local<span class="sep"
-            >·</span
-          >Free
-        </div>
+        <div class="eyebrow"><span class="dot"></span>{{ t('hero.eyebrow') }}</div>
         <h1 class="headline">
-          Convert anything.
-          <span class="subline">Locally.</span>
+          {{ t('hero.headline') }}
+          <span class="subline">{{ t('hero.subline') }}</span>
         </h1>
-        <p class="hero-body">
-          No internet. No account. No telemetry. Just drag, drop, and convert — on your own machine.
-        </p>
+        <p class="hero-body">{{ t('hero.body') }}</p>
         <div class="hero-ctas">
           <a class="btn btn-primary btn-lg" href="#download">
             <svg viewBox="0 0 24 24">
@@ -157,7 +165,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download for Linux
+            {{ t('hero.cta_linux') }}
           </a>
           <a
             class="btn btn-outline btn-lg"
@@ -170,11 +178,11 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                 d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
               />
             </svg>
-            View on GitHub
+            {{ t('hero.cta_github') }}
           </a>
         </div>
         <div class="os-row">
-          <span class="label">Available for</span>
+          <span class="label">{{ t('hero.available_for') }}</span>
           <div class="os-badges">
             <span class="os-badge">
               <svg viewBox="0 0 24 24">
@@ -208,20 +216,63 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         </div>
       </div>
 
-      <!-- App screenshot -->
+      <!-- App mockup -->
       <div class="mockup">
         <div class="win">
           <div class="win-bar">
             <div class="traffic">
               <span class="r"></span><span class="y"></span><span class="g"></span>
             </div>
-            <div class="label">Verto</div>
+            <div class="label">Verto — Images</div>
           </div>
-          <img
-            src="/screenshot-app.png"
-            alt="Verto app showing the conversion queue with image thumbnails"
-            class="win-screenshot"
-          />
+          <div class="win-body">
+            <div class="ws-sidebar">
+              <div class="ws-brand">
+                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
+              </div>
+              <div class="ws-item active"><span class="ico"></span>Images</div>
+              <div class="ws-item"><span class="ico"></span>Documents</div>
+              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Audio</div>
+              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Video</div>
+            </div>
+            <div class="ws-main">
+              <div class="ws-drop">
+                <div class="icon-box">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 3v12" />
+                    <path d="M7 8l5-5 5 5" />
+                    <path d="M5 21h14" />
+                  </svg>
+                </div>
+                <div>Drop files here</div>
+              </div>
+              <div class="ws-row">
+                <span class="name">diagram.png</span>
+                <span class="arrow">→</span>
+                <span class="to">.webp</span>
+                <span class="ws-bar"><span class="fill"></span></span>
+              </div>
+            </div>
+            <div class="ws-panel">
+              <div>
+                <div class="ws-label" style="margin-bottom: 6px">Format</div>
+                <div class="ws-field"><span>WebP</span><span class="arrow-d">▾</span></div>
+              </div>
+              <div>
+                <div
+                  class="ws-label"
+                  style="margin-bottom: 6px; display: flex; justify-content: space-between"
+                >
+                  <span>Quality</span
+                  ><span style="color: var(--text); font-family: 'JetBrains Mono', monospace"
+                    >85%</span
+                  >
+                </div>
+                <div class="ws-slider"></div>
+              </div>
+              <div class="ws-btn">Convert</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -231,7 +282,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <section id="features">
     <div class="container">
       <div class="section-head">
-        <div class="section-eyebrow">Features</div>
+        <div class="section-eyebrow">{{ t('features.title') }}</div>
         <h2 class="section-title">Everything you need.<br />Nothing you don't.</h2>
         <p class="section-sub">
           A single binary. Four file types. Zero network calls. Verto does one thing — convert files
@@ -247,11 +298,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M21 15l-5-5L5 21" />
             </svg>
           </div>
-          <div class="feature-title">Images</div>
-          <div class="feature-body">
-            Convert between JPEG, PNG, WebP, GIF, BMP and TIFF using the native Rust
-            <code>image</code> crate — no external binary required.
-          </div>
+          <div class="feature-title">{{ t('features.images_title') }}</div>
+          <div class="feature-body">{{ t('features.images_desc') }}</div>
           <div class="feature-list">
             <span class="chip">.jpeg</span><span class="chip">.png</span
             ><span class="chip">.webp</span><span class="chip">.gif</span
@@ -266,11 +314,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M8 13h8M8 17h5" />
             </svg>
           </div>
-          <div class="feature-title">Documents</div>
-          <div class="feature-body">
-            Cross-convert Markdown, DOCX, HTML, RST, ODT and EPUB in any direction using a bundled
-            Pandoc sidecar — no internet, no Pandoc install.
-          </div>
+          <div class="feature-title">{{ t('features.documents_title') }}</div>
+          <div class="feature-body">{{ t('features.documents_desc') }}</div>
           <div class="feature-list">
             <span class="chip">.md</span><span class="chip">.docx</span
             ><span class="chip">.html</span><span class="chip">.rst</span
@@ -320,11 +365,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <div class="feature-title">100% Local</div>
-          <div class="feature-body">
-            Every conversion runs as a local process. No network stack involved, ever. Works
-            offline, air-gapped, on a plane.
-          </div>
+          <div class="feature-title">{{ t('features.local_title') }}</div>
+          <div class="feature-body">{{ t('features.local_desc') }}</div>
           <div class="feature-list">
             <span class="chip">offline-first</span><span class="chip">no telemetry</span
             ><span class="chip">air-gapped</span>
@@ -337,11 +379,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M8 6l-6 6 6 6" />
             </svg>
           </div>
-          <div class="feature-title">Open source</div>
-          <div class="feature-body">
-            MIT licensed. Rust backend, Vue 3 frontend, Tauri v2. No black boxes. Audit the source,
-            file an issue, send a PR.
-          </div>
+          <div class="feature-title">{{ t('features.opensource_title') }}</div>
+          <div class="feature-body">{{ t('features.opensource_desc') }}</div>
           <div class="feature-list">
             <span class="chip">MIT</span><span class="chip">Rust + Tauri v2</span
             ><span class="chip">Vue 3</span>
@@ -354,12 +393,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <!-- PRIVACY -->
   <section id="privacy" class="privacy">
     <div class="container">
-      <div class="section-eyebrow" style="text-align: center">Privacy</div>
-      <h2 class="privacy-title">Your files stay on your machine.</h2>
-      <p class="privacy-sub">
-        No uploads. No logs. No accounts. No analytics. Verto runs entirely on your device — what
-        happens on your laptop stays on your laptop.
-      </p>
+      <div class="section-eyebrow" style="text-align: center">{{ t('privacy.eyebrow') }}</div>
+      <h2 class="privacy-title">{{ t('privacy.title') }}</h2>
+      <p class="privacy-sub">{{ t('privacy.body') }}</p>
       <div class="privacy-visual">
         <div class="pv-node local">
           <div class="pv-icon">
@@ -434,7 +470,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <section id="download">
     <div class="container">
       <div class="section-head" style="text-align: center; margin-left: auto; margin-right: auto">
-        <div class="section-eyebrow">Download</div>
+        <div class="section-eyebrow">{{ t('download.eyebrow') }}</div>
         <h2 class="section-title">Ready to install?</h2>
         <p class="section-sub" style="margin-left: auto; margin-right: auto">
           ~18 MB. Single binary. No installer trickery, no bundled extras.
@@ -452,7 +488,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               </svg>
             </div>
             <div>
-              <div class="dl-os-name">Linux</div>
+              <div class="dl-os-name">{{ t('download.linux') }}</div>
               <div class="dl-os-version">{{ version ? `${version} · x86_64` : 'x86_64' }}</div>
             </div>
           </div>
@@ -484,7 +520,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ extOf(a.name) }}
+                {{ t('download.fallback') }} {{ extOf(a.name) }}
               </a>
             </template>
             <template v-else>
@@ -518,7 +554,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               </svg>
             </div>
             <div>
-              <div class="dl-os-name">Windows</div>
+              <div class="dl-os-name">{{ t('download.windows') }}</div>
               <div class="dl-os-version">{{ version ? `${version} · x86_64` : 'x86_64' }}</div>
             </div>
           </div>
@@ -550,7 +586,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ extOf(a.name) }}
+                {{ t('download.fallback') }} {{ extOf(a.name) }}
               </a>
             </template>
             <template v-else>
@@ -584,7 +620,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               </svg>
             </div>
             <div>
-              <div class="dl-os-name">macOS</div>
+              <div class="dl-os-name">{{ t('download.macos') }}</div>
               <div class="dl-os-version">
                 {{ version ? `${version} · Apple Silicon` : 'Apple Silicon' }}
               </div>
@@ -618,7 +654,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download {{ extOf(a.name) }}
+                {{ t('download.fallback') }} {{ extOf(a.name) }}
               </a>
             </template>
             <template v-else>
@@ -646,7 +682,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
 
   <footer>
     <div class="container footer-inner">
-      <div class="footer-meta">Verto · MIT License · 2026</div>
+      <div class="footer-meta">Verto · {{ t('footer.license') }} · 2026</div>
       <div class="footer-links">
         <a href="https://github.com/Mvth1s/Verto" target="_blank" rel="noopener">GitHub</a>
         <a
@@ -758,6 +794,33 @@ header.nav {
 }
 .nav-link:hover {
   color: var(--text);
+}
+.lang-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+}
+.lang-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.lang-toggle button.active {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
 }
 .nav-link svg {
   width: 14px;
@@ -1005,12 +1068,6 @@ header.nav {
   font-family: 'JetBrains Mono', monospace;
 }
 
-.win-screenshot {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 0 0 10px 10px;
-}
 .win-body {
   display: grid;
   grid-template-columns: 130px 1fr 180px;
