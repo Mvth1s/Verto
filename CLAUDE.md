@@ -138,6 +138,8 @@ Result<ConversionResult, String> → back to Vue
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.3.0`. La prochaine merge `dev→main` produira `v1.4.0` (présence de commits `feat:`).
+
 ---
 
 ## Code conventions
@@ -153,6 +155,7 @@ Conventional Commits enforced by Commitlint + Husky:
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`
 - Scopes: `desktop`, `web`, `backend`, `frontend`, `ci`, `deps`
 - Versioning: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major
+- **Ne jamais mettre de numéro de version dans le titre du commit** — c'est SR qui calcule la version. Écrire `feat(desktop): add AVIF support` et non `feat(desktop): v0.4.0 — AVIF support`.
 
 ### TypeScript / Vue
 
