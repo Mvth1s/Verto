@@ -25,6 +25,7 @@ const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
 const thumbErrors = ref<Record<string, true>>({})
+const videoThumbs = ref<Record<string, string>>({})
 const locale = ref<Locale>('en')
 const updateVersion = ref<string | null>(null)
 const updateDismissed = ref(false)
@@ -85,6 +86,22 @@ const availableCodecs = computed(() => VIDEO_CODECS_FOR_FORMAT[settings.outputFo
 
 const activeQueue = computed(() =>
   conversion.queue.filter((f) => f.category === activeFileCategory.value),
+)
+
+watch(
+  () => conversion.queue.filter((f) => f.category === 'video'),
+  (videoFiles) => {
+    for (const f of videoFiles) {
+      if (!videoThumbs.value[f.id]) {
+        invoke<string>('get_video_thumbnail', { inputPath: f.path })
+          .then((data) => {
+            videoThumbs.value[f.id] = data
+          })
+          .catch(() => {})
+      }
+    }
+  },
+  { deep: true },
 )
 
 const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status === 'waiting'))
@@ -411,6 +428,12 @@ onUnmounted(() => {
             :alt="file.inputFormat.toUpperCase()"
             loading="lazy"
             @error="onThumbError(file.id)"
+          />
+          <img
+            v-else-if="activeCategory === 'video' && videoThumbs[file.id]"
+            :src="videoThumbs[file.id]"
+            class="thumb-img"
+            :alt="file.inputFormat.toUpperCase()"
           />
           <div v-else class="ftype" aria-hidden="true">
             {{ file.inputFormat.toUpperCase().slice(0, 4) }}
