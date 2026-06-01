@@ -12,7 +12,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
-### Added
+### Added (v0.4.0 — Image quality)
+- AVIF conversion via FFmpeg sidecar (input and output)
+- Image resize: width × height with keep-aspect-ratio toggle
+- Quality presets: Web (75%), Print (95%), Lossless (100%) — single-click buttons above the quality slider
+- `convert_image` Tauri command extended with `resize_width` and `resize_height` parameters
+- Preview thumbnail in the conversion queue for image files (32×32 px via `asset://` protocol, falls back to format badge)
+
+### Added (v0.3.0 — Audio)
 - Audio conversion: MP3, FLAC, OGG, WAV, AAC via FFmpeg sidecar (`convert_audio` Tauri command)
 - FFmpeg sidecar download scripts for Linux/macOS (`download-ffmpeg.sh`) and Windows (`download-ffmpeg.ps1`)
 - Audio category in sidebar — activates dedicated file picker, queue filter, and format selector
