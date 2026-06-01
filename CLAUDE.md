@@ -130,6 +130,26 @@ Result<ConversionResult, String> → back to Vue
 
 `FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio`), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
 
+### Structure apps/web
+
+```
+apps/web/
+├── src/
+│   ├── App.vue      # Page unique — tout le markup, script, et CSS scopé en un seul fichier
+│   ├── main.ts      # Monte l'app Vue avec le plugin i18n
+│   ├── style.css    # Import Tailwind uniquement
+│   └── i18n/
+│       ├── index.ts # createI18n (legacy:false), exporte le type Locale ('en' | 'fr')
+│       ├── en.json  # Chaînes anglaises
+│       └── fr.json  # Chaînes françaises
+├── public/          # Assets statiques : favicon, og-image.png, screenshot-app.png
+└── index.html
+```
+
+- Pas de routing (single page), pas de Pinia
+- La langue active est un `ref<Locale>` local dans `App.vue`, synchronisé avec `i18nLocale` de `vue-i18n`
+- Fetch GitHub API au montage pour récupérer la dernière release et afficher les liens de téléchargement
+
 ### CI/CD
 
 | Trigger | Workflows |
@@ -166,7 +186,9 @@ Conventional Commits enforced by Commitlint + Husky:
 - Components in `components/` are kebab-case files, PascalCase in templates
 - Views (routes) in `views/`, reusable logic in `composables/use*.ts`
 
-### Design system (Tailwind tokens)
+### Design system
+
+**Desktop** (Tailwind tokens) :
 
 | Token | Value |
 |---|---|
@@ -177,7 +199,25 @@ Conventional Commits enforced by Commitlint + Husky:
 | Text primary | `text-zinc-100` |
 | Text secondary | `text-zinc-400` |
 
-Dark theme by default. Desktop-first responsive. No inline styles, no custom CSS unless strictly necessary.
+**Web** (CSS custom properties dans le `<style>` de `App.vue`) :
+
+| Variable | Rôle |
+|---|---|
+| `--bg` / `--bg-soft` | Fond principal / fond doux |
+| `--surface` / `--surface-2` | Surfaces élevées |
+| `--border` / `--border-soft` | Bordures |
+| `--text` / `--text-2` / `--text-3` | Texte principal / secondaire / tertiaire |
+| `--accent` / `--accent-bright` / `--accent-soft` | Vert emerald (#10b981, #34d399, rgba soft) |
+
+Dark theme par défaut dans les deux apps. Pour le web, utiliser les CSS vars, pas les classes Tailwind.
+
+### i18n (apps/web)
+
+Toute chaîne visible dans la landing page passe par `t('clé')` via `useI18n()`. Les clés sont organisées par section : `nav`, `hero`, `features`, `privacy`, `download`, `footer`.
+
+- Ajouter une clé simultanément dans `en.json` **et** `fr.json`
+- Le type `Locale = 'en' | 'fr'` est exporté depuis `src/i18n/index.ts`
+- La langue par défaut est `'en'` (aussi `fallbackLocale`)
 
 ### Calling Rust commands from Vue
 
