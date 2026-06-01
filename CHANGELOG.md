@@ -5,6 +5,23 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.4.0](https://github.com/Mvth1s/Verto/compare/v1.3.0...v1.4.0) (2026-06-01)
+
+
+### Bug Fixes
+
+* **frontend:** extract setLocale() — multi-line Vue template handlers crash compiler ([29220f8](https://github.com/Mvth1s/Verto/commit/29220f84f93e05bf42c7e88c41d57c338897807b))
+
+
+### Features
+
+* **desktop:** add settings page with persistence ([cc7111c](https://github.com/Mvth1s/Verto/commit/cc7111c823be3db13e29ed564815ffc14f01cb1a))
+* **desktop:** add video conversion (MP4, MKV, WebM, MOV) ([927b57b](https://github.com/Mvth1s/Verto/commit/927b57ba0de991141bddb20d42a5f5a8ae509cc1))
+* **desktop:** add video thumbnail preview in queue ([6ce7332](https://github.com/Mvth1s/Verto/commit/6ce7332915f9a797af1d76e0600357d97db75520))
+* **desktop:** v0.4.0 — AVIF, image resize, quality presets ([6096147](https://github.com/Mvth1s/Verto/commit/60961472ceea50e6619d6dd4e38593a4c9d800a9))
+* **desktop:** v0.4.0 — image thumbnail preview in queue ([828d32b](https://github.com/Mvth1s/Verto/commit/828d32b48583984a870d4f4b1e00d2ca2af3e613))
+* **desktop:** v1.0.0 — i18n, accessibilité, auto-updater, coverage, SEO ([2be5970](https://github.com/Mvth1s/Verto/commit/2be5970a85f419f8b3487dcbdedd5be06b408e8c))
+
 > **Note:** From `v1.4.0` onward, this file is maintained automatically by Semantic Release.
 > Entries below `v1.1.0` reflect pre-automation milestones written manually.
 
