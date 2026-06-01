@@ -5,6 +5,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const outputFormat = ref('webp')
   const quality = ref(85)
   const bitrate = ref(192)
+  const videoCodec = ref('h264')
   const resizeEnabled = ref(false)
   const resizeWidth = ref<number | null>(null)
   const resizeHeight = ref<number | null>(null)
@@ -17,6 +18,7 @@ export const useSettingsStore = defineStore('settings', () => {
     outputFormat,
     quality,
     bitrate,
+    videoCodec,
     resizeEnabled,
     resizeWidth,
     resizeHeight,

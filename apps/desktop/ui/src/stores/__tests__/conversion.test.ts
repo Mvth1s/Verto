@@ -418,3 +418,66 @@ describe('useConversionStore', () => {
     })
   })
 })
+
+describe('video category', () => {
+  const VIDEO_RESULT = {
+    output_path: '/tmp/out/clip.mkv',
+    input_size: 50_000_000,
+    output_size: 20_000_000,
+    saved_bytes: 30_000_000,
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('accepts video extensions', () => {
+    const store = useConversionStore()
+    store.addFiles(
+      [
+        { name: 'clip.mp4', path: '/tmp/clip.mp4' },
+        { name: 'movie.mkv', path: '/tmp/movie.mkv' },
+        { name: 'screen.webm', path: '/tmp/screen.webm' },
+      ],
+      'video',
+    )
+    expect(store.queue).toHaveLength(3)
+    expect(store.queue.every((f) => f.category === 'video')).toBe(true)
+  })
+
+  it('rejects non-video files', () => {
+    const store = useConversionStore()
+    store.addFiles([{ name: 'photo.jpg', path: '/tmp/photo.jpg' }], 'video')
+    expect(store.queue).toHaveLength(0)
+  })
+
+  it('invokes convert_video with correct params', async () => {
+    const settings = useSettingsStore()
+    settings.outputFormat = 'mkv'
+    settings.videoCodec = 'h265'
+    mockInvoke.mockResolvedValue(VIDEO_RESULT)
+
+    const store = useConversionStore()
+    store.addFiles([{ name: 'clip.mp4', path: '/tmp/clip.mp4' }], 'video')
+    await store.convertAll('video')
+
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'convert_video',
+      expect.objectContaining({ codec: 'h265', outputFormat: 'mkv' }),
+    )
+  })
+
+  it('marks file as done after successful conversion', async () => {
+    const settings = useSettingsStore()
+    settings.outputFormat = 'mp4'
+    settings.videoCodec = 'h264'
+    mockInvoke.mockResolvedValue(VIDEO_RESULT)
+
+    const store = useConversionStore()
+    store.addFiles([{ name: 'clip.mkv', path: '/tmp/clip.mkv' }], 'video')
+    await store.convertAll('video')
+
+    expect(store.queue[0].status).toBe('done')
+  })
+})
