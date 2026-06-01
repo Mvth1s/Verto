@@ -1,5 +1,5 @@
-use base64::Engine;
 use crate::converters::ffmpeg as ffmpeg_converter;
+use base64::Engine;
 use serde::Serialize;
 use tauri_plugin_shell::ShellExt;
 
@@ -83,11 +83,16 @@ pub async fn get_video_thumbnail(
         .map_err(|e| e.to_string())?
         .args([
             "-y",
-            "-ss", "0.1",
-            "-i", &input_path,
-            "-vframes", "1",
-            "-vf", "scale=64:-2",
-            "-q:v", "5",
+            "-ss",
+            "0.1",
+            "-i",
+            &input_path,
+            "-vframes",
+            "1",
+            "-vf",
+            "scale=64:-2",
+            "-q:v",
+            "5",
             tmp.to_str().ok_or("invalid temp path")?,
         ])
         .spawn()
