@@ -388,10 +388,20 @@ mod video_tests {
         std::process::Command::new(&ffmpeg)
             .args([
                 "-y",
-                "-f", "lavfi", "-i", "color=black:size=64x64:rate=1:duration=1",
-                "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
-                "-t", "1",
-                "-c:v", "libx264", "-c:a", "aac",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=black:size=64x64:rate=1:duration=1",
+                "-f",
+                "lavfi",
+                "-i",
+                "anullsrc=r=44100:cl=mono",
+                "-t",
+                "1",
+                "-c:v",
+                "libx264",
+                "-c:a",
+                "aac",
                 "-shortest",
                 path.to_str().unwrap(),
             ])
@@ -407,14 +417,24 @@ mod video_tests {
         };
         let input = std::env::temp_dir().join("verto_test_video_input.mp4");
         create_minimal_mp4(&input);
-        if !input.exists() { return; }
+        if !input.exists() {
+            return;
+        }
 
         let output = std::env::temp_dir().join("verto_test_video_mp4_to_mkv.mkv");
         let status = std::process::Command::new(&ffmpeg)
-            .args(["-y", "-i", input.to_str().unwrap(),
-                   "-c:v", "libx264", "-c:a", "aac",
-                   output.to_str().unwrap()])
-            .status().expect("ffmpeg failed");
+            .args([
+                "-y",
+                "-i",
+                input.to_str().unwrap(),
+                "-c:v",
+                "libx264",
+                "-c:a",
+                "aac",
+                output.to_str().unwrap(),
+            ])
+            .status()
+            .expect("ffmpeg failed");
 
         assert!(status.success());
         assert!(output.exists());
@@ -430,7 +450,8 @@ mod video_tests {
         };
         let status = std::process::Command::new(&ffmpeg)
             .args(["-y", "-i", "/nonexistent/video.mp4", "/tmp/out.mkv"])
-            .status().expect("ffmpeg process failed");
+            .status()
+            .expect("ffmpeg process failed");
         assert!(!status.success());
     }
 }
