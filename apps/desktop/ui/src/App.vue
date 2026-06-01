@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -29,6 +30,8 @@ const videoThumbs = ref<Record<string, string>>({})
 const locale = ref<Locale>('en')
 const updateVersion = ref<string | null>(null)
 const updateDismissed = ref(false)
+const showSettings = ref(false)
+const appVersion = ref('')
 
 function onThumbError(id: string) {
   thumbErrors.value[id] = true
@@ -214,6 +217,7 @@ let unlistenDrop: (() => void) | null = null
 
 onMounted(async () => {
   checkForUpdates()
+  appVersion.value = await getVersion().catch(() => '—')
   const appWindow = getCurrentWebviewWindow()
 
   unlistenDrop = await appWindow.onDragDropEvent((event) => {
@@ -262,6 +266,204 @@ onUnmounted(() => {
       </button>
     </div>
   </div>
+  <!-- SETTINGS MODAL -->
+  <Teleport to="body">
+    <div
+      v-if="showSettings"
+      class="settings-overlay"
+      role="dialog"
+      :aria-label="t('settings_page.title')"
+      aria-modal="true"
+      @click.self="showSettings = false"
+      @keydown.escape="showSettings = false"
+    >
+      <div class="settings-modal">
+        <div class="settings-header">
+          <div class="settings-title">{{ t('settings_page.title') }}</div>
+          <button
+            class="settings-close"
+            :aria-label="t('settings_page.close')"
+            @click="showSettings = false"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- Interface -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.interface') }}</div>
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.language') }}</div>
+              <div class="settings-lang-btns">
+                <button
+                  class="lang-choice"
+                  :class="{ active: locale === 'en' }"
+                  @click="
+                    locale = 'en'
+                    i18nLocale = 'en'
+                  "
+                >
+                  EN
+                </button>
+                <button
+                  class="lang-choice"
+                  :class="{ active: locale === 'fr' }"
+                  @click="
+                    locale = 'fr'
+                    i18nLocale = 'fr'
+                  "
+                >
+                  FR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conversion defaults -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.defaults') }}</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.default_output_dir') }}</div>
+              <div class="settings-folder-row">
+                <div class="settings-folder-path">
+                  {{ settings.outputDirectory ?? t('settings.same_as_source') }}
+                </div>
+                <button class="settings-folder-browse" @click="openFolderPicker">
+                  {{ t('settings.browse') }}
+                </button>
+                <button
+                  v-if="settings.outputDirectory"
+                  class="settings-folder-clear"
+                  :aria-label="t('settings_page.reset_defaults')"
+                  @click="settings.outputDirectory = null"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-quality">
+                {{ t('settings_page.default_quality') }}
+                <span class="settings-val">{{ settings.quality }}%</span>
+              </label>
+              <input
+                id="sp-quality"
+                v-model.number="settings.quality"
+                type="range"
+                min="1"
+                max="100"
+                class="settings-slider"
+              />
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-bitrate">{{
+                t('settings_page.default_bitrate')
+              }}</label>
+              <select id="sp-bitrate" v-model.number="settings.bitrate" class="settings-select">
+                <option :value="64">64 kbps</option>
+                <option :value="128">128 kbps</option>
+                <option :value="192">192 kbps</option>
+                <option :value="256">256 kbps</option>
+                <option :value="320">320 kbps</option>
+              </select>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-codec">{{
+                t('settings_page.default_codec')
+              }}</label>
+              <select id="sp-codec" v-model="settings.videoCodec" class="settings-select">
+                <option value="h264">{{ t('settings.codec_h264') }}</option>
+                <option value="h265">{{ t('settings.codec_h265') }}</option>
+                <option value="vp9">{{ t('settings.codec_vp9') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Behavior -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.behavior') }}</div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-metadata">{{
+                t('settings.preserve_metadata')
+              }}</label>
+              <div
+                id="sp-metadata"
+                class="toggle"
+                :class="{ on: settings.preserveMetadata }"
+                role="switch"
+                tabindex="0"
+                :aria-checked="settings.preserveMetadata"
+                @click="settings.preserveMetadata = !settings.preserveMetadata"
+                @keydown.enter.space.prevent="
+                  settings.preserveMetadata = !settings.preserveMetadata
+                "
+              ></div>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-overwrite">{{
+                t('settings.overwrite_originals')
+              }}</label>
+              <div
+                id="sp-overwrite"
+                class="toggle"
+                :class="{ on: settings.overwriteOriginals }"
+                role="switch"
+                tabindex="0"
+                :aria-checked="settings.overwriteOriginals"
+                @click="settings.overwriteOriginals = !settings.overwriteOriginals"
+                @keydown.enter.space.prevent="
+                  settings.overwriteOriginals = !settings.overwriteOriginals
+                "
+              ></div>
+            </div>
+          </div>
+
+          <!-- About -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.about') }}</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.version') }}</div>
+              <div class="settings-about-val">v{{ appVersion }}</div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.source_code') }}</div>
+              <a
+                class="settings-link"
+                href="https://github.com/Mvth1s/Verto"
+                target="_blank"
+                rel="noopener"
+                >GitHub ↗</a
+              >
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.changelog') }}</div>
+              <a
+                class="settings-link"
+                href="https://github.com/Mvth1s/Verto/releases"
+                target="_blank"
+                rel="noopener"
+                >Releases ↗</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <div class="shell" role="application" aria-label="Verto Desktop">
     <!-- SIDEBAR -->
     <aside class="sidebar" aria-label="Navigation">
@@ -352,7 +554,11 @@ onUnmounted(() => {
         >
           {{ locale.toUpperCase() }}
         </button>
-        <button class="icon-btn" aria-label="Settings">
+        <button
+          class="icon-btn"
+          :aria-label="t('settings_page.title')"
+          @click="showSettings = true"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path
@@ -1724,5 +1930,245 @@ body {
 .update-btn-dismiss:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Settings modal ─────────────────────────────────────────────────── */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.settings-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.settings-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 5px;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.settings-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.settings-close svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+.settings-body {
+  overflow-y: auto;
+  padding: 8px 0 16px;
+}
+.settings-section {
+  padding: 12px 20px;
+}
+.settings-section + .settings-section {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 4px;
+  padding-top: 16px;
+}
+.settings-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+}
+.settings-row-label {
+  font-size: 13px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.settings-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.settings-slider {
+  flex: 1;
+  max-width: 160px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.settings-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.settings-select {
+  flex: 1;
+  max-width: 160px;
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  padding-right: 28px;
+}
+.settings-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.settings-lang-btns {
+  display: flex;
+  gap: 4px;
+}
+.lang-choice {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition:
+    background 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+.lang-choice.active {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+.settings-folder-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.settings-folder-path {
+  flex: 1;
+  padding: 7px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.settings-folder-browse {
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-folder-browse:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.settings-folder-clear {
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.settings-folder-clear:hover {
+  color: var(--danger);
+}
+.settings-about-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.settings-link {
+  font-size: 12px;
+  color: var(--accent-bright);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+.settings-link:hover {
+  text-decoration: underline;
 }
 </style>
