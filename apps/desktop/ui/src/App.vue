@@ -8,16 +8,24 @@ import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
 import { type Locale } from './i18n'
 
-type Category = 'images' | 'documents' | 'audio'
+type Category = 'images' | 'documents' | 'audio' | 'video'
 
 const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
 const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
+const VIDEO_FORMATS = ['mp4', 'mkv', 'webm', 'mov']
+const VIDEO_CODECS_FOR_FORMAT: Record<string, string[]> = {
+  mp4: ['h264', 'h265'],
+  mkv: ['h264', 'h265', 'vp9'],
+  webm: ['vp9'],
+  mov: ['h264', 'h265'],
+}
 
 const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
 const thumbErrors = ref<Record<string, true>>({})
+const videoThumbs = ref<Record<string, string>>({})
 const locale = ref<Locale>('en')
 const updateVersion = ref<string | null>(null)
 const updateDismissed = ref(false)
@@ -56,23 +64,44 @@ const settings = useSettingsStore()
 const categoryName = computed(() => {
   if (activeCategory.value === 'images') return t('nav.images')
   if (activeCategory.value === 'documents') return t('nav.documents')
-  return t('nav.audio')
+  if (activeCategory.value === 'audio') return t('nav.audio')
+  return t('nav.video')
 })
 
 const activeFormats = computed(() => {
   if (activeCategory.value === 'images') return IMAGE_FORMATS
   if (activeCategory.value === 'documents') return DOCUMENT_FORMATS
-  return AUDIO_FORMATS
+  if (activeCategory.value === 'audio') return AUDIO_FORMATS
+  return VIDEO_FORMATS
 })
 
 const activeFileCategory = computed(() => {
   if (activeCategory.value === 'images') return 'image' as const
   if (activeCategory.value === 'documents') return 'document' as const
-  return 'audio' as const
+  if (activeCategory.value === 'audio') return 'audio' as const
+  return 'video' as const
 })
+
+const availableCodecs = computed(() => VIDEO_CODECS_FOR_FORMAT[settings.outputFormat] ?? ['h264'])
 
 const activeQueue = computed(() =>
   conversion.queue.filter((f) => f.category === activeFileCategory.value),
+)
+
+watch(
+  () => conversion.queue.filter((f) => f.category === 'video'),
+  (videoFiles) => {
+    for (const f of videoFiles) {
+      if (!videoThumbs.value[f.id]) {
+        invoke<string>('get_video_thumbnail', { inputPath: f.path })
+          .then((data) => {
+            videoThumbs.value[f.id] = data
+          })
+          .catch(() => {})
+      }
+    }
+  },
+  { deep: true },
 )
 
 const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status === 'waiting'))
@@ -87,8 +116,19 @@ const queueSummary = computed(() => {
 watch(activeCategory, (cat) => {
   if (cat === 'images') settings.outputFormat = IMAGE_FORMATS[0]
   else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMATS[0]
-  else settings.outputFormat = AUDIO_FORMATS[0]
+  else if (cat === 'audio') settings.outputFormat = AUDIO_FORMATS[0]
+  else settings.outputFormat = VIDEO_FORMATS[0]
 })
+
+watch(
+  () => settings.outputFormat,
+  (fmt) => {
+    if (activeCategory.value === 'video') {
+      const codecs = VIDEO_CODECS_FOR_FORMAT[fmt] ?? ['h264']
+      if (!codecs.includes(settings.videoCodec)) settings.videoCodec = codecs[0]
+    }
+  },
+)
 
 function setCategory(cat: Category) {
   activeCategory.value = cat
@@ -125,8 +165,12 @@ async function openFilePicker() {
         extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
       },
     ]
-  } else {
+  } else if (activeCategory.value === 'audio') {
     filters = [{ name: 'Audio', extensions: ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus'] }]
+  } else {
+    filters = [
+      { name: 'Video', extensions: ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v'] },
+    ]
   }
   const selected = await open({ multiple: true, filters })
   if (!selected) return
@@ -278,13 +322,21 @@ onUnmounted(() => {
           </svg>
           <span>{{ t('nav.audio') }}</span>
         </div>
-        <div class="nav-item disabled" aria-disabled="true">
+        <div
+          class="nav-item"
+          :class="{ active: activeCategory === 'video' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'video'"
+          :aria-label="t('nav.video')"
+          @click="setCategory('video')"
+          @keydown.enter.space.prevent="setCategory('video')"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="2" y="6" width="14" height="12" rx="2" />
             <path d="M22 8l-6 4 6 4z" />
           </svg>
           <span>{{ t('nav.video') }}</span>
-          <span class="soon" aria-label="coming soon">{{ t('nav.soon') }}</span>
         </div>
       </nav>
 
@@ -376,6 +428,12 @@ onUnmounted(() => {
             :alt="file.inputFormat.toUpperCase()"
             loading="lazy"
             @error="onThumbError(file.id)"
+          />
+          <img
+            v-else-if="activeCategory === 'video' && videoThumbs[file.id]"
+            :src="videoThumbs[file.id]"
+            class="thumb-img"
+            :alt="file.inputFormat.toUpperCase()"
           />
           <div v-else class="ftype" aria-hidden="true">
             {{ file.inputFormat.toUpperCase().slice(0, 4) }}
@@ -505,6 +563,15 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <div v-if="activeCategory === 'video'" class="field">
+        <label class="field-label" for="codec-select">{{ t('settings.codec') }}</label>
+        <select id="codec-select" v-model="settings.videoCodec" class="select">
+          <option v-for="c in availableCodecs" :key="c" :value="c">
+            {{ t(`settings.codec_${c}`) }}
+          </option>
+        </select>
+      </div>
+
       <div v-if="activeCategory === 'images'" class="field">
         <label class="field-label" for="quality-slider">
           <span>{{ t('settings.quality') }}</span>
@@ -537,7 +604,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-if="activeCategory === 'images'" class="field">
+      <div v-if="activeCategory === 'images' || activeCategory === 'video'" class="field">
         <div class="field-label">
           <span>{{ t('settings.resize') }}</span>
           <div

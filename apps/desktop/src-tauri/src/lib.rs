@@ -13,6 +13,8 @@ pub fn run() {
             commands::fs::list_directory,
             commands::updater::check_for_updates,
             commands::updater::install_update,
+            commands::video::convert_video,
+            commands::video::get_video_thumbnail,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
