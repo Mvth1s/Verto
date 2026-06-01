@@ -21,7 +21,19 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxQkUxNzZFRUQ0OUUzOUQKUldTZDQwbnRiaGUrUVdZTUdjcG9qQ2xYSFZQUEVHMmlMOUhrdUtPUlF5cDc2ZDhDSmxORnp5cFcK",
+      "endpoints": [
+        "https://github.com/Mvth1s/Verto/releases/latest/download/latest.json"
+      ]
     }
   },
   "bundle": {

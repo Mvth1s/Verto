@@ -13,6 +13,7 @@ pub fn convert(
     output_format: &str,
     quality: Option<u8>,
     output_path: Option<&str>,
+    resize: Option<(u32, u32)>,
 ) -> Result<ConversionResult, String> {
     let input = Path::new(input_path);
 
@@ -41,7 +42,11 @@ pub fn convert(
         .map_err(|e| e.to_string())?
         .len();
 
-    let img = image::open(input).map_err(|e| format!("Failed to open image: {}", e))?;
+    let mut img = image::open(input).map_err(|e| format!("Failed to open image: {}", e))?;
+
+    if let Some((w, h)) = resize {
+        img = img.resize(w, h, image::imageops::FilterType::Lanczos3);
+    }
 
     match format {
         ImageFormat::Jpeg => {
@@ -128,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_convert_nonexistent_file() {
-        let result = convert("/nonexistent/path/file.png", "webp", None, None);
+        let result = convert("/nonexistent/path/file.png", "webp", None, None, None);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("File not found"));
     }
@@ -145,7 +150,7 @@ mod tests {
             return; // Skip if fixture missing
         }
 
-        let result = convert(&input, "png", None, Some(&output));
+        let result = convert(&input, "png", None, Some(&output), None);
         assert!(result.is_ok(), "Conversion failed: {:?}", result.err());
         assert!(std::path::Path::new(&output).exists());
         let _ = std::fs::remove_file(&output);
@@ -163,7 +168,7 @@ mod tests {
             return;
         }
 
-        let result = convert(&input, "webp", None, Some(&output));
+        let result = convert(&input, "webp", None, Some(&output), None);
         assert!(result.is_ok(), "Conversion failed: {:?}", result.err());
         assert!(std::path::Path::new(&output).exists());
         let _ = std::fs::remove_file(&output);
@@ -185,8 +190,8 @@ mod tests {
             return;
         }
 
-        let high = convert(&input, "jpeg", Some(95), Some(&output_high));
-        let low = convert(&input, "jpeg", Some(10), Some(&output_low));
+        let high = convert(&input, "jpeg", Some(95), Some(&output_high), None);
+        let low = convert(&input, "jpeg", Some(10), Some(&output_low), None);
 
         assert!(high.is_ok());
         assert!(low.is_ok());

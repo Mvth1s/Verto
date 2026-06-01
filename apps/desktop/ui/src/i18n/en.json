@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "convert": "Convert",
+    "images": "Images",
+    "documents": "Documents",
+    "audio": "Audio",
+    "video": "Video",
+    "soon": "Soon"
+  },
+  "dropzone": {
+    "title": "Drop files here",
+    "sub": "or click to browse · max 100 files at once"
+  },
+  "queue": {
+    "title": "Queue",
+    "clear_done": "Clear done",
+    "no_files": "No files",
+    "summary": "{done} of {total} complete · {saved} saved",
+    "waiting": "waiting",
+    "converting": "converting…",
+    "error": "error"
+  },
+  "settings": {
+    "title": "Output settings",
+    "format": "Format",
+    "presets": "Presets",
+    "preset_web": "Web",
+    "preset_print": "Print",
+    "preset_lossless": "Lossless",
+    "bitrate": "Bitrate",
+    "quality": "Quality",
+    "quality_jpeg_only": "Quality applies to JPEG only",
+    "bitrate_lossy_only": "Bitrate applies to lossy formats only",
+    "resize": "Resize",
+    "ratio_locked": "Ratio locked",
+    "free_resize": "Free resize",
+    "width_hint": "Width only — height computed from ratio",
+    "exact_hint": "Exact dimensions",
+    "output_folder": "Output folder",
+    "same_as_source": "Same as source",
+    "browse": "Browse",
+    "preserve_metadata": "Preserve metadata",
+    "overwrite_originals": "Overwrite originals",
+    "codec": "Codec",
+    "codec_h264": "H.264 (AVC)",
+    "codec_h265": "H.265 (HEVC)",
+    "codec_vp9": "VP9"
+  },
+  "summary": {
+    "files": "Files",
+    "waiting": "Waiting",
+    "format": "Format",
+    "saved": "Saved"
+  },
+  "actions": {
+    "convert": "Convert",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "retry": "Retry · {error}"
+  },
+  "settings_page": {
+    "title": "Settings",
+    "close": "Close",
+    "interface": "Interface",
+    "language": "Language",
+    "lang_en": "English",
+    "lang_fr": "Français",
+    "defaults": "Conversion defaults",
+    "default_output_dir": "Default output folder",
+    "default_quality": "Default JPEG quality",
+    "default_bitrate": "Default audio bitrate",
+    "default_codec": "Default video codec",
+    "behavior": "Behavior",
+    "about": "About",
+    "version": "Version",
+    "source_code": "Source code",
+    "changelog": "Changelog",
+    "reset_defaults": "Reset to defaults"
+  },
+  "update": {
+    "available": "Update available — v{version}",
+    "install": "Install",
+    "dismiss": "Dismiss"
+  }
+}

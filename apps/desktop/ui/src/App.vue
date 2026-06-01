@@ -1,42 +1,115 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
+import { type Locale } from './i18n'
 
-type Category = 'images' | 'documents' | 'audio'
+type Category = 'images' | 'documents' | 'audio' | 'video'
 
-const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'bmp', 'tiff', 'gif']
+const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
 const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
+const VIDEO_FORMATS = ['mp4', 'mkv', 'webm', 'mov']
+const VIDEO_CODECS_FOR_FORMAT: Record<string, string[]> = {
+  mp4: ['h264', 'h265'],
+  mkv: ['h264', 'h265', 'vp9'],
+  webm: ['vp9'],
+  mov: ['h264', 'h265'],
+}
 
+const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
+const thumbErrors = ref<Record<string, true>>({})
+const videoThumbs = ref<Record<string, string>>({})
+const locale = ref<Locale>('en')
+const updateVersion = ref<string | null>(null)
+const updateDismissed = ref(false)
+const showSettings = ref(false)
+const appVersion = ref('')
+
+function onThumbError(id: string) {
+  thumbErrors.value[id] = true
+}
+
+function toggleLocale() {
+  locale.value = locale.value === 'en' ? 'fr' : 'en'
+  i18nLocale.value = locale.value
+}
+
+function setLocale(l: Locale) {
+  locale.value = l
+  i18nLocale.value = l
+}
+
+async function checkForUpdates() {
+  try {
+    const result = await invoke<{ version: string; body: string | null } | null>(
+      'check_for_updates',
+    )
+    if (result) updateVersion.value = result.version
+  } catch {
+    // updater not configured — silent in dev
+  }
+}
+
+async function installUpdate() {
+  try {
+    await invoke('install_update')
+  } catch (e) {
+    console.error('Update failed:', e)
+  }
+}
 
 const conversion = useConversionStore()
 const settings = useSettingsStore()
 
 const categoryName = computed(() => {
-  if (activeCategory.value === 'images') return 'Images'
-  if (activeCategory.value === 'documents') return 'Documents'
-  return 'Audio'
+  if (activeCategory.value === 'images') return t('nav.images')
+  if (activeCategory.value === 'documents') return t('nav.documents')
+  if (activeCategory.value === 'audio') return t('nav.audio')
+  return t('nav.video')
 })
 
 const activeFormats = computed(() => {
   if (activeCategory.value === 'images') return IMAGE_FORMATS
   if (activeCategory.value === 'documents') return DOCUMENT_FORMATS
-  return AUDIO_FORMATS
+  if (activeCategory.value === 'audio') return AUDIO_FORMATS
+  return VIDEO_FORMATS
 })
 
 const activeFileCategory = computed(() => {
   if (activeCategory.value === 'images') return 'image' as const
   if (activeCategory.value === 'documents') return 'document' as const
-  return 'audio' as const
+  if (activeCategory.value === 'audio') return 'audio' as const
+  return 'video' as const
 })
+
+const availableCodecs = computed(() => VIDEO_CODECS_FOR_FORMAT[settings.outputFormat] ?? ['h264'])
 
 const activeQueue = computed(() =>
   conversion.queue.filter((f) => f.category === activeFileCategory.value),
+)
+
+watch(
+  () => conversion.queue.filter((f) => f.category === 'video'),
+  (videoFiles) => {
+    for (const f of videoFiles) {
+      if (!videoThumbs.value[f.id]) {
+        invoke<string>('get_video_thumbnail', { inputPath: f.path })
+          .then((data) => {
+            videoThumbs.value[f.id] = data
+          })
+          .catch(() => {})
+      }
+    }
+  },
+  { deep: true },
 )
 
 const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status === 'waiting'))
@@ -44,15 +117,26 @@ const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status ==
 const queueSummary = computed(() => {
   const total = activeQueue.value.length
   const doneCount = activeQueue.value.filter((f) => f.status === 'done').length
-  if (total === 0) return 'No files'
-  return `${doneCount} of ${total} complete · ${formatBytes(conversion.totalSaved)} saved`
+  if (total === 0) return t('queue.no_files')
+  return t('queue.summary', { done: doneCount, total, saved: formatBytes(conversion.totalSaved) })
 })
 
 watch(activeCategory, (cat) => {
   if (cat === 'images') settings.outputFormat = IMAGE_FORMATS[0]
   else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMATS[0]
-  else settings.outputFormat = AUDIO_FORMATS[0]
+  else if (cat === 'audio') settings.outputFormat = AUDIO_FORMATS[0]
+  else settings.outputFormat = VIDEO_FORMATS[0]
 })
+
+watch(
+  () => settings.outputFormat,
+  (fmt) => {
+    if (activeCategory.value === 'video') {
+      const codecs = VIDEO_CODECS_FOR_FORMAT[fmt] ?? ['h264']
+      if (!codecs.includes(settings.videoCodec)) settings.videoCodec = codecs[0]
+    }
+  },
+)
 
 function setCategory(cat: Category) {
   activeCategory.value = cat
@@ -89,8 +173,12 @@ async function openFilePicker() {
         extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
       },
     ]
-  } else {
+  } else if (activeCategory.value === 'audio') {
     filters = [{ name: 'Audio', extensions: ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus'] }]
+  } else {
+    filters = [
+      { name: 'Video', extensions: ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v'] },
+    ]
   }
   const selected = await open({ multiple: true, filters })
   if (!selected) return
@@ -108,6 +196,19 @@ async function openFolderPicker() {
   }
 }
 
+function applyPreset(preset: 'web' | 'print' | 'lossless') {
+  if (preset === 'web') {
+    settings.outputFormat = 'jpeg'
+    settings.quality = 75
+  } else if (preset === 'print') {
+    settings.outputFormat = 'jpeg'
+    settings.quality = 95
+  } else {
+    settings.outputFormat = 'png'
+    settings.quality = 100
+  }
+}
+
 function handleQueueAction(fileId: string, status: string) {
   if (status === 'error') {
     conversion.retryFile(fileId)
@@ -120,6 +221,8 @@ function handleQueueAction(fileId: string, status: string) {
 let unlistenDrop: (() => void) | null = null
 
 onMounted(async () => {
+  checkForUpdates()
+  appVersion.value = await getVersion().catch(() => '—')
   const appWindow = getCurrentWebviewWindow()
 
   unlistenDrop = await appWindow.onDragDropEvent((event) => {
@@ -150,67 +253,312 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div
+    v-if="updateVersion && !updateDismissed"
+    class="update-banner"
+    role="alert"
+    aria-live="assertive"
+  >
+    <span>{{ t('update.available', { version: updateVersion }) }}</span>
+    <div class="update-actions">
+      <button class="update-btn-install" @click="installUpdate">{{ t('update.install') }}</button>
+      <button
+        class="update-btn-dismiss"
+        :aria-label="t('update.dismiss')"
+        @click="updateDismissed = true"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+  <!-- SETTINGS MODAL -->
+  <Teleport to="body">
+    <div
+      v-if="showSettings"
+      class="settings-overlay"
+      role="dialog"
+      :aria-label="t('settings_page.title')"
+      aria-modal="true"
+      @click.self="showSettings = false"
+      @keydown.escape="showSettings = false"
+    >
+      <div class="settings-modal">
+        <div class="settings-header">
+          <div class="settings-title">{{ t('settings_page.title') }}</div>
+          <button
+            class="settings-close"
+            :aria-label="t('settings_page.close')"
+            @click="showSettings = false"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- Interface -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.interface') }}</div>
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.language') }}</div>
+              <div class="settings-lang-btns">
+                <button
+                  class="lang-choice"
+                  :class="{ active: locale === 'en' }"
+                  @click="setLocale('en')"
+                >
+                  EN
+                </button>
+                <button
+                  class="lang-choice"
+                  :class="{ active: locale === 'fr' }"
+                  @click="setLocale('fr')"
+                >
+                  FR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conversion defaults -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.defaults') }}</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.default_output_dir') }}</div>
+              <div class="settings-folder-row">
+                <div class="settings-folder-path">
+                  {{ settings.outputDirectory ?? t('settings.same_as_source') }}
+                </div>
+                <button class="settings-folder-browse" @click="openFolderPicker">
+                  {{ t('settings.browse') }}
+                </button>
+                <button
+                  v-if="settings.outputDirectory"
+                  class="settings-folder-clear"
+                  :aria-label="t('settings_page.reset_defaults')"
+                  @click="settings.outputDirectory = null"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-quality">
+                {{ t('settings_page.default_quality') }}
+                <span class="settings-val">{{ settings.quality }}%</span>
+              </label>
+              <input
+                id="sp-quality"
+                v-model.number="settings.quality"
+                type="range"
+                min="1"
+                max="100"
+                class="settings-slider"
+              />
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-bitrate">{{
+                t('settings_page.default_bitrate')
+              }}</label>
+              <select id="sp-bitrate" v-model.number="settings.bitrate" class="settings-select">
+                <option :value="64">64 kbps</option>
+                <option :value="128">128 kbps</option>
+                <option :value="192">192 kbps</option>
+                <option :value="256">256 kbps</option>
+                <option :value="320">320 kbps</option>
+              </select>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-codec">{{
+                t('settings_page.default_codec')
+              }}</label>
+              <select id="sp-codec" v-model="settings.videoCodec" class="settings-select">
+                <option value="h264">{{ t('settings.codec_h264') }}</option>
+                <option value="h265">{{ t('settings.codec_h265') }}</option>
+                <option value="vp9">{{ t('settings.codec_vp9') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Behavior -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.behavior') }}</div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-metadata">{{
+                t('settings.preserve_metadata')
+              }}</label>
+              <div
+                id="sp-metadata"
+                class="toggle"
+                :class="{ on: settings.preserveMetadata }"
+                role="switch"
+                tabindex="0"
+                :aria-checked="settings.preserveMetadata"
+                @click="settings.preserveMetadata = !settings.preserveMetadata"
+                @keydown.enter.space.prevent="
+                  settings.preserveMetadata = !settings.preserveMetadata
+                "
+              ></div>
+            </div>
+
+            <div class="settings-row">
+              <label class="settings-row-label" for="sp-overwrite">{{
+                t('settings.overwrite_originals')
+              }}</label>
+              <div
+                id="sp-overwrite"
+                class="toggle"
+                :class="{ on: settings.overwriteOriginals }"
+                role="switch"
+                tabindex="0"
+                :aria-checked="settings.overwriteOriginals"
+                @click="settings.overwriteOriginals = !settings.overwriteOriginals"
+                @keydown.enter.space.prevent="
+                  settings.overwriteOriginals = !settings.overwriteOriginals
+                "
+              ></div>
+            </div>
+          </div>
+
+          <!-- About -->
+          <div class="settings-section">
+            <div class="settings-section-title">{{ t('settings_page.about') }}</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.version') }}</div>
+              <div class="settings-about-val">v{{ appVersion }}</div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.source_code') }}</div>
+              <a
+                class="settings-link"
+                href="https://github.com/Mvth1s/Verto"
+                target="_blank"
+                rel="noopener"
+                >GitHub ↗</a
+              >
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">{{ t('settings_page.changelog') }}</div>
+              <a
+                class="settings-link"
+                href="https://github.com/Mvth1s/Verto/releases"
+                target="_blank"
+                rel="noopener"
+                >Releases ↗</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <div class="shell" role="application" aria-label="Verto Desktop">
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Navigation">
       <div class="brand">
         <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
       </div>
 
-      <div class="nav-label">Convert</div>
-      <nav class="nav">
+      <div class="nav-label" aria-hidden="true">{{ t('nav.convert') }}</div>
+      <nav class="nav" :aria-label="t('nav.convert')">
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'images' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'images'"
+          :aria-label="t('nav.images')"
           @click="setCategory('images')"
+          @keydown.enter.space.prevent="setCategory('images')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="9" cy="9" r="2" />
             <path d="M21 15l-5-5L5 21" />
           </svg>
-          <span>Images</span>
+          <span>{{ t('nav.images') }}</span>
         </div>
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'documents' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'documents'"
+          :aria-label="t('nav.documents')"
           @click="setCategory('documents')"
+          @keydown.enter.space.prevent="setCategory('documents')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <path d="M14 2v6h6" />
             <path d="M8 13h8M8 17h5" />
           </svg>
-          <span>Documents</span>
+          <span>{{ t('nav.documents') }}</span>
         </div>
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'audio' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'audio'"
+          :aria-label="t('nav.audio')"
           @click="setCategory('audio')"
+          @keydown.enter.space.prevent="setCategory('audio')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
           </svg>
-          <span>Audio</span>
+          <span>{{ t('nav.audio') }}</span>
         </div>
-        <div class="nav-item disabled">
-          <svg viewBox="0 0 24 24">
+        <div
+          class="nav-item"
+          :class="{ active: activeCategory === 'video' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'video'"
+          :aria-label="t('nav.video')"
+          @click="setCategory('video')"
+          @keydown.enter.space.prevent="setCategory('video')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="2" y="6" width="14" height="12" rx="2" />
             <path d="M22 8l-6 4 6 4z" />
           </svg>
-          <span>Video</span>
-          <span class="soon">Soon</span>
+          <span>{{ t('nav.video') }}</span>
         </div>
       </nav>
 
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
-        <div class="pill-version"><span class="dot"></span>v0.3.0</div>
-        <button class="icon-btn" aria-label="Settings">
-          <svg viewBox="0 0 24 24">
+        <div class="pill-version"><span class="dot" aria-hidden="true"></span>v0.4.0</div>
+        <button
+          class="icon-btn lang-btn"
+          :aria-label="`Language: ${locale === 'en' ? 'English' : 'Français'}`"
+          :title="locale === 'en' ? 'Switch to French' : 'Passer en anglais'"
+          @click="toggleLocale"
+        >
+          {{ locale.toUpperCase() }}
+        </button>
+        <button
+          class="icon-btn"
+          :aria-label="t('settings_page.title')"
+          @click="showSettings = true"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path
               d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
@@ -224,19 +572,23 @@ onUnmounted(() => {
     <main class="main">
       <div class="main-header">
         <div class="main-title">{{ categoryName }}</div>
-        <div class="main-sub">{{ queueSummary }}</div>
+        <div class="main-sub" aria-live="polite" aria-atomic="true">{{ queueSummary }}</div>
       </div>
 
       <div
         class="dropzone"
         :class="{ dragover: isDragover }"
+        role="button"
+        tabindex="0"
+        :aria-label="t('dropzone.title')"
         @click="openFilePicker"
+        @keydown.enter.space.prevent="openFilePicker"
         @dragenter.prevent="isDragover = true"
         @dragover.prevent="isDragover = true"
         @dragleave.prevent="isDragover = false"
         @drop.prevent="isDragover = false"
       >
-        <div class="drop-icon">
+        <div class="drop-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M12 3v12" />
             <path d="M7 8l5-5 5 5" />
@@ -244,26 +596,26 @@ onUnmounted(() => {
           </svg>
         </div>
         <div>
-          <div class="drop-title">Drop files here</div>
+          <div class="drop-title">{{ t('dropzone.title') }}</div>
           <div class="drop-sub" style="text-align: center; margin-top: 4px">
-            or click to browse · max 100 files at once
+            {{ t('dropzone.sub') }}
           </div>
         </div>
-        <div class="drop-kbd"><kbd>⌘</kbd><kbd>O</kbd></div>
+        <div class="drop-kbd" aria-hidden="true"><kbd>⌘</kbd><kbd>O</kbd></div>
       </div>
 
-      <div v-if="activeQueue.length > 0" class="queue">
+      <div v-if="activeQueue.length > 0" class="queue" role="list" :aria-label="t('queue.title')">
         <div class="queue-header">
-          <div class="queue-title">Queue</div>
+          <div class="queue-title" aria-hidden="true">{{ t('queue.title') }}</div>
           <div class="queue-actions">
             <button
               v-if="activeQueue.some((f) => f.status === 'done')"
               class="queue-clear"
               @click="conversion.clearDone"
             >
-              Clear done
+              {{ t('queue.clear_done') }}
             </button>
-            <div class="queue-meta">{{ queueSummary }}</div>
+            <div class="queue-meta" aria-hidden="true">{{ queueSummary }}</div>
           </div>
         </div>
 
@@ -272,11 +624,28 @@ onUnmounted(() => {
           :key="file.id"
           class="queue-row"
           :class="{ 'with-progress': file.status === 'converting' }"
+          role="listitem"
         >
-          <div class="ftype">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
+          <img
+            v-if="activeCategory === 'images' && !thumbErrors[file.id]"
+            :src="convertFileSrc(file.path)"
+            class="thumb-img"
+            :alt="file.inputFormat.toUpperCase()"
+            loading="lazy"
+            @error="onThumbError(file.id)"
+          />
+          <img
+            v-else-if="activeCategory === 'video' && videoThumbs[file.id]"
+            :src="videoThumbs[file.id]"
+            class="thumb-img"
+            :alt="file.inputFormat.toUpperCase()"
+          />
+          <div v-else class="ftype" aria-hidden="true">
+            {{ file.inputFormat.toUpperCase().slice(0, 4) }}
+          </div>
           <div class="fname">
             <span>{{ file.name }}</span>
-            <span class="arrow">→</span>
+            <span class="arrow" aria-hidden="true">→</span>
             <span class="to"
               >{{ file.name.replace(/\.[^/.]+$/, '') }}.{{ settings.outputFormat }}</span
             >
@@ -288,44 +657,54 @@ onUnmounted(() => {
               progress: file.status === 'converting',
               error: file.status === 'error',
             }"
+            aria-live="polite"
           >
             <template v-if="file.status === 'done'">
               {{ formatPercent(file.inputSize!, file.outputSize!) }}
             </template>
-            <template v-else-if="file.status === 'converting'"> converting… </template>
-            <template v-else-if="file.status === 'error'"> error </template>
-            <template v-else> waiting </template>
+            <template v-else-if="file.status === 'converting'">{{
+              t('queue.converting')
+            }}</template>
+            <template v-else-if="file.status === 'error'">{{ t('queue.error') }}</template>
+            <template v-else>{{ t('queue.waiting') }}</template>
           </div>
           <div
             class="qaction"
             :class="{ check: file.status === 'done', retry: file.status === 'error' }"
             role="button"
-            :title="
+            tabindex="0"
+            :aria-label="
               file.status === 'error'
-                ? `Retry · ${file.error}`
-                : file.status === 'waiting'
-                  ? 'Remove'
+                ? t('actions.retry', { error: file.error })
+                : file.status === 'waiting' || file.status === 'done'
+                  ? t('actions.remove')
                   : undefined
             "
             @click="handleQueueAction(file.id, file.status)"
+            @keydown.enter.space.prevent="handleQueueAction(file.id, file.status)"
           >
-            <svg v-if="file.status === 'done'" viewBox="0 0 24 24">
+            <svg v-if="file.status === 'done'" viewBox="0 0 24 24" aria-hidden="true">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24">
+            <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 8v4l3 2" />
             </svg>
-            <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24">
+            <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24" aria-hidden="true">
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
             </svg>
-            <svg v-else viewBox="0 0 24 24">
+            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </div>
-          <div v-if="file.status === 'converting'" class="progress-row">
+          <div
+            v-if="file.status === 'converting'"
+            class="progress-row"
+            role="progressbar"
+            :aria-label="file.name"
+          >
             <div class="bar indeterminate"></div>
           </div>
         </div>
@@ -333,27 +712,46 @@ onUnmounted(() => {
     </main>
 
     <!-- RIGHT PANEL -->
-    <aside class="panel">
-      <div class="panel-title">Output settings</div>
+    <aside class="panel" :aria-label="t('settings.title')">
+      <div class="panel-title" aria-hidden="true">{{ t('settings.title') }}</div>
 
       <div class="field">
-        <div class="field-label">Format</div>
-        <select v-model="settings.outputFormat" class="select">
+        <label class="field-label" for="format-select">{{ t('settings.format') }}</label>
+        <select id="format-select" v-model="settings.outputFormat" class="select">
           <option v-for="fmt in activeFormats" :key="fmt" :value="fmt">
             {{ fmt.toUpperCase() }}
           </option>
         </select>
       </div>
 
-      <div v-if="activeCategory === 'audio'" class="field">
-        <div class="field-label">
-          <span>Bitrate</span>
-          <span class="val">{{ settings.bitrate }} kbps</span>
+      <div v-if="activeCategory === 'images'" class="field">
+        <div id="presets-label" class="field-label">{{ t('settings.presets') }}</div>
+        <div class="presets" role="group" :aria-labelledby="'presets-label'">
+          <button class="preset-btn" @click="applyPreset('web')">
+            {{ t('settings.preset_web') }}
+          </button>
+          <button class="preset-btn" @click="applyPreset('print')">
+            {{ t('settings.preset_print') }}
+          </button>
+          <button class="preset-btn" @click="applyPreset('lossless')">
+            {{ t('settings.preset_lossless') }}
+          </button>
         </div>
+      </div>
+
+      <div v-if="activeCategory === 'audio'" class="field">
+        <label class="field-label" for="bitrate-select">
+          <span>{{ t('settings.bitrate') }}</span>
+          <span class="val">{{ settings.bitrate }} kbps</span>
+        </label>
         <select
+          id="bitrate-select"
           v-model.number="settings.bitrate"
           class="select"
           :disabled="['flac', 'wav'].includes(settings.outputFormat)"
+          :aria-describedby="
+            ['flac', 'wav'].includes(settings.outputFormat) ? 'bitrate-hint' : undefined
+          "
         >
           <option :value="64">64 kbps</option>
           <option :value="128">128 kbps</option>
@@ -361,78 +759,187 @@ onUnmounted(() => {
           <option :value="256">256 kbps</option>
           <option :value="320">320 kbps</option>
         </select>
-        <div v-if="['flac', 'wav'].includes(settings.outputFormat)" class="field-hint">
-          Bitrate applies to lossy formats only
+        <div
+          v-if="['flac', 'wav'].includes(settings.outputFormat)"
+          id="bitrate-hint"
+          class="field-hint"
+        >
+          {{ t('settings.bitrate_lossy_only') }}
         </div>
       </div>
 
+      <div v-if="activeCategory === 'video'" class="field">
+        <label class="field-label" for="codec-select">{{ t('settings.codec') }}</label>
+        <select id="codec-select" v-model="settings.videoCodec" class="select">
+          <option v-for="c in availableCodecs" :key="c" :value="c">
+            {{ t(`settings.codec_${c}`) }}
+          </option>
+        </select>
+      </div>
+
       <div v-if="activeCategory === 'images'" class="field">
-        <div class="field-label">
-          <span>Quality</span>
+        <label class="field-label" for="quality-slider">
+          <span>{{ t('settings.quality') }}</span>
           <span class="val">{{ settings.quality }}%</span>
-        </div>
+        </label>
         <div class="slider-track-wrap">
           <input
+            id="quality-slider"
             v-model.number="settings.quality"
             class="slider"
             type="range"
             min="1"
             max="100"
             :disabled="!['jpeg', 'jpg'].includes(settings.outputFormat)"
+            :aria-valuemin="1"
+            :aria-valuemax="100"
+            :aria-valuenow="settings.quality"
+            :aria-describedby="
+              !['jpeg', 'jpg'].includes(settings.outputFormat) ? 'quality-hint' : undefined
+            "
           />
         </div>
-        <div class="ticks"><span>1</span><span>50</span><span>100</span></div>
-        <div v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)" class="field-hint">
-          Quality applies to JPEG only
+        <div class="ticks" aria-hidden="true"><span>1</span><span>50</span><span>100</span></div>
+        <div
+          v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)"
+          id="quality-hint"
+          class="field-hint"
+        >
+          {{ t('settings.quality_jpeg_only') }}
         </div>
       </div>
 
-      <div class="field">
-        <div class="field-label">Output folder</div>
-        <div class="folder-row">
-          <div class="folder-path">
-            {{ settings.outputDirectory ?? 'Same as source' }}
+      <div v-if="activeCategory === 'images' || activeCategory === 'video'" class="field">
+        <div class="field-label">
+          <span>{{ t('settings.resize') }}</span>
+          <div
+            class="toggle"
+            :class="{ on: settings.resizeEnabled }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.resizeEnabled"
+            :aria-label="t('settings.resize')"
+            @click="settings.resizeEnabled = !settings.resizeEnabled"
+            @keydown.enter.space.prevent="settings.resizeEnabled = !settings.resizeEnabled"
+          ></div>
+        </div>
+        <template v-if="settings.resizeEnabled">
+          <div class="resize-row">
+            <input
+              v-model.number="settings.resizeWidth"
+              class="resize-input"
+              type="number"
+              placeholder="W"
+              min="1"
+              :aria-label="`${t('settings.resize')} width`"
+            />
+            <button
+              class="ratio-btn"
+              :class="{ active: settings.keepAspectRatio }"
+              :aria-pressed="settings.keepAspectRatio"
+              :aria-label="
+                settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')
+              "
+              :title="
+                settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')
+              "
+              @click="settings.keepAspectRatio = !settings.keepAspectRatio"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <path v-if="settings.keepAspectRatio" d="M7 11V7a5 5 0 0 1 10 0v4" />
+                <path v-else d="M7 11V7a5 5 0 0 1 4.9-5M17 11V7a5 5 0 0 0-1.9-3.9" />
+              </svg>
+            </button>
+            <input
+              v-model.number="settings.resizeHeight"
+              class="resize-input"
+              type="number"
+              placeholder="H"
+              min="1"
+              :disabled="settings.keepAspectRatio"
+              :aria-label="`${t('settings.resize')} height`"
+            />
           </div>
-          <button class="folder-browse" @click="openFolderPicker">Browse</button>
+          <div class="field-hint">
+            {{ settings.keepAspectRatio ? t('settings.width_hint') : t('settings.exact_hint') }}
+          </div>
+        </template>
+      </div>
+
+      <div class="field">
+        <div id="folder-label" class="field-label">{{ t('settings.output_folder') }}</div>
+        <div class="folder-row" role="group" aria-labelledby="folder-label">
+          <div
+            class="folder-path"
+            :title="settings.outputDirectory ?? t('settings.same_as_source')"
+          >
+            {{ settings.outputDirectory ?? t('settings.same_as_source') }}
+          </div>
+          <button class="folder-browse" @click="openFolderPicker">
+            {{ t('settings.browse') }}
+          </button>
         </div>
       </div>
 
       <div class="field">
         <div class="toggle-row">
-          <div class="toggle-label">Preserve metadata</div>
+          <label class="toggle-label" for="toggle-metadata">{{
+            t('settings.preserve_metadata')
+          }}</label>
           <div
+            id="toggle-metadata"
             class="toggle"
             :class="{ on: settings.preserveMetadata }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.preserveMetadata"
+            :aria-label="t('settings.preserve_metadata')"
             @click="settings.preserveMetadata = !settings.preserveMetadata"
+            @keydown.enter.space.prevent="settings.preserveMetadata = !settings.preserveMetadata"
           ></div>
         </div>
         <div class="toggle-row" style="margin-top: 8px">
-          <div class="toggle-label">Overwrite originals</div>
+          <label class="toggle-label" for="toggle-overwrite">{{
+            t('settings.overwrite_originals')
+          }}</label>
           <div
+            id="toggle-overwrite"
             class="toggle"
             :class="{ on: settings.overwriteOriginals }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.overwriteOriginals"
+            :aria-label="t('settings.overwrite_originals')"
             @click="settings.overwriteOriginals = !settings.overwriteOriginals"
+            @keydown.enter.space.prevent="
+              settings.overwriteOriginals = !settings.overwriteOriginals
+            "
           ></div>
         </div>
       </div>
 
       <div class="panel-spacer"></div>
 
-      <div class="summary">
+      <div class="summary" aria-label="Conversion summary">
         <div class="summary-item">
-          <div class="summary-key">Files</div>
-          <div class="summary-val">{{ activeQueue.length }}</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.files') }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.files')}: ${activeQueue.length}`">
+            {{ activeQueue.length }}
+          </div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Waiting</div>
-          <div class="summary-val">{{ activeWaiting.length }}</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.waiting') }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.waiting')}: ${activeWaiting.length}`">
+            {{ activeWaiting.length }}
+          </div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Format</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.format') }}</div>
           <div class="summary-val">{{ settings.outputFormat.toUpperCase() }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Saved</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.saved') }}</div>
           <div class="summary-val">{{ formatBytes(conversion.totalSaved) }}</div>
         </div>
       </div>
@@ -441,17 +948,23 @@ onUnmounted(() => {
         v-if="!conversion.isConverting"
         class="btn-primary"
         :disabled="activeWaiting.length === 0"
+        :aria-label="`${t('actions.convert')} ${activeWaiting.length} ${t('summary.waiting').toLowerCase()}`"
         @click="conversion.convertAll(activeFileCategory)"
       >
-        <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 8" /></svg>
-        <span>Convert</span>
-        <span class="shortcut">⌘↵</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 8" /></svg>
+        <span>{{ t('actions.convert') }}</span>
+        <span class="shortcut" aria-hidden="true">⌘↵</span>
       </button>
-      <button v-else class="btn-cancel" @click="conversion.cancelConversion">
-        <svg viewBox="0 0 24 24">
+      <button
+        v-else
+        class="btn-cancel"
+        :aria-label="t('actions.cancel')"
+        @click="conversion.cancelConversion"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="6" y="6" width="12" height="12" rx="1" />
         </svg>
-        <span>Cancel</span>
+        <span>{{ t('actions.cancel') }}</span>
       </button>
     </aside>
   </div>
@@ -823,7 +1336,7 @@ body {
 }
 .queue-row {
   display: grid;
-  grid-template-columns: 24px 1fr 80px 22px;
+  grid-template-columns: 32px 1fr 80px 22px;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -834,9 +1347,9 @@ body {
   border-top: none;
 }
 .queue-row .ftype {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
   background: var(--surface-2);
   display: grid;
   place-items: center;
@@ -844,6 +1357,14 @@ body {
   font-size: 9px;
   color: var(--text-2);
   font-weight: 500;
+}
+.thumb-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 5px;
+  display: block;
+  border: 1px solid var(--border-soft);
 }
 .queue-row .fname {
   font-family: 'JetBrains Mono', monospace;
@@ -934,7 +1455,7 @@ body {
   }
 }
 .queue-row.with-progress {
-  grid-template-columns: 24px 1fr 80px 22px;
+  grid-template-columns: 32px 1fr 80px 22px;
   grid-template-rows: auto auto;
 }
 
@@ -1238,11 +1759,415 @@ body {
   fill: currentColor;
 }
 
+/* Quality presets */
+.presets {
+  display: flex;
+  gap: 6px;
+}
+.preset-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.preset-btn:hover {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+
+/* Resize */
+.resize-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.resize-input {
+  width: 0;
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.resize-input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.resize-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* hide number spinner arrows */
+.resize-input::-webkit-inner-spin-button,
+.resize-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+.resize-input[type='number'] {
+  -moz-appearance: textfield;
+}
+.ratio-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-3);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.ratio-btn.active {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+.ratio-btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
 .qaction.retry {
   color: var(--accent-bright);
 }
 .qaction.retry:hover {
   background: var(--accent-soft);
   color: var(--accent-bright);
+}
+
+/* Language toggle button */
+.lang-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  padding: 0 6px;
+  width: auto;
+}
+.lang-btn:hover {
+  color: var(--accent-bright);
+}
+
+/* Keyboard focus ring — visible for all focusable elements */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Update banner */
+.update-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+.update-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.update-btn-install {
+  background: var(--accent);
+  color: #052e22;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-btn-install:hover {
+  background: var(--accent-bright);
+}
+.update-btn-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.update-btn-dismiss:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Settings modal ─────────────────────────────────────────────────── */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.settings-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.settings-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 5px;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.settings-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.settings-close svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+.settings-body {
+  overflow-y: auto;
+  padding: 8px 0 16px;
+}
+.settings-section {
+  padding: 12px 20px;
+}
+.settings-section + .settings-section {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 4px;
+  padding-top: 16px;
+}
+.settings-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+}
+.settings-row-label {
+  font-size: 13px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.settings-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.settings-slider {
+  flex: 1;
+  max-width: 160px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.settings-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.settings-select {
+  flex: 1;
+  max-width: 160px;
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  padding-right: 28px;
+}
+.settings-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.settings-lang-btns {
+  display: flex;
+  gap: 4px;
+}
+.lang-choice {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition:
+    background 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+.lang-choice.active {
+  background: var(--accent-soft);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-bright);
+}
+.settings-folder-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.settings-folder-path {
+  flex: 1;
+  padding: 7px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.settings-folder-browse {
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-folder-browse:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.settings-folder-clear {
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.settings-folder-clear:hover {
+  color: var(--danger);
+}
+.settings-about-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.settings-link {
+  font-size: 12px;
+  color: var(--accent-bright);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+.settings-link:hover {
+  text-decoration: underline;
 }
 </style>

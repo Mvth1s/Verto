@@ -98,6 +98,364 @@ pub async fn convert(
     })
 }
 
+const AVIF_FORMATS: &[&str] = &["avif"];
+
+pub const VIDEO_FORMATS: &[&str] = &["mp4", "mkv", "webm", "mov"];
+pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "vp9"];
+
+fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
+    match codec {
+        "h264" => Ok("libx264"),
+        "h265" => Ok("libx265"),
+        "vp9" => Ok("libvpx-vp9"),
+        other => Err(format!("Unsupported codec: {}", other)),
+    }
+}
+
+fn audio_codec_for_format(output_format: &str) -> &'static str {
+    match output_format {
+        "webm" => "libopus",
+        _ => "aac",
+    }
+}
+
+pub async fn convert_video(
+    app: &tauri::AppHandle,
+    input_path: &str,
+    output_format: &str,
+    output_path: &str,
+    codec: Option<&str>,
+    resolution_width: Option<u32>,
+    resolution_height: Option<u32>,
+) -> Result<ConversionResult, String> {
+    if !std::path::Path::new(input_path).exists() {
+        return Err(format!("Input file not found: {}", input_path));
+    }
+
+    if !VIDEO_FORMATS.contains(&output_format) {
+        return Err(format!(
+            "Unsupported video format: {}. Allowed: {}",
+            output_format,
+            VIDEO_FORMATS.join(", ")
+        ));
+    }
+
+    if let Some(c) = codec {
+        if !VIDEO_CODECS.contains(&c) {
+            return Err(format!(
+                "Unsupported codec: {}. Allowed: {}",
+                c,
+                VIDEO_CODECS.join(", ")
+            ));
+        }
+    }
+
+    let input_size = std::fs::metadata(input_path)
+        .map_err(|e| format!("Failed to read input metadata: {}", e))?
+        .len();
+
+    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+
+    // Video codec
+    let codec_name = codec.unwrap_or("h264");
+    let vcodec = video_codec_flag(codec_name)?;
+    args.push("-c:v".to_string());
+    args.push(vcodec.to_string());
+
+    // VP9 constant-quality mode requires -b:v 0
+    if codec_name == "vp9" {
+        args.push("-b:v".to_string());
+        args.push("0".to_string());
+    }
+
+    // Resolution scale filter
+    match (resolution_width, resolution_height) {
+        (Some(w), Some(h)) => {
+            args.push("-vf".to_string());
+            args.push(format!("scale={}:{}", w, h));
+        }
+        (Some(w), None) => {
+            args.push("-vf".to_string());
+            args.push(format!("scale={}:-2", w));
+        }
+        (None, Some(h)) => {
+            args.push("-vf".to_string());
+            args.push(format!("scale=-2:{}", h));
+        }
+        (None, None) => {}
+    }
+
+    // Audio codec
+    args.push("-c:a".to_string());
+    args.push(audio_codec_for_format(output_format).to_string());
+
+    args.push(output_path.to_string());
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("ffmpeg")
+        .map_err(|e| e.to_string())?
+        .args(&args)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    let mut stderr_buf = String::new();
+    let mut exit_code: Option<i32> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stderr(line) => {
+                stderr_buf.push_str(&String::from_utf8_lossy(&line));
+            }
+            CommandEvent::Terminated(payload) => {
+                exit_code = payload.code;
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    if exit_code != Some(0) {
+        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+    }
+
+    let output_size = std::fs::metadata(output_path)
+        .map_err(|e| format!("Failed to read output metadata: {}", e))?
+        .len();
+
+    Ok(ConversionResult {
+        output_path: output_path.to_string(),
+        input_size,
+        output_size,
+    })
+}
+
+pub async fn convert_image(
+    app: &tauri::AppHandle,
+    input_path: &str,
+    output_format: &str,
+    output_path: &str,
+    resize: Option<(Option<u32>, Option<u32>)>,
+) -> Result<ConversionResult, String> {
+    if !std::path::Path::new(input_path).exists() {
+        return Err(format!("Input file not found: {}", input_path));
+    }
+
+    if !AVIF_FORMATS.contains(&output_format) {
+        return Err(format!(
+            "ffmpeg image converter only handles: {}",
+            AVIF_FORMATS.join(", ")
+        ));
+    }
+
+    let input_size = std::fs::metadata(input_path)
+        .map_err(|e| format!("Failed to read input metadata: {}", e))?
+        .len();
+
+    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+
+    if let Some((w, h)) = resize {
+        let scale = match (w, h) {
+            (Some(w), Some(h)) => format!("scale={}:{}", w, h),
+            (Some(w), None) => format!("scale={}:-2", w),
+            (None, Some(h)) => format!("scale=-2:{}", h),
+            (None, None) => unreachable!(),
+        };
+        args.push("-vf".to_string());
+        args.push(scale);
+    }
+
+    args.push(output_path.to_string());
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("ffmpeg")
+        .map_err(|e| e.to_string())?
+        .args(&args)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    let mut stderr_buf = String::new();
+    let mut exit_code: Option<i32> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stderr(line) => {
+                stderr_buf.push_str(&String::from_utf8_lossy(&line));
+            }
+            CommandEvent::Terminated(payload) => {
+                exit_code = payload.code;
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    if exit_code != Some(0) {
+        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+    }
+
+    let output_size = std::fs::metadata(output_path)
+        .map_err(|e| format!("Failed to read output metadata: {}", e))?
+        .len();
+
+    Ok(ConversionResult {
+        output_path: output_path.to_string(),
+        input_size,
+        output_size,
+    })
+}
+
+#[cfg(test)]
+mod video_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn ffmpeg_bin() -> Option<PathBuf> {
+        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries");
+        [
+            "ffmpeg-x86_64-unknown-linux-gnu",
+            "ffmpeg-aarch64-unknown-linux-gnu",
+            "ffmpeg-x86_64-apple-darwin",
+            "ffmpeg-aarch64-apple-darwin",
+            "ffmpeg-x86_64-pc-windows-msvc.exe",
+        ]
+        .iter()
+        .map(|name| base.join(name))
+        .find(|p| p.exists() && p.metadata().map(|m| m.len() > 0).unwrap_or(false))
+    }
+
+    // ── Format / codec validation ─────────────────────────────────────────────
+
+    #[test]
+    fn test_video_formats_list() {
+        assert!(VIDEO_FORMATS.contains(&"mp4"));
+        assert!(VIDEO_FORMATS.contains(&"mkv"));
+        assert!(VIDEO_FORMATS.contains(&"webm"));
+        assert!(VIDEO_FORMATS.contains(&"mov"));
+    }
+
+    #[test]
+    fn test_video_codecs_list() {
+        assert!(VIDEO_CODECS.contains(&"h264"));
+        assert!(VIDEO_CODECS.contains(&"h265"));
+        assert!(VIDEO_CODECS.contains(&"vp9"));
+    }
+
+    #[test]
+    fn test_codec_flag_h264() {
+        assert_eq!(video_codec_flag("h264").unwrap(), "libx264");
+    }
+
+    #[test]
+    fn test_codec_flag_h265() {
+        assert_eq!(video_codec_flag("h265").unwrap(), "libx265");
+    }
+
+    #[test]
+    fn test_codec_flag_vp9() {
+        assert_eq!(video_codec_flag("vp9").unwrap(), "libvpx-vp9");
+    }
+
+    #[test]
+    fn test_codec_flag_unknown() {
+        assert!(video_codec_flag("xvid").is_err());
+    }
+
+    #[test]
+    fn test_audio_codec_webm() {
+        assert_eq!(audio_codec_for_format("webm"), "libopus");
+    }
+
+    #[test]
+    fn test_audio_codec_mp4() {
+        assert_eq!(audio_codec_for_format("mp4"), "aac");
+    }
+
+    #[test]
+    fn test_audio_codec_mkv() {
+        assert_eq!(audio_codec_for_format("mkv"), "aac");
+    }
+
+    // ── Integration: real FFmpeg ──────────────────────────────────────────────
+
+    fn create_minimal_mp4(path: &PathBuf) {
+        let ffmpeg = match ffmpeg_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        // Generate a 1-second color video with silent audio
+        std::process::Command::new(&ffmpeg)
+            .args([
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=black:size=64x64:rate=1:duration=1",
+                "-f",
+                "lavfi",
+                "-i",
+                "anullsrc=r=44100:cl=mono",
+                "-t",
+                "1",
+                "-c:v",
+                "libx264",
+                "-c:a",
+                "aac",
+                "-shortest",
+                path.to_str().unwrap(),
+            ])
+            .output()
+            .ok();
+    }
+
+    #[test]
+    fn test_mp4_to_mkv() {
+        let ffmpeg = match ffmpeg_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        let input = std::env::temp_dir().join("verto_test_video_input.mp4");
+        create_minimal_mp4(&input);
+        if !input.exists() {
+            return;
+        }
+
+        let output = std::env::temp_dir().join("verto_test_video_mp4_to_mkv.mkv");
+        let status = std::process::Command::new(&ffmpeg)
+            .args([
+                "-y",
+                "-i",
+                input.to_str().unwrap(),
+                "-c:v",
+                "libx264",
+                "-c:a",
+                "aac",
+                output.to_str().unwrap(),
+            ])
+            .status()
+            .expect("ffmpeg failed");
+
+        assert!(status.success());
+        assert!(output.exists());
+        let _ = std::fs::remove_file(&output);
+        let _ = std::fs::remove_file(&input);
+    }
+
+    #[test]
+    fn test_nonexistent_video_input() {
+        let ffmpeg = match ffmpeg_bin() {
+            Some(p) => p,
+            None => return,
+        };
+        let status = std::process::Command::new(&ffmpeg)
+            .args(["-y", "-i", "/nonexistent/video.mp4", "/tmp/out.mkv"])
+            .status()
+            .expect("ffmpeg process failed");
+        assert!(!status.success());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

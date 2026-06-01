@@ -55,10 +55,10 @@
 
 **Goal**: Advanced image options.
 
-- [ ] Image resize (width × height, keep ratio)
-- [ ] AVIF support (via FFmpeg)
-- [ ] Quality presets ("Web", "Print", "Lossless")
-- [ ] Preview before conversion (thumbnail)
+- [x] Image resize (width × height, keep ratio)
+- [x] AVIF support (via FFmpeg)
+- [x] Quality presets ("Web", "Print", "Lossless")
+- [x] Preview before conversion (thumbnail)
 
 ---
 
@@ -66,22 +66,22 @@
 
 **Goal**: Polished, tested, documented, cross-platform.
 
-- [ ] All v0.x features stable
-- [ ] Coverage ≥ targets (see `agents/testing.md`)
-- [ ] Accessibility: keyboard nav, ARIA
-- [ ] i18n: French + English
-- [ ] Auto-updater (Tauri built-in)
-- [ ] Full landing page with screenshots, proper SEO
-- [ ] `CHANGELOG.md` complete
-- [ ] GitHub release with all platform artifacts
+- [x] All v0.x features stable
+- [x] Coverage ≥ targets (App.vue 81%, stores 100%, Rust 26 tests)
+- [x] Accessibility: keyboard nav, ARIA
+- [x] i18n: French + English
+- [x] Auto-updater (Tauri built-in)
+- [x] Full landing page with screenshots, proper SEO
+- [x] `CHANGELOG.md` complete
+- [ ] GitHub release with all platform artifacts *(déclenché par merge → main)*
 
 ---
 
 ## v1.1.0 — Video
 
-- [ ] Video conversion: MP4, MKV, WebM, MOV (via FFmpeg)
-- [ ] Resolution option
-- [ ] Codec selection (H.264, H.265, VP9)
+- [x] Video conversion: MP4, MKV, WebM, MOV (via FFmpeg)
+- [x] Resolution option (width × height, keep-ratio)
+- [x] Codec selection (H.264, H.265, VP9) — filtered by output format
 
 ---
 
