@@ -71,18 +71,17 @@ apps/desktop/
 ├── src-tauri/          # Crate Rust (Cargo.toml, build.rs, tauri.conf.json)
 │   ├── src/
 │   │   ├── main.rs
-│   │   ├── lib.rs
-│   │   ├── commands/   # Tauri commands (convert_image, convert_doc, …)
+│   │   ├── lib.rs      # Tauri builder + invoke_handler registration
+│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, fs.rs
 │   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
 │   └── capabilities/
 │       └── default.json
 ├── ui/                 # Vue 3 frontend
 │   ├── index.html
 │   └── src/
-│       ├── components/
-│       ├── views/
-│       ├── stores/
-│       └── composables/
+│       ├── App.vue     # Single-component UI (no components/ or views/ split yet)
+│       ├── main.ts
+│       └── stores/     # Pinia stores: conversion.ts, settings.ts
 ├── vite.config.ts      # root: 'ui' — pointe Vite vers ui/
 ├── package.json        # workspace package "desktop"
 └── tsconfig*.json
@@ -92,33 +91,44 @@ apps/desktop/
 
 ```
 User (Vue 3 UI)
-     │  invoke('convert_image', { ... })
+     │  invoke('convert_image' | 'convert_audio' | 'convert_document' | 'list_directory', { ... })
      ▼
 Tauri IPC bridge
      ▼
-Rust command (src-tauri/src/commands/image.rs)
+Rust command (src-tauri/src/commands/*.rs)
      ├── Native: image crate (JPEG, PNG, WebP, BMP, TIFF, GIF)
-     └── Sidecar: FFmpeg (AVIF, HEIF, audio, video) / Pandoc (documents)
+     └── Sidecar: FFmpeg (AVIF, audio, video) / Pandoc (documents)
      ▼
 Result<ConversionResult, String> → back to Vue
 ```
+
+### Tauri commands
+
+| Command | File | Delegates to |
+|---|---|---|
+| `convert_image` | `commands/image.rs` | `converters/image.rs` or `converters/ffmpeg.rs` (AVIF) |
+| `convert_audio` | `commands/audio.rs` | `converters/ffmpeg.rs` |
+| `convert_document` | `commands/document.rs` | `converters/pandoc.rs` |
+| `list_directory` | `commands/fs.rs` | `std::fs` (max 1000 files) |
 
 ### Conversion strategy
 
 | Format type | Tool |
 |---|---|
 | JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
-| AVIF, HEIF | FFmpeg sidecar |
-| PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF | Pandoc sidecar |
-| Audio (v0.3+) | FFmpeg sidecar |
+| AVIF | FFmpeg sidecar |
+| PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF, RST, ODT, EPUB | Pandoc sidecar |
+| Audio: MP3, FLAC, OGG, WAV, AAC (v0.3+) | FFmpeg sidecar |
 | Video (v1.1+) | FFmpeg sidecar |
 
 ### Pinia stores (desktop)
 
-| Store | State |
+| Store | Key state |
 |---|---|
-| `useConversionStore` | queue, progress per file, history |
-| `useSettingsStore` | default output format, output dir, theme |
+| `useConversionStore` | `queue` (FileItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
+| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
+
+`FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio`), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
 
 ### CI/CD
 
@@ -152,7 +162,6 @@ Conventional Commits enforced by Commitlint + Husky:
 - Component internal order: imports → props/emits → stores → reactive state → computed → functions → lifecycle hooks
 - Components in `components/` are kebab-case files, PascalCase in templates
 - Views (routes) in `views/`, reusable logic in `composables/use*.ts`
-- All user-facing text goes through i18n keys
 
 ### Design system (Tailwind tokens)
 
@@ -174,8 +183,11 @@ import { invoke } from '@tauri-apps/api/core'
 
 const result = await invoke<ConversionResult>('convert_image', {
   inputPath: '/path/to/file.png',
-  outputFormat: 'webp',
+  outputFormat: 'avif',
   quality: 85,
+  resizeWidth: 1920,
+  resizeHeight: null,   // null = keep aspect ratio
+  outputPath: '/path/to/file.avif',
 })
 ```
 
@@ -188,7 +200,7 @@ Always type the return value. Handle errors with try/catch and surface them in t
 - Tauri commands always return `Result<T, String>` (String errors serialize automatically)
 - No `unwrap()` in production code — use `?` or explicit error handling
 - No blocking calls on the main thread — use `async`
-- Validate all input paths (no path traversal)
+- Validate all input paths (no path traversal); paths must be absolute
 - Never delete source files automatically
 
 #### Tauri command pattern
@@ -196,9 +208,12 @@ Always type the return value. Handle errors with try/catch and surface them in t
 ```rust
 #[tauri::command]
 pub async fn convert_image(
+    app: tauri::AppHandle,
     input_path: String,
     output_format: String,
     quality: Option<u8>,
+    resize_width: Option<u32>,
+    resize_height: Option<u32>,
     output_path: Option<String>,
 ) -> Result<ConversionResult, String> {
     // validate → convert → map errors to String
@@ -208,8 +223,8 @@ pub async fn convert_image(
 #### Sidecar pattern (FFmpeg / Pandoc)
 
 ```rust
-let sidecar_command = app.shell().sidecar("ffmpeg").unwrap();
-let (mut rx, mut child) = sidecar_command
+let sidecar_cmd = app.shell().sidecar("ffmpeg").map_err(|e| e.to_string())?;
+let (mut rx, mut child) = sidecar_cmd
     .args(["-i", &input, "-q:v", "2", &output])
     .spawn()
     .map_err(|e| e.to_string())?;
@@ -242,7 +257,7 @@ For cross-domain tasks (e.g. "add WebP conversion with UI"): backend first (Rust
 
 ## Definition of done
 
-- [ ] `cargo test` passes
+- [ ] `cargo test --lib` passes (use `--lib` to avoid the libLLVM system error)
 - [ ] `pnpm test` passes
 - [ ] `pnpm lint` returns no errors
 - [ ] Feature works on Linux (primary target), tested manually

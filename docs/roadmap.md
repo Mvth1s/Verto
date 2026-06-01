@@ -55,10 +55,10 @@
 
 **Goal**: Advanced image options.
 
-- [ ] Image resize (width × height, keep ratio)
-- [ ] AVIF support (via FFmpeg)
-- [ ] Quality presets ("Web", "Print", "Lossless")
-- [ ] Preview before conversion (thumbnail)
+- [x] Image resize (width × height, keep ratio)
+- [x] AVIF support (via FFmpeg)
+- [x] Quality presets ("Web", "Print", "Lossless")
+- [x] Preview before conversion (thumbnail)
 
 ---
 

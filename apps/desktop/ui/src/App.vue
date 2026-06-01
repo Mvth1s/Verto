@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
@@ -13,6 +14,11 @@ const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
 
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
+const thumbErrors = ref<Record<string, true>>({})
+
+function onThumbError(id: string) {
+  thumbErrors.value[id] = true
+}
 
 const conversion = useConversionStore()
 const settings = useSettingsStore()
@@ -286,7 +292,14 @@ onUnmounted(() => {
           class="queue-row"
           :class="{ 'with-progress': file.status === 'converting' }"
         >
-          <div class="ftype">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
+          <img
+            v-if="activeCategory === 'images' && !thumbErrors[file.id]"
+            :src="convertFileSrc(file.path)"
+            class="thumb-img"
+            loading="lazy"
+            @error="onThumbError(file.id)"
+          />
+          <div v-else class="ftype">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
           <div class="fname">
             <span>{{ file.name }}</span>
             <span class="arrow">→</span>
@@ -894,7 +907,7 @@ body {
 }
 .queue-row {
   display: grid;
-  grid-template-columns: 24px 1fr 80px 22px;
+  grid-template-columns: 32px 1fr 80px 22px;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -905,9 +918,9 @@ body {
   border-top: none;
 }
 .queue-row .ftype {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
   background: var(--surface-2);
   display: grid;
   place-items: center;
@@ -915,6 +928,14 @@ body {
   font-size: 9px;
   color: var(--text-2);
   font-weight: 500;
+}
+.thumb-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 5px;
+  display: block;
+  border: 1px solid var(--border-soft);
 }
 .queue-row .fname {
   font-family: 'JetBrains Mono', monospace;
@@ -1005,7 +1026,7 @@ body {
   }
 }
 .queue-row.with-progress {
-  grid-template-columns: 24px 1fr 80px 22px;
+  grid-template-columns: 32px 1fr 80px 22px;
   grid-template-rows: auto auto;
 }
 
