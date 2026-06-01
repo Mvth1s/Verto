@@ -209,7 +209,13 @@ onUnmounted(() => {
     <span>{{ t('update.available', { version: updateVersion }) }}</span>
     <div class="update-actions">
       <button class="update-btn-install" @click="installUpdate">{{ t('update.install') }}</button>
-      <button class="update-btn-dismiss" :aria-label="t('update.dismiss')" @click="updateDismissed = true">✕</button>
+      <button
+        class="update-btn-dismiss"
+        :aria-label="t('update.dismiss')"
+        @click="updateDismissed = true"
+      >
+        ✕
+      </button>
     </div>
   </div>
   <div class="shell" role="application" aria-label="Verto Desktop">
@@ -291,7 +297,9 @@ onUnmounted(() => {
           :aria-label="`Language: ${locale === 'en' ? 'English' : 'Français'}`"
           :title="locale === 'en' ? 'Switch to French' : 'Passer en anglais'"
           @click="toggleLocale"
-        >{{ locale.toUpperCase() }}</button>
+        >
+          {{ locale.toUpperCase() }}
+        </button>
         <button class="icon-btn" aria-label="Settings">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
@@ -369,7 +377,9 @@ onUnmounted(() => {
             loading="lazy"
             @error="onThumbError(file.id)"
           />
-          <div v-else class="ftype" aria-hidden="true">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
+          <div v-else class="ftype" aria-hidden="true">
+            {{ file.inputFormat.toUpperCase().slice(0, 4) }}
+          </div>
           <div class="fname">
             <span>{{ file.name }}</span>
             <span class="arrow" aria-hidden="true">→</span>
@@ -389,7 +399,9 @@ onUnmounted(() => {
             <template v-if="file.status === 'done'">
               {{ formatPercent(file.inputSize!, file.outputSize!) }}
             </template>
-            <template v-else-if="file.status === 'converting'">{{ t('queue.converting') }}</template>
+            <template v-else-if="file.status === 'converting'">{{
+              t('queue.converting')
+            }}</template>
             <template v-else-if="file.status === 'error'">{{ t('queue.error') }}</template>
             <template v-else>{{ t('queue.waiting') }}</template>
           </div>
@@ -424,7 +436,12 @@ onUnmounted(() => {
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </div>
-          <div v-if="file.status === 'converting'" class="progress-row" role="progressbar" :aria-label="file.name">
+          <div
+            v-if="file.status === 'converting'"
+            class="progress-row"
+            role="progressbar"
+            :aria-label="file.name"
+          >
             <div class="bar indeterminate"></div>
           </div>
         </div>
@@ -447,9 +464,15 @@ onUnmounted(() => {
       <div v-if="activeCategory === 'images'" class="field">
         <div id="presets-label" class="field-label">{{ t('settings.presets') }}</div>
         <div class="presets" role="group" :aria-labelledby="'presets-label'">
-          <button class="preset-btn" @click="applyPreset('web')">{{ t('settings.preset_web') }}</button>
-          <button class="preset-btn" @click="applyPreset('print')">{{ t('settings.preset_print') }}</button>
-          <button class="preset-btn" @click="applyPreset('lossless')">{{ t('settings.preset_lossless') }}</button>
+          <button class="preset-btn" @click="applyPreset('web')">
+            {{ t('settings.preset_web') }}
+          </button>
+          <button class="preset-btn" @click="applyPreset('print')">
+            {{ t('settings.preset_print') }}
+          </button>
+          <button class="preset-btn" @click="applyPreset('lossless')">
+            {{ t('settings.preset_lossless') }}
+          </button>
         </div>
       </div>
 
@@ -463,7 +486,9 @@ onUnmounted(() => {
           v-model.number="settings.bitrate"
           class="select"
           :disabled="['flac', 'wav'].includes(settings.outputFormat)"
-          :aria-describedby="['flac', 'wav'].includes(settings.outputFormat) ? 'bitrate-hint' : undefined"
+          :aria-describedby="
+            ['flac', 'wav'].includes(settings.outputFormat) ? 'bitrate-hint' : undefined
+          "
         >
           <option :value="64">64 kbps</option>
           <option :value="128">128 kbps</option>
@@ -471,7 +496,11 @@ onUnmounted(() => {
           <option :value="256">256 kbps</option>
           <option :value="320">320 kbps</option>
         </select>
-        <div v-if="['flac', 'wav'].includes(settings.outputFormat)" id="bitrate-hint" class="field-hint">
+        <div
+          v-if="['flac', 'wav'].includes(settings.outputFormat)"
+          id="bitrate-hint"
+          class="field-hint"
+        >
           {{ t('settings.bitrate_lossy_only') }}
         </div>
       </div>
@@ -493,11 +522,17 @@ onUnmounted(() => {
             :aria-valuemin="1"
             :aria-valuemax="100"
             :aria-valuenow="settings.quality"
-            :aria-describedby="!['jpeg', 'jpg'].includes(settings.outputFormat) ? 'quality-hint' : undefined"
+            :aria-describedby="
+              !['jpeg', 'jpg'].includes(settings.outputFormat) ? 'quality-hint' : undefined
+            "
           />
         </div>
         <div class="ticks" aria-hidden="true"><span>1</span><span>50</span><span>100</span></div>
-        <div v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)" id="quality-hint" class="field-hint">
+        <div
+          v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)"
+          id="quality-hint"
+          class="field-hint"
+        >
           {{ t('settings.quality_jpeg_only') }}
         </div>
       </div>
@@ -530,8 +565,12 @@ onUnmounted(() => {
               class="ratio-btn"
               :class="{ active: settings.keepAspectRatio }"
               :aria-pressed="settings.keepAspectRatio"
-              :aria-label="settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')"
-              :title="settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')"
+              :aria-label="
+                settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')
+              "
+              :title="
+                settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')
+              "
               @click="settings.keepAspectRatio = !settings.keepAspectRatio"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -559,16 +598,23 @@ onUnmounted(() => {
       <div class="field">
         <div id="folder-label" class="field-label">{{ t('settings.output_folder') }}</div>
         <div class="folder-row" role="group" aria-labelledby="folder-label">
-          <div class="folder-path" :title="settings.outputDirectory ?? t('settings.same_as_source')">
+          <div
+            class="folder-path"
+            :title="settings.outputDirectory ?? t('settings.same_as_source')"
+          >
             {{ settings.outputDirectory ?? t('settings.same_as_source') }}
           </div>
-          <button class="folder-browse" @click="openFolderPicker">{{ t('settings.browse') }}</button>
+          <button class="folder-browse" @click="openFolderPicker">
+            {{ t('settings.browse') }}
+          </button>
         </div>
       </div>
 
       <div class="field">
         <div class="toggle-row">
-          <label class="toggle-label" for="toggle-metadata">{{ t('settings.preserve_metadata') }}</label>
+          <label class="toggle-label" for="toggle-metadata">{{
+            t('settings.preserve_metadata')
+          }}</label>
           <div
             id="toggle-metadata"
             class="toggle"
@@ -582,7 +628,9 @@ onUnmounted(() => {
           ></div>
         </div>
         <div class="toggle-row" style="margin-top: 8px">
-          <label class="toggle-label" for="toggle-overwrite">{{ t('settings.overwrite_originals') }}</label>
+          <label class="toggle-label" for="toggle-overwrite">{{
+            t('settings.overwrite_originals')
+          }}</label>
           <div
             id="toggle-overwrite"
             class="toggle"
@@ -592,7 +640,9 @@ onUnmounted(() => {
             :aria-checked="settings.overwriteOriginals"
             :aria-label="t('settings.overwrite_originals')"
             @click="settings.overwriteOriginals = !settings.overwriteOriginals"
-            @keydown.enter.space.prevent="settings.overwriteOriginals = !settings.overwriteOriginals"
+            @keydown.enter.space.prevent="
+              settings.overwriteOriginals = !settings.overwriteOriginals
+            "
           ></div>
         </div>
       </div>
@@ -602,11 +652,15 @@ onUnmounted(() => {
       <div class="summary" aria-label="Conversion summary">
         <div class="summary-item">
           <div class="summary-key" aria-hidden="true">{{ t('summary.files') }}</div>
-          <div class="summary-val" :aria-label="`${t('summary.files')}: ${activeQueue.length}`">{{ activeQueue.length }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.files')}: ${activeQueue.length}`">
+            {{ activeQueue.length }}
+          </div>
         </div>
         <div class="summary-item">
           <div class="summary-key" aria-hidden="true">{{ t('summary.waiting') }}</div>
-          <div class="summary-val" :aria-label="`${t('summary.waiting')}: ${activeWaiting.length}`">{{ activeWaiting.length }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.waiting')}: ${activeWaiting.length}`">
+            {{ activeWaiting.length }}
+          </div>
         </div>
         <div class="summary-item">
           <div class="summary-key" aria-hidden="true">{{ t('summary.format') }}</div>
@@ -629,7 +683,12 @@ onUnmounted(() => {
         <span>{{ t('actions.convert') }}</span>
         <span class="shortcut" aria-hidden="true">⌘↵</span>
       </button>
-      <button v-else class="btn-cancel" :aria-label="t('actions.cancel')" @click="conversion.cancelConversion">
+      <button
+        v-else
+        class="btn-cancel"
+        :aria-label="t('actions.cancel')"
+        @click="conversion.cancelConversion"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="6" y="6" width="12" height="12" rx="1" />
         </svg>
