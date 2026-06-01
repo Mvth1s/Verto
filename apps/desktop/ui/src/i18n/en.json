@@ -58,6 +58,25 @@
     "remove": "Remove",
     "retry": "Retry · {error}"
   },
+  "settings_page": {
+    "title": "Settings",
+    "close": "Close",
+    "interface": "Interface",
+    "language": "Language",
+    "lang_en": "English",
+    "lang_fr": "Français",
+    "defaults": "Conversion defaults",
+    "default_output_dir": "Default output folder",
+    "default_quality": "Default JPEG quality",
+    "default_bitrate": "Default audio bitrate",
+    "default_codec": "Default video codec",
+    "behavior": "Behavior",
+    "about": "About",
+    "version": "Version",
+    "source_code": "Source code",
+    "changelog": "Changelog",
+    "reset_defaults": "Reset to defaults"
+  },
   "update": {
     "available": "Update available — v{version}",
     "install": "Install",
