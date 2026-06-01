@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "convert": "Convertir",
+    "images": "Images",
+    "documents": "Documents",
+    "audio": "Audio",
+    "video": "Vidéo",
+    "soon": "Bientôt"
+  },
+  "dropzone": {
+    "title": "Déposez vos fichiers ici",
+    "sub": "ou cliquez pour parcourir · max 100 fichiers à la fois"
+  },
+  "queue": {
+    "title": "File d'attente",
+    "clear_done": "Effacer terminés",
+    "no_files": "Aucun fichier",
+    "summary": "{done} sur {total} terminé · {saved} économisés",
+    "waiting": "en attente",
+    "converting": "conversion…",
+    "error": "erreur"
+  },
+  "settings": {
+    "title": "Paramètres de sortie",
+    "format": "Format",
+    "presets": "Préréglages",
+    "preset_web": "Web",
+    "preset_print": "Impression",
+    "preset_lossless": "Sans perte",
+    "bitrate": "Débit",
+    "quality": "Qualité",
+    "quality_jpeg_only": "La qualité s'applique au JPEG uniquement",
+    "bitrate_lossy_only": "Le débit s'applique aux formats avec perte uniquement",
+    "resize": "Redimensionner",
+    "ratio_locked": "Ratio verrouillé",
+    "free_resize": "Redimensionnement libre",
+    "width_hint": "Largeur seule — hauteur calculée selon le ratio",
+    "exact_hint": "Dimensions exactes",
+    "output_folder": "Dossier de sortie",
+    "same_as_source": "Même dossier que la source",
+    "browse": "Parcourir",
+    "preserve_metadata": "Conserver les métadonnées",
+    "overwrite_originals": "Écraser les originaux"
+  },
+  "summary": {
+    "files": "Fichiers",
+    "waiting": "En attente",
+    "format": "Format",
+    "saved": "Économisés"
+  },
+  "actions": {
+    "convert": "Convertir",
+    "cancel": "Annuler",
+    "remove": "Supprimer",
+    "retry": "Réessayer · {error}"
+  },
+  "update": {
+    "available": "Mise à jour disponible — v{version}",
+    "install": "Installer",
+    "dismiss": "Ignorer"
+  }
+}

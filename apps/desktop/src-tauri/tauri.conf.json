@@ -28,6 +28,14 @@
       }
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "TAURI_UPDATER_PUBKEY",
+      "endpoints": [
+        "https://github.com/Mvth1s/Verto/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

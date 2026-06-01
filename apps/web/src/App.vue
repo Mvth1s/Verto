@@ -208,63 +208,20 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         </div>
       </div>
 
-      <!-- App mockup -->
+      <!-- App screenshot -->
       <div class="mockup">
         <div class="win">
           <div class="win-bar">
             <div class="traffic">
               <span class="r"></span><span class="y"></span><span class="g"></span>
             </div>
-            <div class="label">Verto — Images</div>
+            <div class="label">Verto</div>
           </div>
-          <div class="win-body">
-            <div class="ws-sidebar">
-              <div class="ws-brand">
-                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
-              </div>
-              <div class="ws-item active"><span class="ico"></span>Images</div>
-              <div class="ws-item"><span class="ico"></span>Documents</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Audio</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Video</div>
-            </div>
-            <div class="ws-main">
-              <div class="ws-drop">
-                <div class="icon-box">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 3v12" />
-                    <path d="M7 8l5-5 5 5" />
-                    <path d="M5 21h14" />
-                  </svg>
-                </div>
-                <div>Drop files here</div>
-              </div>
-              <div class="ws-row">
-                <span class="name">diagram.png</span>
-                <span class="arrow">→</span>
-                <span class="to">.webp</span>
-                <span class="ws-bar"><span class="fill"></span></span>
-              </div>
-            </div>
-            <div class="ws-panel">
-              <div>
-                <div class="ws-label" style="margin-bottom: 6px">Format</div>
-                <div class="ws-field"><span>WebP</span><span class="arrow-d">▾</span></div>
-              </div>
-              <div>
-                <div
-                  class="ws-label"
-                  style="margin-bottom: 6px; display: flex; justify-content: space-between"
-                >
-                  <span>Quality</span
-                  ><span style="color: var(--text); font-family: 'JetBrains Mono', monospace"
-                    >85%</span
-                  >
-                </div>
-                <div class="ws-slider"></div>
-              </div>
-              <div class="ws-btn">Convert</div>
-            </div>
-          </div>
+          <img
+            src="/screenshot-app.png"
+            alt="Verto app showing the conversion queue with image thumbnails"
+            class="win-screenshot"
+          />
         </div>
       </div>
     </div>
@@ -1048,6 +1005,12 @@ header.nav {
   font-family: 'JetBrains Mono', monospace;
 }
 
+.win-screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0 0 10px 10px;
+}
 .win-body {
   display: grid;
   grid-template-columns: 130px 1fr 180px;
