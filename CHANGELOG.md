@@ -12,6 +12,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added (v1.0.0 — Stable release)
+- i18n: full French and English support via `vue-i18n`; EN/FR toggle button in sidebar footer
+- Accessibility: ARIA labels, roles, `aria-live` on queue status, keyboard navigation (Tab/Enter/Space) on all interactive elements, `:focus-visible` focus ring
+- Auto-updater: `tauri-plugin-updater` wired up with GitHub releases endpoint; in-app banner on new version available
+- Test coverage: 56 Vitest tests (App.vue component: 81% line coverage, stores: 100%), 26 Rust tests including 5 new `commands/fs` unit tests
+- Landing page: real app screenshot in hero, full Open Graph and Twitter Card SEO meta tags in `index.html`
+
 ### Added (v0.4.0 — Image quality)
 - AVIF conversion via FFmpeg sidecar (input and output)
 - Image resize: width × height with keep-aspect-ratio toggle
@@ -24,11 +31,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - FFmpeg sidecar download scripts for Linux/macOS (`download-ffmpeg.sh`) and Windows (`download-ffmpeg.ps1`)
 - Audio category in sidebar — activates dedicated file picker, queue filter, and format selector
 - Bitrate selector (64–320 kbps) in right panel, disabled for lossless formats (FLAC, WAV)
-- 7 Rust unit/integration tests for FFmpeg converter (`test_allowed_formats_accepted`, `test_disallowed_formats_rejected`, `test_output_path_replaces_extension`, `test_output_path_flac_to_ogg`, `test_wav_to_mp3`, `test_wav_to_flac`, `test_nonexistent_input_fails`)
-- 5 new Vitest tests for audio category in conversion store (addFiles, addDirectory, convertAll, lossless bitrate passthrough)
+- 7 Rust unit/integration tests for FFmpeg converter
+- 5 new Vitest tests for audio category in conversion store
 - 7 Rust unit tests for the Pandoc converter
 - Markdown fixture `tests/fixtures/sample.md` for Pandoc integration tests
-- CI: `lint-frontend` and `lint-rust` jobs run tests on every push (35 Vitest + 21 Rust tests)
+- CI: `lint-frontend` and `lint-rust` jobs run tests on every push
 - CI: build matrix downloads both Pandoc and FFmpeg sidecars before compiling
 
 ---

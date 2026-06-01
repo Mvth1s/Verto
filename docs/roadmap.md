@@ -66,14 +66,14 @@
 
 **Goal**: Polished, tested, documented, cross-platform.
 
-- [ ] All v0.x features stable
-- [ ] Coverage ≥ targets (see `agents/testing.md`)
-- [ ] Accessibility: keyboard nav, ARIA
-- [ ] i18n: French + English
-- [ ] Auto-updater (Tauri built-in)
-- [ ] Full landing page with screenshots, proper SEO
-- [ ] `CHANGELOG.md` complete
-- [ ] GitHub release with all platform artifacts
+- [x] All v0.x features stable
+- [x] Coverage ≥ targets (App.vue 81%, stores 100%, Rust 26 tests)
+- [x] Accessibility: keyboard nav, ARIA
+- [x] i18n: French + English
+- [x] Auto-updater (Tauri built-in)
+- [x] Full landing page with screenshots, proper SEO
+- [x] `CHANGELOG.md` complete
+- [ ] GitHub release with all platform artifacts *(déclenché par merge → main)*
 
 ---
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { convertFileSrc } from '@tauri-apps/api/core'
+import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
+import { type Locale } from './i18n'
 
 type Category = 'images' | 'documents' | 'audio'
 
@@ -12,21 +14,49 @@ const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
 const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
 
+const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
 const isDragover = ref(false)
 const thumbErrors = ref<Record<string, true>>({})
+const locale = ref<Locale>('en')
+const updateVersion = ref<string | null>(null)
+const updateDismissed = ref(false)
 
 function onThumbError(id: string) {
   thumbErrors.value[id] = true
+}
+
+function toggleLocale() {
+  locale.value = locale.value === 'en' ? 'fr' : 'en'
+  i18nLocale.value = locale.value
+}
+
+async function checkForUpdates() {
+  try {
+    const result = await invoke<{ version: string; body: string | null } | null>(
+      'check_for_updates',
+    )
+    if (result) updateVersion.value = result.version
+  } catch {
+    // updater not configured — silent in dev
+  }
+}
+
+async function installUpdate() {
+  try {
+    await invoke('install_update')
+  } catch (e) {
+    console.error('Update failed:', e)
+  }
 }
 
 const conversion = useConversionStore()
 const settings = useSettingsStore()
 
 const categoryName = computed(() => {
-  if (activeCategory.value === 'images') return 'Images'
-  if (activeCategory.value === 'documents') return 'Documents'
-  return 'Audio'
+  if (activeCategory.value === 'images') return t('nav.images')
+  if (activeCategory.value === 'documents') return t('nav.documents')
+  return t('nav.audio')
 })
 
 const activeFormats = computed(() => {
@@ -50,8 +80,8 @@ const activeWaiting = computed(() => activeQueue.value.filter((f) => f.status ==
 const queueSummary = computed(() => {
   const total = activeQueue.value.length
   const doneCount = activeQueue.value.filter((f) => f.status === 'done').length
-  if (total === 0) return 'No files'
-  return `${doneCount} of ${total} complete · ${formatBytes(conversion.totalSaved)} saved`
+  if (total === 0) return t('queue.no_files')
+  return t('queue.summary', { done: doneCount, total, saved: formatBytes(conversion.totalSaved) })
 })
 
 watch(activeCategory, (cat) => {
@@ -139,6 +169,7 @@ function handleQueueAction(fileId: string, status: string) {
 let unlistenDrop: (() => void) | null = null
 
 onMounted(async () => {
+  checkForUpdates()
   const appWindow = getCurrentWebviewWindow()
 
   unlistenDrop = await appWindow.onDragDropEvent((event) => {
@@ -169,67 +200,100 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div
+    v-if="updateVersion && !updateDismissed"
+    class="update-banner"
+    role="alert"
+    aria-live="assertive"
+  >
+    <span>{{ t('update.available', { version: updateVersion }) }}</span>
+    <div class="update-actions">
+      <button class="update-btn-install" @click="installUpdate">{{ t('update.install') }}</button>
+      <button class="update-btn-dismiss" :aria-label="t('update.dismiss')" @click="updateDismissed = true">✕</button>
+    </div>
+  </div>
   <div class="shell" role="application" aria-label="Verto Desktop">
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Navigation">
       <div class="brand">
         <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
       </div>
 
-      <div class="nav-label">Convert</div>
-      <nav class="nav">
+      <div class="nav-label" aria-hidden="true">{{ t('nav.convert') }}</div>
+      <nav class="nav" :aria-label="t('nav.convert')">
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'images' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'images'"
+          :aria-label="t('nav.images')"
           @click="setCategory('images')"
+          @keydown.enter.space.prevent="setCategory('images')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="9" cy="9" r="2" />
             <path d="M21 15l-5-5L5 21" />
           </svg>
-          <span>Images</span>
+          <span>{{ t('nav.images') }}</span>
         </div>
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'documents' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'documents'"
+          :aria-label="t('nav.documents')"
           @click="setCategory('documents')"
+          @keydown.enter.space.prevent="setCategory('documents')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <path d="M14 2v6h6" />
             <path d="M8 13h8M8 17h5" />
           </svg>
-          <span>Documents</span>
+          <span>{{ t('nav.documents') }}</span>
         </div>
         <div
           class="nav-item"
           :class="{ active: activeCategory === 'audio' }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="activeCategory === 'audio'"
+          :aria-label="t('nav.audio')"
           @click="setCategory('audio')"
+          @keydown.enter.space.prevent="setCategory('audio')"
         >
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
           </svg>
-          <span>Audio</span>
+          <span>{{ t('nav.audio') }}</span>
         </div>
-        <div class="nav-item disabled">
-          <svg viewBox="0 0 24 24">
+        <div class="nav-item disabled" aria-disabled="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="2" y="6" width="14" height="12" rx="2" />
             <path d="M22 8l-6 4 6 4z" />
           </svg>
-          <span>Video</span>
-          <span class="soon">Soon</span>
+          <span>{{ t('nav.video') }}</span>
+          <span class="soon" aria-label="coming soon">{{ t('nav.soon') }}</span>
         </div>
       </nav>
 
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
-        <div class="pill-version"><span class="dot"></span>v0.3.0</div>
+        <div class="pill-version"><span class="dot" aria-hidden="true"></span>v0.4.0</div>
+        <button
+          class="icon-btn lang-btn"
+          :aria-label="`Language: ${locale === 'en' ? 'English' : 'Français'}`"
+          :title="locale === 'en' ? 'Switch to French' : 'Passer en anglais'"
+          @click="toggleLocale"
+        >{{ locale.toUpperCase() }}</button>
         <button class="icon-btn" aria-label="Settings">
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path
               d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
@@ -243,19 +307,23 @@ onUnmounted(() => {
     <main class="main">
       <div class="main-header">
         <div class="main-title">{{ categoryName }}</div>
-        <div class="main-sub">{{ queueSummary }}</div>
+        <div class="main-sub" aria-live="polite" aria-atomic="true">{{ queueSummary }}</div>
       </div>
 
       <div
         class="dropzone"
         :class="{ dragover: isDragover }"
+        role="button"
+        tabindex="0"
+        :aria-label="t('dropzone.title')"
         @click="openFilePicker"
+        @keydown.enter.space.prevent="openFilePicker"
         @dragenter.prevent="isDragover = true"
         @dragover.prevent="isDragover = true"
         @dragleave.prevent="isDragover = false"
         @drop.prevent="isDragover = false"
       >
-        <div class="drop-icon">
+        <div class="drop-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M12 3v12" />
             <path d="M7 8l5-5 5 5" />
@@ -263,26 +331,26 @@ onUnmounted(() => {
           </svg>
         </div>
         <div>
-          <div class="drop-title">Drop files here</div>
+          <div class="drop-title">{{ t('dropzone.title') }}</div>
           <div class="drop-sub" style="text-align: center; margin-top: 4px">
-            or click to browse · max 100 files at once
+            {{ t('dropzone.sub') }}
           </div>
         </div>
-        <div class="drop-kbd"><kbd>⌘</kbd><kbd>O</kbd></div>
+        <div class="drop-kbd" aria-hidden="true"><kbd>⌘</kbd><kbd>O</kbd></div>
       </div>
 
-      <div v-if="activeQueue.length > 0" class="queue">
+      <div v-if="activeQueue.length > 0" class="queue" role="list" :aria-label="t('queue.title')">
         <div class="queue-header">
-          <div class="queue-title">Queue</div>
+          <div class="queue-title" aria-hidden="true">{{ t('queue.title') }}</div>
           <div class="queue-actions">
             <button
               v-if="activeQueue.some((f) => f.status === 'done')"
               class="queue-clear"
               @click="conversion.clearDone"
             >
-              Clear done
+              {{ t('queue.clear_done') }}
             </button>
-            <div class="queue-meta">{{ queueSummary }}</div>
+            <div class="queue-meta" aria-hidden="true">{{ queueSummary }}</div>
           </div>
         </div>
 
@@ -291,18 +359,20 @@ onUnmounted(() => {
           :key="file.id"
           class="queue-row"
           :class="{ 'with-progress': file.status === 'converting' }"
+          role="listitem"
         >
           <img
             v-if="activeCategory === 'images' && !thumbErrors[file.id]"
             :src="convertFileSrc(file.path)"
             class="thumb-img"
+            :alt="file.inputFormat.toUpperCase()"
             loading="lazy"
             @error="onThumbError(file.id)"
           />
-          <div v-else class="ftype">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
+          <div v-else class="ftype" aria-hidden="true">{{ file.inputFormat.toUpperCase().slice(0, 4) }}</div>
           <div class="fname">
             <span>{{ file.name }}</span>
-            <span class="arrow">→</span>
+            <span class="arrow" aria-hidden="true">→</span>
             <span class="to"
               >{{ file.name.replace(/\.[^/.]+$/, '') }}.{{ settings.outputFormat }}</span
             >
@@ -314,44 +384,47 @@ onUnmounted(() => {
               progress: file.status === 'converting',
               error: file.status === 'error',
             }"
+            aria-live="polite"
           >
             <template v-if="file.status === 'done'">
               {{ formatPercent(file.inputSize!, file.outputSize!) }}
             </template>
-            <template v-else-if="file.status === 'converting'"> converting… </template>
-            <template v-else-if="file.status === 'error'"> error </template>
-            <template v-else> waiting </template>
+            <template v-else-if="file.status === 'converting'">{{ t('queue.converting') }}</template>
+            <template v-else-if="file.status === 'error'">{{ t('queue.error') }}</template>
+            <template v-else>{{ t('queue.waiting') }}</template>
           </div>
           <div
             class="qaction"
             :class="{ check: file.status === 'done', retry: file.status === 'error' }"
             role="button"
-            :title="
+            tabindex="0"
+            :aria-label="
               file.status === 'error'
-                ? `Retry · ${file.error}`
-                : file.status === 'waiting'
-                  ? 'Remove'
+                ? t('actions.retry', { error: file.error })
+                : file.status === 'waiting' || file.status === 'done'
+                  ? t('actions.remove')
                   : undefined
             "
             @click="handleQueueAction(file.id, file.status)"
+            @keydown.enter.space.prevent="handleQueueAction(file.id, file.status)"
           >
-            <svg v-if="file.status === 'done'" viewBox="0 0 24 24">
+            <svg v-if="file.status === 'done'" viewBox="0 0 24 24" aria-hidden="true">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24">
+            <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 8v4l3 2" />
             </svg>
-            <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24">
+            <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24" aria-hidden="true">
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
             </svg>
-            <svg v-else viewBox="0 0 24 24">
+            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </div>
-          <div v-if="file.status === 'converting'" class="progress-row">
+          <div v-if="file.status === 'converting'" class="progress-row" role="progressbar" :aria-label="file.name">
             <div class="bar indeterminate"></div>
           </div>
         </div>
@@ -359,12 +432,12 @@ onUnmounted(() => {
     </main>
 
     <!-- RIGHT PANEL -->
-    <aside class="panel">
-      <div class="panel-title">Output settings</div>
+    <aside class="panel" :aria-label="t('settings.title')">
+      <div class="panel-title" aria-hidden="true">{{ t('settings.title') }}</div>
 
       <div class="field">
-        <div class="field-label">Format</div>
-        <select v-model="settings.outputFormat" class="select">
+        <label class="field-label" for="format-select">{{ t('settings.format') }}</label>
+        <select id="format-select" v-model="settings.outputFormat" class="select">
           <option v-for="fmt in activeFormats" :key="fmt" :value="fmt">
             {{ fmt.toUpperCase() }}
           </option>
@@ -372,23 +445,25 @@ onUnmounted(() => {
       </div>
 
       <div v-if="activeCategory === 'images'" class="field">
-        <div class="field-label">Presets</div>
-        <div class="presets">
-          <button class="preset-btn" @click="applyPreset('web')">Web</button>
-          <button class="preset-btn" @click="applyPreset('print')">Print</button>
-          <button class="preset-btn" @click="applyPreset('lossless')">Lossless</button>
+        <div id="presets-label" class="field-label">{{ t('settings.presets') }}</div>
+        <div class="presets" role="group" :aria-labelledby="'presets-label'">
+          <button class="preset-btn" @click="applyPreset('web')">{{ t('settings.preset_web') }}</button>
+          <button class="preset-btn" @click="applyPreset('print')">{{ t('settings.preset_print') }}</button>
+          <button class="preset-btn" @click="applyPreset('lossless')">{{ t('settings.preset_lossless') }}</button>
         </div>
       </div>
 
       <div v-if="activeCategory === 'audio'" class="field">
-        <div class="field-label">
-          <span>Bitrate</span>
+        <label class="field-label" for="bitrate-select">
+          <span>{{ t('settings.bitrate') }}</span>
           <span class="val">{{ settings.bitrate }} kbps</span>
-        </div>
+        </label>
         <select
+          id="bitrate-select"
           v-model.number="settings.bitrate"
           class="select"
           :disabled="['flac', 'wav'].includes(settings.outputFormat)"
+          :aria-describedby="['flac', 'wav'].includes(settings.outputFormat) ? 'bitrate-hint' : undefined"
         >
           <option :value="64">64 kbps</option>
           <option :value="128">128 kbps</option>
@@ -396,39 +471,49 @@ onUnmounted(() => {
           <option :value="256">256 kbps</option>
           <option :value="320">320 kbps</option>
         </select>
-        <div v-if="['flac', 'wav'].includes(settings.outputFormat)" class="field-hint">
-          Bitrate applies to lossy formats only
+        <div v-if="['flac', 'wav'].includes(settings.outputFormat)" id="bitrate-hint" class="field-hint">
+          {{ t('settings.bitrate_lossy_only') }}
         </div>
       </div>
 
       <div v-if="activeCategory === 'images'" class="field">
-        <div class="field-label">
-          <span>Quality</span>
+        <label class="field-label" for="quality-slider">
+          <span>{{ t('settings.quality') }}</span>
           <span class="val">{{ settings.quality }}%</span>
-        </div>
+        </label>
         <div class="slider-track-wrap">
           <input
+            id="quality-slider"
             v-model.number="settings.quality"
             class="slider"
             type="range"
             min="1"
             max="100"
             :disabled="!['jpeg', 'jpg'].includes(settings.outputFormat)"
+            :aria-valuemin="1"
+            :aria-valuemax="100"
+            :aria-valuenow="settings.quality"
+            :aria-describedby="!['jpeg', 'jpg'].includes(settings.outputFormat) ? 'quality-hint' : undefined"
           />
         </div>
-        <div class="ticks"><span>1</span><span>50</span><span>100</span></div>
-        <div v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)" class="field-hint">
-          Quality applies to JPEG only
+        <div class="ticks" aria-hidden="true"><span>1</span><span>50</span><span>100</span></div>
+        <div v-if="!['jpeg', 'jpg'].includes(settings.outputFormat)" id="quality-hint" class="field-hint">
+          {{ t('settings.quality_jpeg_only') }}
         </div>
       </div>
 
       <div v-if="activeCategory === 'images'" class="field">
         <div class="field-label">
-          <span>Resize</span>
+          <span>{{ t('settings.resize') }}</span>
           <div
             class="toggle"
             :class="{ on: settings.resizeEnabled }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.resizeEnabled"
+            :aria-label="t('settings.resize')"
             @click="settings.resizeEnabled = !settings.resizeEnabled"
+            @keydown.enter.space.prevent="settings.resizeEnabled = !settings.resizeEnabled"
           ></div>
         </div>
         <template v-if="settings.resizeEnabled">
@@ -439,14 +524,17 @@ onUnmounted(() => {
               type="number"
               placeholder="W"
               min="1"
+              :aria-label="`${t('settings.resize')} width`"
             />
             <button
               class="ratio-btn"
               :class="{ active: settings.keepAspectRatio }"
-              :title="settings.keepAspectRatio ? 'Ratio locked' : 'Free resize'"
+              :aria-pressed="settings.keepAspectRatio"
+              :aria-label="settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')"
+              :title="settings.keepAspectRatio ? t('settings.ratio_locked') : t('settings.free_resize')"
               @click="settings.keepAspectRatio = !settings.keepAspectRatio"
             >
-              <svg viewBox="0 0 24 24">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="11" width="18" height="10" rx="2" />
                 <path v-if="settings.keepAspectRatio" d="M7 11V7a5 5 0 0 1 10 0v4" />
                 <path v-else d="M7 11V7a5 5 0 0 1 4.9-5M17 11V7a5 5 0 0 0-1.9-3.9" />
@@ -459,64 +547,73 @@ onUnmounted(() => {
               placeholder="H"
               min="1"
               :disabled="settings.keepAspectRatio"
+              :aria-label="`${t('settings.resize')} height`"
             />
           </div>
           <div class="field-hint">
-            {{
-              settings.keepAspectRatio
-                ? 'Width only — height computed from ratio'
-                : 'Exact dimensions'
-            }}
+            {{ settings.keepAspectRatio ? t('settings.width_hint') : t('settings.exact_hint') }}
           </div>
         </template>
       </div>
 
       <div class="field">
-        <div class="field-label">Output folder</div>
-        <div class="folder-row">
-          <div class="folder-path">
-            {{ settings.outputDirectory ?? 'Same as source' }}
+        <div id="folder-label" class="field-label">{{ t('settings.output_folder') }}</div>
+        <div class="folder-row" role="group" aria-labelledby="folder-label">
+          <div class="folder-path" :title="settings.outputDirectory ?? t('settings.same_as_source')">
+            {{ settings.outputDirectory ?? t('settings.same_as_source') }}
           </div>
-          <button class="folder-browse" @click="openFolderPicker">Browse</button>
+          <button class="folder-browse" @click="openFolderPicker">{{ t('settings.browse') }}</button>
         </div>
       </div>
 
       <div class="field">
         <div class="toggle-row">
-          <div class="toggle-label">Preserve metadata</div>
+          <label class="toggle-label" for="toggle-metadata">{{ t('settings.preserve_metadata') }}</label>
           <div
+            id="toggle-metadata"
             class="toggle"
             :class="{ on: settings.preserveMetadata }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.preserveMetadata"
+            :aria-label="t('settings.preserve_metadata')"
             @click="settings.preserveMetadata = !settings.preserveMetadata"
+            @keydown.enter.space.prevent="settings.preserveMetadata = !settings.preserveMetadata"
           ></div>
         </div>
         <div class="toggle-row" style="margin-top: 8px">
-          <div class="toggle-label">Overwrite originals</div>
+          <label class="toggle-label" for="toggle-overwrite">{{ t('settings.overwrite_originals') }}</label>
           <div
+            id="toggle-overwrite"
             class="toggle"
             :class="{ on: settings.overwriteOriginals }"
+            role="switch"
+            tabindex="0"
+            :aria-checked="settings.overwriteOriginals"
+            :aria-label="t('settings.overwrite_originals')"
             @click="settings.overwriteOriginals = !settings.overwriteOriginals"
+            @keydown.enter.space.prevent="settings.overwriteOriginals = !settings.overwriteOriginals"
           ></div>
         </div>
       </div>
 
       <div class="panel-spacer"></div>
 
-      <div class="summary">
+      <div class="summary" aria-label="Conversion summary">
         <div class="summary-item">
-          <div class="summary-key">Files</div>
-          <div class="summary-val">{{ activeQueue.length }}</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.files') }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.files')}: ${activeQueue.length}`">{{ activeQueue.length }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Waiting</div>
-          <div class="summary-val">{{ activeWaiting.length }}</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.waiting') }}</div>
+          <div class="summary-val" :aria-label="`${t('summary.waiting')}: ${activeWaiting.length}`">{{ activeWaiting.length }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Format</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.format') }}</div>
           <div class="summary-val">{{ settings.outputFormat.toUpperCase() }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-key">Saved</div>
+          <div class="summary-key" aria-hidden="true">{{ t('summary.saved') }}</div>
           <div class="summary-val">{{ formatBytes(conversion.totalSaved) }}</div>
         </div>
       </div>
@@ -525,17 +622,18 @@ onUnmounted(() => {
         v-if="!conversion.isConverting"
         class="btn-primary"
         :disabled="activeWaiting.length === 0"
+        :aria-label="`${t('actions.convert')} ${activeWaiting.length} ${t('summary.waiting').toLowerCase()}`"
         @click="conversion.convertAll(activeFileCategory)"
       >
-        <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 8" /></svg>
-        <span>Convert</span>
-        <span class="shortcut">⌘↵</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 8" /></svg>
+        <span>{{ t('actions.convert') }}</span>
+        <span class="shortcut" aria-hidden="true">⌘↵</span>
       </button>
-      <button v-else class="btn-cancel" @click="conversion.cancelConversion">
-        <svg viewBox="0 0 24 24">
+      <button v-else class="btn-cancel" :aria-label="t('actions.cancel')" @click="conversion.cancelConversion">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="6" y="6" width="12" height="12" rx="1" />
         </svg>
-        <span>Cancel</span>
+        <span>{{ t('actions.cancel') }}</span>
       </button>
     </aside>
   </div>
@@ -1426,5 +1524,79 @@ body {
 .qaction.retry:hover {
   background: var(--accent-soft);
   color: var(--accent-bright);
+}
+
+/* Language toggle button */
+.lang-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  padding: 0 6px;
+  width: auto;
+}
+.lang-btn:hover {
+  color: var(--accent-bright);
+}
+
+/* Keyboard focus ring — visible for all focusable elements */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Update banner */
+.update-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+.update-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.update-btn-install {
+  background: var(--accent);
+  color: #052e22;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-btn-install:hover {
+  background: var(--accent-bright);
+}
+.update-btn-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.update-btn-dismiss:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
 }
 </style>
