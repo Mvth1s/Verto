@@ -79,15 +79,22 @@ elif [ "$OS" = "Darwin" ]; then
         echo "Cross-compilation: téléchargement du bottle FFmpeg Intel (x86_64)..."
         TMP=$(mktemp -d)
         BOTTLE_FILE=""
+        FETCH_OUT=""
         for BOTTLE_TAG in ventura sonoma monterey; do
-            FETCH_OUT=$(brew fetch --bottle-tag="$BOTTLE_TAG" --no-deps ffmpeg 2>&1) && {
-                BOTTLE_FILE=$(echo "$FETCH_OUT" | grep -E "^(Already downloaded|Downloaded to):" | head -1 | sed 's/^[^:]*: //')
+            # --deps is opt-in (adds dependencies); omitting it fetches only the formula
+            if FETCH_OUT=$(brew fetch --bottle-tag="$BOTTLE_TAG" ffmpeg 2>&1); then
+                # Parse path from brew output; fallback: newest ffmpeg bottle in cache
+                BOTTLE_FILE=$(echo "$FETCH_OUT" | grep -E "(Already downloaded|Downloaded to):" | head -1 | sed 's/.*: //')
+                if [ -z "$BOTTLE_FILE" ] || [ ! -f "$BOTTLE_FILE" ]; then
+                    BOTTLE_FILE=$(find "$(brew --cache)/downloads" -name "*ffmpeg*bottle*" -type f 2>/dev/null | tail -1)
+                fi
                 [ -n "$BOTTLE_FILE" ] && [ -f "$BOTTLE_FILE" ] && break
                 BOTTLE_FILE=""
-            }
+            fi
         done
         if [ -z "$BOTTLE_FILE" ] || [ ! -f "$BOTTLE_FILE" ]; then
-            echo "Erreur: bottle FFmpeg Intel introuvable. Sortie brew: $FETCH_OUT"
+            echo "Erreur: bottle FFmpeg Intel introuvable. Sortie brew:"
+            echo "$FETCH_OUT"
             rm -rf "$TMP"
             exit 1
         fi
