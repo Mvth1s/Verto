@@ -5,6 +5,18 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.5.0](https://github.com/Mvth1s/Verto/compare/v1.4.0...v1.5.0) (2026-06-01)
+
+
+### Bug Fixes
+
+* **ci:** add FFmpeg download to release.yml + fix macOS ARM target ([5c45b34](https://github.com/Mvth1s/Verto/commit/5c45b343aebb604a72976ba8719299a57d50fed4))
+
+
+### Features
+
+* **desktop:** show system notification when conversion completes ([d86fe1b](https://github.com/Mvth1s/Verto/commit/d86fe1b2cf96d3660633b10f268d0f8c4e9e7649))
+
 # [1.4.0](https://github.com/Mvth1s/Verto/compare/v1.3.0...v1.4.0) (2026-06-01)
 
 
