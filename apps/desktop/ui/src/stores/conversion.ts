@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { useSettingsStore } from './settings'
 
 export type FileStatus = 'waiting' | 'converting' | 'done' | 'error'
-export type FileCategory = 'image' | 'document' | 'audio'
+export type FileCategory = 'image' | 'document' | 'audio' | 'video'
 
 export interface FileItem {
   id: string
@@ -30,11 +30,13 @@ interface ConversionResult {
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'avif']
 const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
 const AUDIO_EXTENSIONS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus']
+const VIDEO_EXTENSIONS = ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v']
 
 function supportedExtensions(category: FileCategory): string[] {
   if (category === 'image') return IMAGE_EXTENSIONS
   if (category === 'document') return DOCUMENT_EXTENSIONS
-  return AUDIO_EXTENSIONS
+  if (category === 'audio') return AUDIO_EXTENSIONS
+  return VIDEO_EXTENSIONS
 }
 
 function buildOutputPath(
@@ -135,6 +137,16 @@ export const useConversionStore = defineStore('conversion', () => {
             inputPath: file.path,
             outputFormat: settings.outputFormat,
             bitrate: isLossless ? undefined : settings.bitrate,
+            outputPath,
+          })
+        } else if (category === 'video') {
+          result = await invoke<ConversionResult>('convert_video', {
+            inputPath: file.path,
+            outputFormat: settings.outputFormat,
+            codec: settings.videoCodec,
+            resolutionWidth: settings.resizeEnabled ? settings.resizeWidth : null,
+            resolutionHeight:
+              settings.resizeEnabled && !settings.keepAspectRatio ? settings.resizeHeight : null,
             outputPath,
           })
         } else {

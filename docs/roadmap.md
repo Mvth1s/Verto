@@ -79,9 +79,9 @@
 
 ## v1.1.0 — Video
 
-- [ ] Video conversion: MP4, MKV, WebM, MOV (via FFmpeg)
-- [ ] Resolution option
-- [ ] Codec selection (H.264, H.265, VP9)
+- [x] Video conversion: MP4, MKV, WebM, MOV (via FFmpeg)
+- [x] Resolution option (width × height, keep-ratio)
+- [x] Codec selection (H.264, H.265, VP9) — filtered by output format
 
 ---
 
