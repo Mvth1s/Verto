@@ -1,7 +1,24 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import {
+  isPermissionGranted,
+  requestPermission,
+  sendNotification,
+} from '@tauri-apps/plugin-notification'
 import { useSettingsStore } from './settings'
+
+async function notify(title: string, body: string) {
+  try {
+    let granted = await isPermissionGranted()
+    if (!granted) {
+      granted = (await requestPermission()) === 'granted'
+    }
+    if (granted) sendNotification({ title, body })
+  } catch {
+    // notification not available — silent
+  }
+}
 
 export type FileStatus = 'waiting' | 'converting' | 'done' | 'error'
 export type FileCategory = 'image' | 'document' | 'audio' | 'video'
@@ -174,6 +191,21 @@ export const useConversionStore = defineStore('conversion', () => {
 
     isConverting.value = false
     cancelRequested.value = false
+
+    const doneCount = queue.value.filter(
+      (f) => f.category === category && f.status === 'done',
+    ).length
+    const errorCount = queue.value.filter(
+      (f) => f.category === category && f.status === 'error',
+    ).length
+    if (doneCount > 0) {
+      const saved = queue.value
+        .filter((f) => f.category === category)
+        .reduce((acc, f) => acc + (f.savedBytes ?? 0), 0)
+      const savedMb = saved > 0 ? ` · ${(saved / 1024 / 1024).toFixed(1)} MB saved` : ''
+      const errors = errorCount > 0 ? ` (${errorCount} error${errorCount > 1 ? 's' : ''})` : ''
+      notify('Verto', `${doneCount} file${doneCount > 1 ? 's' : ''} converted${savedMb}${errors}`)
+    }
   }
 
   return {

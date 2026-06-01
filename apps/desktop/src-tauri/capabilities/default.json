@@ -10,6 +10,7 @@
       "identifier": "shell:allow-execute",
       "allow": [{ "name": "pandoc", "sidecar": true }]
     },
-    "updater:default"
+    "updater:default",
+    "notification:default"
   ]
 }
