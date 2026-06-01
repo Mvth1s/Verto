@@ -7,31 +7,29 @@ mkdir -p "$BINARIES_DIR"
 
 OS=$(uname -s)
 ARCH=$(uname -m)
-# TAURI_TARGET allows CI to override arch detection for cross-compilation
-TAURI_TARGET="${TAURI_TARGET:-}"
 
 if [ "$OS" = "Linux" ]; then
-    if [ "$TAURI_TARGET" = "x86_64-unknown-linux-gnu" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "x86_64" ]; }; then
+    if [ "$ARCH" = "x86_64" ]; then
         TARGET="x86_64-unknown-linux-gnu"
         PANDOC_ARCH="amd64"
-    elif [ "$TAURI_TARGET" = "aarch64-unknown-linux-gnu" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "aarch64" ]; }; then
+    elif [ "$ARCH" = "aarch64" ]; then
         TARGET="aarch64-unknown-linux-gnu"
         PANDOC_ARCH="arm64"
     else
-        echo "Architecture Linux non supportée: ${TAURI_TARGET:-$ARCH}"
+        echo "Architecture Linux non supportée: $ARCH"
         exit 1
     fi
     URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-${PANDOC_ARCH}.tar.gz"
     EXT="tar.gz"
 elif [ "$OS" = "Darwin" ]; then
-    if [ "$TAURI_TARGET" = "x86_64-apple-darwin" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "x86_64" ]; }; then
+    if [ "$ARCH" = "x86_64" ]; then
         TARGET="x86_64-apple-darwin"
         PANDOC_MACOS_ARCH="x86_64"
-    elif [ "$TAURI_TARGET" = "aarch64-apple-darwin" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "arm64" ]; }; then
+    elif [ "$ARCH" = "arm64" ]; then
         TARGET="aarch64-apple-darwin"
         PANDOC_MACOS_ARCH="arm64"
     else
-        echo "Architecture macOS non supportée: ${TAURI_TARGET:-$ARCH}"
+        echo "Architecture macOS non supportée: $ARCH"
         exit 1
     fi
     URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-${PANDOC_MACOS_ARCH}-macOS.zip"

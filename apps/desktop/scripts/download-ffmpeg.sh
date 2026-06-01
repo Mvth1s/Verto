@@ -6,18 +6,16 @@ mkdir -p "$BINARIES_DIR"
 
 OS=$(uname -s)
 ARCH=$(uname -m)
-# TAURI_TARGET allows CI to override arch detection for cross-compilation
-TAURI_TARGET="${TAURI_TARGET:-}"
 
 if [ "$OS" = "Linux" ]; then
-    if [ "$TAURI_TARGET" = "x86_64-unknown-linux-gnu" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "x86_64" ]; }; then
+    if [ "$ARCH" = "x86_64" ]; then
         TARGET="x86_64-unknown-linux-gnu"
         BTBN_FILE="ffmpeg-master-latest-linux64-gpl.tar.xz"
-    elif [ "$TAURI_TARGET" = "aarch64-unknown-linux-gnu" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "aarch64" ]; }; then
+    elif [ "$ARCH" = "aarch64" ]; then
         TARGET="aarch64-unknown-linux-gnu"
         BTBN_FILE="ffmpeg-master-latest-linuxarm64-gpl.tar.xz"
     else
-        echo "Architecture Linux non supportée: ${TAURI_TARGET:-$ARCH}"
+        echo "Architecture Linux non supportée: $ARCH"
         exit 1
     fi
 
@@ -55,14 +53,12 @@ if [ "$OS" = "Linux" ]; then
     echo "FFmpeg installé dans $DEST (via BtbN)"
 
 elif [ "$OS" = "Darwin" ]; then
-    if [ "$TAURI_TARGET" = "x86_64-apple-darwin" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "x86_64" ]; }; then
+    if [ "$ARCH" = "x86_64" ]; then
         TARGET="x86_64-apple-darwin"
-        NEED_X86=true
-    elif [ "$TAURI_TARGET" = "aarch64-apple-darwin" ] || { [ -z "$TAURI_TARGET" ] && [ "$ARCH" = "arm64" ]; }; then
+    elif [ "$ARCH" = "arm64" ]; then
         TARGET="aarch64-apple-darwin"
-        NEED_X86=false
     else
-        echo "Architecture macOS non supportée: ${TAURI_TARGET:-$ARCH}"
+        echo "Architecture macOS non supportée: $ARCH"
         exit 1
     fi
 
@@ -72,51 +68,13 @@ elif [ "$OS" = "Darwin" ]; then
         exit 0
     fi
 
-    if [ "$NEED_X86" = true ] && [ "$ARCH" = "arm64" ]; then
-        # Cross-compilation: ARM host targeting x86_64.
-        # Use `brew fetch --bottle-tag=ventura` to download the Intel (x86_64) macOS 13 bottle.
-        # Homebrew bottle tags: plain version name = Intel, arm64_ prefix = Apple Silicon.
-        echo "Cross-compilation: téléchargement du bottle FFmpeg Intel (x86_64)..."
-        TMP=$(mktemp -d)
-        BOTTLE_FILE=""
-        FETCH_OUT=""
-        for BOTTLE_TAG in ventura sonoma monterey; do
-            # --deps is opt-in (adds dependencies); omitting it fetches only the formula
-            if FETCH_OUT=$(brew fetch --bottle-tag="$BOTTLE_TAG" ffmpeg 2>&1); then
-                # Parse path from brew output; fallback: newest ffmpeg bottle in cache
-                BOTTLE_FILE=$(echo "$FETCH_OUT" | grep -E "(Already downloaded|Downloaded to):" | head -1 | sed 's/.*: //')
-                if [ -z "$BOTTLE_FILE" ] || [ ! -f "$BOTTLE_FILE" ]; then
-                    BOTTLE_FILE=$(find "$(brew --cache)/downloads" -name "*ffmpeg*bottle*" -type f 2>/dev/null | tail -1)
-                fi
-                [ -n "$BOTTLE_FILE" ] && [ -f "$BOTTLE_FILE" ] && break
-                BOTTLE_FILE=""
-            fi
-        done
-        if [ -z "$BOTTLE_FILE" ] || [ ! -f "$BOTTLE_FILE" ]; then
-            echo "Erreur: bottle FFmpeg Intel introuvable. Sortie brew:"
-            echo "$FETCH_OUT"
-            rm -rf "$TMP"
-            exit 1
-        fi
-        tar -xzf "$BOTTLE_FILE" -C "$TMP"
-        FFMPEG_BIN=$(find "$TMP" -path "*/bin/ffmpeg" -type f | head -1)
-        [ -z "$FFMPEG_BIN" ] && FFMPEG_BIN=$(find "$TMP" -name "ffmpeg" -type f | head -1)
-        if [ -z "$FFMPEG_BIN" ]; then
-            echo "Erreur: binaire ffmpeg introuvable dans le bottle"
-            rm -rf "$TMP"
-            exit 1
-        fi
-        cp "$FFMPEG_BIN" "$DEST"
-        rm -rf "$TMP"
-    else
-        if ! command -v ffmpeg &>/dev/null; then
-            echo "Installation de FFmpeg via Homebrew..."
-            brew install --quiet ffmpeg
-        fi
-        cp "$(which ffmpeg)" "$DEST"
+    if ! command -v ffmpeg &>/dev/null; then
+        echo "Installation de FFmpeg via Homebrew..."
+        brew install --quiet ffmpeg
     fi
+    cp "$(which ffmpeg)" "$DEST"
     chmod +x "$DEST"
-    echo "FFmpeg installé dans $DEST"
+    echo "FFmpeg installé dans $DEST (via Homebrew)"
 
 else
     echo "OS non supporté: $OS (utilisez download-ffmpeg.ps1 sur Windows)"

@@ -61,8 +61,6 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
           - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: macos-latest
             target: aarch64-apple-darwin
 
     runs-on: ${{ matrix.platform.os }}
@@ -103,8 +101,6 @@ jobs:
 
       - name: Download Pandoc sidecar (Linux / macOS)
         if: matrix.platform.os != 'windows-latest'
-        env:
-          TAURI_TARGET: ${{ matrix.platform.target }}
         run: bash apps/desktop/scripts/download-pandoc.sh
 
       - name: Download Pandoc sidecar (Windows)
@@ -113,8 +109,6 @@ jobs:
 
       - name: Download FFmpeg sidecar (Linux / macOS)
         if: matrix.platform.os != 'windows-latest'
-        env:
-          TAURI_TARGET: ${{ matrix.platform.target }}
         run: bash apps/desktop/scripts/download-ffmpeg.sh
 
       - name: Download FFmpeg sidecar (Windows)
