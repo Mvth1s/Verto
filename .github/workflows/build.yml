@@ -16,8 +16,10 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          - os: macos-latest
+          - os: macos-13
             target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
 
     runs-on: ${{ matrix.platform.os }}
 
@@ -73,7 +75,7 @@ jobs:
         run: pwsh apps/desktop/scripts/download-ffmpeg.ps1
 
       - name: Generate icon.icns (macOS)
-        if: matrix.platform.os == 'macos-latest'
+        if: startsWith(matrix.platform.os, 'macos')
         run: |
           mkdir -p apps/desktop/src-tauri/icons/icon.iconset
           sips -z 16 16   apps/desktop/src-tauri/icons/icon.png --out apps/desktop/src-tauri/icons/icon.iconset/icon_16x16.png
@@ -94,3 +96,4 @@ jobs:
         with:
           projectPath: apps/desktop
           tauriScript: pnpm tauri
+          args: --target ${{ matrix.platform.target }}
