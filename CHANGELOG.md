@@ -5,6 +5,16 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [1.5.1](https://github.com/Mvth1s/Verto/compare/v1.5.0...v1.5.1) (2026-06-01)
+
+
+### Bug Fixes
+
+* **ci:** drop macOS x86_64 target, revert scripts to original simplicity ([852ff52](https://github.com/Mvth1s/Verto/commit/852ff52cd6733bd9d548b02eb5e8e7f7a2baa6f5))
+* **ci:** remove invalid --no-deps flag from brew fetch + robust bottle path detection ([f3ec3e3](https://github.com/Mvth1s/Verto/commit/f3ec3e31c28256a0d207faca5f426c966189562e))
+* **ci:** replace retired macos-13 runner with macos-latest + cross-compile x86_64 ([e596d5a](https://github.com/Mvth1s/Verto/commit/e596d5a27834ec430c9dd9b962be755a55bb13d3))
+* **ci:** use brew fetch --bottle-tag to get Intel FFmpeg on ARM runner ([f4a2cec](https://github.com/Mvth1s/Verto/commit/f4a2cec5e474dfd78a54b4aad8b560189708a294))
+
 # [1.5.0](https://github.com/Mvth1s/Verto/compare/v1.4.0...v1.5.0) (2026-06-01)
 
 
