@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "convert": "Convert",
+    "images": "Images",
+    "documents": "Documents",
+    "audio": "Audio",
+    "video": "Video",
+    "soon": "Soon"
+  },
+  "dropzone": {
+    "title": "Drop files here",
+    "sub": "or click to browse · max 100 files at once"
+  },
+  "queue": {
+    "title": "Queue",
+    "clear_done": "Clear done",
+    "no_files": "No files",
+    "summary": "{done} of {total} complete · {saved} saved",
+    "waiting": "waiting",
+    "converting": "converting…",
+    "error": "error"
+  },
+  "settings": {
+    "title": "Output settings",
+    "format": "Format",
+    "presets": "Presets",
+    "preset_web": "Web",
+    "preset_print": "Print",
+    "preset_lossless": "Lossless",
+    "bitrate": "Bitrate",
+    "quality": "Quality",
+    "quality_jpeg_only": "Quality applies to JPEG only",
+    "bitrate_lossy_only": "Bitrate applies to lossy formats only",
+    "resize": "Resize",
+    "ratio_locked": "Ratio locked",
+    "free_resize": "Free resize",
+    "width_hint": "Width only — height computed from ratio",
+    "exact_hint": "Exact dimensions",
+    "output_folder": "Output folder",
+    "same_as_source": "Same as source",
+    "browse": "Browse",
+    "preserve_metadata": "Preserve metadata",
+    "overwrite_originals": "Overwrite originals"
+  },
+  "summary": {
+    "files": "Files",
+    "waiting": "Waiting",
+    "format": "Format",
+    "saved": "Saved"
+  },
+  "actions": {
+    "convert": "Convert",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "retry": "Retry · {error}"
+  },
+  "update": {
+    "available": "Update available — v{version}",
+    "install": "Install",
+    "dismiss": "Dismiss"
+  }
+}
