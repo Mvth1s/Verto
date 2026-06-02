@@ -195,6 +195,7 @@ fn audio_codec_for_format(output_format: &str) -> &'static str {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn convert_video(
     app: &tauri::AppHandle,
     input_path: &str,

@@ -11,6 +11,7 @@ pub struct ConversionResult {
     pub saved_bytes: i64,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn convert_video(
     app: tauri::AppHandle,
