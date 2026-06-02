@@ -72,7 +72,7 @@ apps/desktop/
 │   ├── src/
 │   │   ├── main.rs
 │   │   ├── lib.rs      # Tauri builder + invoke_handler registration
-│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs
+│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs, cancel.rs
 │   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
 │   └── capabilities/
 │       └── default.json
@@ -129,6 +129,7 @@ Result<ConversionResult, String> → back to Vue
 | `list_directory` | `commands/fs.rs` | `std::fs` (max 1000 files) |
 | `check_for_updates` | `commands/updater.rs` | `tauri_plugin_updater` |
 | `install_update` | `commands/updater.rs` | `tauri_plugin_updater` |
+| `cancel_conversion` | `commands/cancel.rs` | `ActiveConversion` state → `child.kill()` |
 
 ### Conversion strategy
 
@@ -136,6 +137,7 @@ Result<ConversionResult, String> → back to Vue
 |---|---|
 | JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
 | AVIF | FFmpeg sidecar |
+| HEIC, HEIF (entrée seulement) | FFmpeg sidecar |
 | PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF, RST, ODT, EPUB | Pandoc sidecar |
 | Audio: MP3, FLAC, OGG, WAV, AAC | FFmpeg sidecar |
 | Video: MP4, MKV, WebM, MOV (H.264, H.265, VP9) | FFmpeg sidecar |
@@ -144,10 +146,12 @@ Result<ConversionResult, String> → back to Vue
 
 | Store | Key state |
 |---|---|
-| `useConversionStore` | `queue` (FileItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
+| `useConversionStore` | `queue` (FileItem[]), `history` (HistoryItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
 | `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
 
-`FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio`), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
+`FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio | video`), `progress?` (0–100 during FFmpeg), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
+
+`HistoryItem` has fields: `id`, `name`, `inputFormat`, `outputFormat`, `inputSize`, `outputSize`, `savedBytes`, `outputPath`, `convertedAt` (timestamp), `category`.
 
 ### Structure apps/web
 
