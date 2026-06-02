@@ -26,9 +26,25 @@ Rust command (src/commands/*.rs)
      ├── Native: image crate (basic image formats, no deps)
      └── Sidecar: FFmpeg / Pandoc (advanced formats)
      │
-     ▼
-Result<ConversionResult, String> → back to Vue
+     ├── Result<ConversionResult, String> → back to Vue (at completion)
+     └── app.emit("conversion-progress", { id, percent }) → Vue (during conversion)
 ```
+
+### Tauri events (Rust → Vue)
+
+Rust commands can push intermediate updates to the frontend via `app.emit()` without waiting for the command to complete.
+
+| Event | Payload | Emitter | Consumer |
+|-------|---------|---------|----------|
+| `conversion-progress` | `{ id: String, percent: f32 }` | `converters/ffmpeg.rs` | `stores/conversion.ts` |
+
+The Vue store registers a global listener with `listen('conversion-progress', ...)` once at store initialisation. The `id` field matches the `FileItem.id` UUID so the correct queue item can be updated reactively.
+
+**Progress calculation** (audio and video):
+1. FFmpeg is launched with `-progress pipe:1 -nostats` — structured key=value progress is sent to stdout
+2. `Duration: HH:MM:SS.cc` is parsed from the early stderr output
+3. `out_time_us=<microseconds>` is parsed from each stdout block
+4. `percent = (out_time_us / duration_us) * 100`, capped at 99 until the command terminates
 
 ### Why Tauri v2?
 
