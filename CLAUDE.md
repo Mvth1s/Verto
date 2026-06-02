@@ -72,7 +72,7 @@ apps/desktop/
 │   ├── src/
 │   │   ├── main.rs
 │   │   ├── lib.rs      # Tauri builder + invoke_handler registration
-│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, fs.rs
+│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs
 │   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
 │   └── capabilities/
 │       └── default.json
@@ -81,17 +81,32 @@ apps/desktop/
 │   └── src/
 │       ├── App.vue     # Single-component UI (no components/ or views/ split yet)
 │       ├── main.ts
+│       ├── i18n/       # vue-i18n: en.json, fr.json, index.ts (Locale = 'en' | 'fr')
 │       └── stores/     # Pinia stores: conversion.ts, settings.ts
 ├── vite.config.ts      # root: 'ui' — pointe Vite vers ui/
 ├── package.json        # workspace package "desktop"
 └── tsconfig*.json
 ```
 
+### Structure apps/web (landing page)
+
+```
+apps/web/
+├── src/
+│   ├── App.vue     # Single-component landing page
+│   ├── main.ts
+│   ├── style.css
+│   └── i18n/       # vue-i18n: en.json, fr.json, index.ts (même Locale type)
+├── public/
+├── vite.config.ts
+└── package.json    # workspace package "web"
+```
+
 ### Communication flow (desktop)
 
 ```
 User (Vue 3 UI)
-     │  invoke('convert_image' | 'convert_audio' | 'convert_document' | 'list_directory', { ... })
+     │  invoke('convert_image' | 'convert_audio' | 'convert_document' | 'convert_video' | 'list_directory', { ... })
      ▼
 Tauri IPC bridge
      ▼
@@ -109,7 +124,11 @@ Result<ConversionResult, String> → back to Vue
 | `convert_image` | `commands/image.rs` | `converters/image.rs` or `converters/ffmpeg.rs` (AVIF) |
 | `convert_audio` | `commands/audio.rs` | `converters/ffmpeg.rs` |
 | `convert_document` | `commands/document.rs` | `converters/pandoc.rs` |
+| `convert_video` | `commands/video.rs` | `converters/ffmpeg.rs` |
+| `get_video_thumbnail` | `commands/video.rs` | `converters/ffmpeg.rs` → base64 JPEG |
 | `list_directory` | `commands/fs.rs` | `std::fs` (max 1000 files) |
+| `check_for_updates` | `commands/updater.rs` | `tauri_plugin_updater` |
+| `install_update` | `commands/updater.rs` | `tauri_plugin_updater` |
 
 ### Conversion strategy
 
@@ -118,15 +137,15 @@ Result<ConversionResult, String> → back to Vue
 | JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
 | AVIF | FFmpeg sidecar |
 | PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF, RST, ODT, EPUB | Pandoc sidecar |
-| Audio: MP3, FLAC, OGG, WAV, AAC (v0.3+) | FFmpeg sidecar |
-| Video (v1.1+) | FFmpeg sidecar |
+| Audio: MP3, FLAC, OGG, WAV, AAC | FFmpeg sidecar |
+| Video: MP4, MKV, WebM, MOV (H.264, H.265, VP9) | FFmpeg sidecar |
 
 ### Pinia stores (desktop)
 
 | Store | Key state |
 |---|---|
 | `useConversionStore` | `queue` (FileItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
-| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
+| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
 
 `FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio`), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
 
