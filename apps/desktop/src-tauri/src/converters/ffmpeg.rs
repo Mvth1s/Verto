@@ -46,10 +46,7 @@ fn extract_ffmpeg_error(stderr: &str) -> String {
         false
     };
 
-    stderr
-        .lines()
-        .filter(|l| !is_noise(l))
-        .next_back()
+    stderr.lines().rfind(|l| !is_noise(l))
         .map(|l| {
             let t = l.trim();
             if t.len() > 200 {
