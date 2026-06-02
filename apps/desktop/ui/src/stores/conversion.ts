@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import {
   isPermissionGranted,
   requestPermission,
@@ -31,6 +32,7 @@ export interface FileItem {
   inputSize: number
   status: FileStatus
   category: FileCategory
+  progress?: number
   outputPath?: string
   outputSize?: number
   savedBytes?: number
@@ -71,6 +73,11 @@ export const useConversionStore = defineStore('conversion', () => {
   const queue = ref<FileItem[]>([])
   const isConverting = ref(false)
   const cancelRequested = ref(false)
+
+  listen<{ id: string; percent: number }>('conversion-progress', ({ payload }) => {
+    const file = queue.value.find((f) => f.id === payload.id)
+    if (file) file.progress = payload.percent
+  })
 
   const waiting = computed(() => queue.value.filter((f) => f.status === 'waiting'))
   const done = computed(() => queue.value.filter((f) => f.status === 'done'))
@@ -137,6 +144,7 @@ export const useConversionStore = defineStore('conversion', () => {
       if (cancelRequested.value) break
 
       file.status = 'converting'
+      file.progress = undefined
 
       const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
 
@@ -155,6 +163,7 @@ export const useConversionStore = defineStore('conversion', () => {
             outputFormat: settings.outputFormat,
             bitrate: isLossless ? undefined : settings.bitrate,
             outputPath,
+            fileId: file.id,
           })
         } else if (category === 'video') {
           result = await invoke<ConversionResult>('convert_video', {
@@ -165,6 +174,7 @@ export const useConversionStore = defineStore('conversion', () => {
             resolutionHeight:
               settings.resizeEnabled && !settings.keepAspectRatio ? settings.resizeHeight : null,
             outputPath,
+            fileId: file.id,
           })
         } else {
           result = await invoke<ConversionResult>('convert_image', {

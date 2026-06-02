@@ -16,6 +16,7 @@ pub async fn convert_audio(
     output_format: String,
     bitrate: Option<u32>,
     output_path: Option<String>,
+    file_id: String,
 ) -> Result<ConversionResult, String> {
     if !input_path.starts_with('/') {
         return Err("Input path must be absolute".to_string());
@@ -33,6 +34,7 @@ pub async fn convert_audio(
         &output_format,
         output_path.as_deref(),
         bitrate,
+        &file_id,
     )
     .await?;
 

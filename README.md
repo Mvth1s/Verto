@@ -35,6 +35,7 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 - Drag & drop files or folders (batch conversion)
 - File picker for individual files, folder browser for output directory
 - Cancel in-progress queue / retry failed items
+- Real-time progress bar for audio and video conversions
 - Images, Documents, Audio and Video categories — separate queues and format selectors
 - Quality slider (images), bitrate selector (audio), codec selector (video)
 - Image resize (width × height, keep aspect ratio) and quality presets (Web / Print / Lossless)
