@@ -139,7 +139,10 @@ pub async fn convert(
                         let percent = ((pos as f64 / dur as f64) * 100.0).min(99.0) as f32;
                         let _ = app.emit(
                             "conversion-progress",
-                            ProgressPayload { id: file_id.to_string(), percent },
+                            ProgressPayload {
+                                id: file_id.to_string(),
+                                percent,
+                            },
                         );
                     }
                 }
@@ -297,7 +300,10 @@ pub async fn convert_video(
                         let percent = ((pos as f64 / dur as f64) * 100.0).min(99.0) as f32;
                         let _ = app.emit(
                             "conversion-progress",
-                            ProgressPayload { id: file_id.to_string(), percent },
+                            ProgressPayload {
+                                id: file_id.to_string(),
+                                percent,
+                            },
                         );
                     }
                 }
