@@ -11,7 +11,10 @@ pub struct ConversionResult {
     pub saved_bytes: i64,
 }
 
-const FFMPEG_IMAGE_FORMATS: &[&str] = &["avif"];
+/// Formats that require FFmpeg for encoding (output).
+const FFMPEG_OUTPUT_FORMATS: &[&str] = &["avif"];
+/// Formats that require FFmpeg for decoding (input only — no encode support on Linux).
+const FFMPEG_INPUT_FORMATS: &[&str] = &["heic", "heif"];
 
 #[tauri::command]
 pub async fn convert_image(
@@ -47,8 +50,9 @@ pub async fn convert_image(
         .unwrap_or("")
         .to_lowercase();
 
-    let use_ffmpeg = FFMPEG_IMAGE_FORMATS.contains(&output_format.as_str())
-        || FFMPEG_IMAGE_FORMATS.contains(&input_ext.as_str());
+    let use_ffmpeg = FFMPEG_OUTPUT_FORMATS.contains(&output_format.as_str())
+        || FFMPEG_OUTPUT_FORMATS.contains(&input_ext.as_str())
+        || FFMPEG_INPUT_FORMATS.contains(&input_ext.as_str());
 
     if use_ffmpeg {
         let resize = match (resize_width, resize_height) {
