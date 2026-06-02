@@ -177,7 +177,7 @@ apps/web/
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
-Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.5.1`.
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.6.0`.
 
 ---
 
