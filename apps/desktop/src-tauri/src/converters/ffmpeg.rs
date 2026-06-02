@@ -1,6 +1,57 @@
 use serde::Serialize;
+use tauri::Emitter;
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
+
+#[derive(Clone, Serialize)]
+struct ProgressPayload {
+    id: String,
+    percent: f32,
+}
+
+/// Extracts total duration in microseconds from an FFmpeg stderr line.
+/// Looks for: `Duration: HH:MM:SS.cc`
+fn parse_duration_us(text: &str) -> Option<u64> {
+    let pos = text.find("Duration: ")?;
+    let s = text[pos + 10..].split(',').next()?.trim();
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let h: u64 = parts[0].trim().parse().ok()?;
+    let m: u64 = parts[1].parse().ok()?;
+    let sec_parts: Vec<&str> = parts[2].split('.').collect();
+    let sec: u64 = sec_parts[0].parse().ok()?;
+    let frac_us: u64 = if sec_parts.len() > 1 {
+        let frac_str = sec_parts[1];
+        let frac: u64 = frac_str.parse().ok()?;
+        match frac_str.len() {
+            1 => frac * 100_000,
+            2 => frac * 10_000,
+            3 => frac * 1_000,
+            4 => frac * 100,
+            5 => frac * 10,
+            _ => frac,
+        }
+    } else {
+        0
+    };
+    Some((h * 3600 + m * 60 + sec) * 1_000_000 + frac_us)
+}
+
+/// Parses `out_time_us=<value>` from an FFmpeg `-progress pipe:1` stdout line.
+fn parse_out_time_us(text: &str) -> Option<u64> {
+    for line in text.lines() {
+        if let Some(rest) = line.strip_prefix("out_time_us=") {
+            let val: i64 = rest.trim().parse().ok()?;
+            if val < 0 {
+                return None;
+            }
+            return Some(val as u64);
+        }
+    }
+    None
+}
 
 #[derive(Debug, Serialize)]
 pub struct ConversionResult {
@@ -17,6 +68,7 @@ pub async fn convert(
     output_format: &str,
     output_path: Option<&str>,
     bitrate: Option<u32>,
+    file_id: &str,
 ) -> Result<ConversionResult, String> {
     if !std::path::Path::new(input_path).exists() {
         return Err(format!("Input file not found: {}", input_path));
@@ -50,7 +102,14 @@ pub async fn convert(
         .map_err(|e| format!("Failed to read input metadata: {}", e))?
         .len();
 
-    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+    let mut args = vec![
+        "-y".to_string(),
+        "-i".to_string(),
+        input_path.to_string(),
+        "-progress".to_string(),
+        "pipe:1".to_string(),
+        "-nostats".to_string(),
+    ];
 
     if let Some(br) = bitrate {
         args.push("-b:a".to_string());
@@ -69,11 +128,28 @@ pub async fn convert(
 
     let mut stderr_buf = String::new();
     let mut exit_code: Option<i32> = None;
+    let mut duration_us: Option<u64> = None;
 
     while let Some(event) = rx.recv().await {
         match event {
+            CommandEvent::Stdout(line) => {
+                let text = String::from_utf8_lossy(&line);
+                if let (Some(dur), Some(pos)) = (duration_us, parse_out_time_us(&text)) {
+                    if dur > 0 {
+                        let percent = ((pos as f64 / dur as f64) * 100.0).min(99.0) as f32;
+                        let _ = app.emit(
+                            "conversion-progress",
+                            ProgressPayload { id: file_id.to_string(), percent },
+                        );
+                    }
+                }
+            }
             CommandEvent::Stderr(line) => {
-                stderr_buf.push_str(&String::from_utf8_lossy(&line));
+                let text = String::from_utf8_lossy(&line);
+                if duration_us.is_none() {
+                    duration_us = parse_duration_us(&text);
+                }
+                stderr_buf.push_str(&text);
             }
             CommandEvent::Terminated(payload) => {
                 exit_code = payload.code;
@@ -127,6 +203,7 @@ pub async fn convert_video(
     codec: Option<&str>,
     resolution_width: Option<u32>,
     resolution_height: Option<u32>,
+    file_id: &str,
 ) -> Result<ConversionResult, String> {
     if !std::path::Path::new(input_path).exists() {
         return Err(format!("Input file not found: {}", input_path));
@@ -154,7 +231,14 @@ pub async fn convert_video(
         .map_err(|e| format!("Failed to read input metadata: {}", e))?
         .len();
 
-    let mut args = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
+    let mut args = vec![
+        "-y".to_string(),
+        "-i".to_string(),
+        input_path.to_string(),
+        "-progress".to_string(),
+        "pipe:1".to_string(),
+        "-nostats".to_string(),
+    ];
 
     // Video codec
     let codec_name = codec.unwrap_or("h264");
@@ -201,11 +285,28 @@ pub async fn convert_video(
 
     let mut stderr_buf = String::new();
     let mut exit_code: Option<i32> = None;
+    let mut duration_us: Option<u64> = None;
 
     while let Some(event) = rx.recv().await {
         match event {
+            CommandEvent::Stdout(line) => {
+                let text = String::from_utf8_lossy(&line);
+                if let (Some(dur), Some(pos)) = (duration_us, parse_out_time_us(&text)) {
+                    if dur > 0 {
+                        let percent = ((pos as f64 / dur as f64) * 100.0).min(99.0) as f32;
+                        let _ = app.emit(
+                            "conversion-progress",
+                            ProgressPayload { id: file_id.to_string(), percent },
+                        );
+                    }
+                }
+            }
             CommandEvent::Stderr(line) => {
-                stderr_buf.push_str(&String::from_utf8_lossy(&line));
+                let text = String::from_utf8_lossy(&line);
+                if duration_us.is_none() {
+                    duration_us = parse_duration_us(&text);
+                }
+                stderr_buf.push_str(&text);
             }
             CommandEvent::Terminated(payload) => {
                 exit_code = payload.code;
