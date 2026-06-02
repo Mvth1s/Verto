@@ -1,8 +1,14 @@
 mod commands;
 mod converters;
 
+use std::sync::Mutex;
+use tauri_plugin_shell::process::CommandChild;
+
+pub struct ActiveConversion(pub Mutex<Option<CommandChild>>);
+
 pub fn run() {
     tauri::Builder::default()
+        .manage(ActiveConversion(Mutex::new(None)))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -16,6 +22,7 @@ pub fn run() {
             commands::updater::install_update,
             commands::video::convert_video,
             commands::video::get_video_thumbnail,
+            commands::cancel::cancel_conversion,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
