@@ -11,15 +11,18 @@ pub struct ConversionResult {
     pub saved_bytes: i64,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn convert_video(
     app: tauri::AppHandle,
+    state: tauri::State<'_, crate::ActiveConversion>,
     input_path: String,
     output_format: String,
     codec: Option<String>,
     resolution_width: Option<u32>,
     resolution_height: Option<u32>,
     output_path: Option<String>,
+    file_id: String,
 ) -> Result<ConversionResult, String> {
     if !input_path.starts_with('/') {
         return Err("Input path must be absolute".to_string());
@@ -40,12 +43,14 @@ pub async fn convert_video(
 
     let result = ffmpeg_converter::convert_video(
         &app,
+        &state,
         &input_path,
         &output_format,
         &out,
         codec.as_deref(),
         resolution_width,
         resolution_height,
+        &file_id,
     )
     .await?;
 

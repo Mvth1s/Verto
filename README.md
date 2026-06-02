@@ -17,26 +17,33 @@ Simple, fast, open-source file conversion for Linux, Windows and macOS — no in
 
 ## What is Verto?
 
-Verto is a desktop application that converts files — images and documents — entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
+Verto is a desktop application that converts files — images, documents, audio and video — entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
 
 It was born out of a simple frustration: never remembering the right `ffmpeg` or `pandoc` command for a one-off file conversion.
 
 ## Supported conversions
 
-| Category  | Formats                                            | Engine              |
-|-----------|----------------------------------------------------|---------------------|
-| Images    | JPEG, PNG, WebP, GIF, BMP, TIFF                    | `image` Rust crate  |
-| Documents | MD, DOCX, HTML, RST, ODT, EPUB                     | Pandoc sidecar      |
-| Audio     | MP3, FLAC, OGG, WAV, AAC *(roadmap v0.3)*          | FFmpeg sidecar      |
-| Video     | MP4, MKV, WebM, MOV *(roadmap v1.1)*               | FFmpeg sidecar      |
+| Category  | Formats                                                        | Engine              |
+|-----------|----------------------------------------------------------------|---------------------|
+| Images    | JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF                         | `image` crate + FFmpeg sidecar |
+| Documents | MD, DOCX, HTML, RST, ODT, EPUB, PDF                           | Pandoc sidecar      |
+| Audio     | MP3, FLAC, OGG, WAV, AAC                                      | FFmpeg sidecar      |
+| Video     | MP4, MKV, WebM, MOV (H.264, H.265, VP9)                       | FFmpeg sidecar      |
 
 ## Features
 
 - Drag & drop files or folders (batch conversion)
 - File picker for individual files, folder browser for output directory
 - Cancel in-progress queue / retry failed items
-- Images and Documents categories — separate queues and format selectors
-- Quality slider for JPEG/WebP
+- Real-time progress bar for audio and video conversions
+- Images, Documents, Audio and Video categories — separate queues and format selectors
+- Quality slider (images), bitrate selector (audio), codec selector (video)
+- Image resize (width × height, keep aspect ratio) and quality presets (Web / Print / Lossless)
+- Thumbnail preview for images and videos in the queue
+- Settings page with persistence (output format, directory, quality, bitrate, codec)
+- System notification when a batch conversion completes
+- i18n: English and French (toggle in the UI)
+- Auto-updater (checks for new releases on launch)
 - 100% local — files never leave your machine
 - Cross-platform: Linux, Windows, macOS
 
@@ -81,7 +88,8 @@ git clone https://github.com/Mvth1s/Verto.git
 cd Verto
 pnpm install
 
-# Download Pandoc sidecar (required for document conversion)
+# Download sidecars required for conversion (FFmpeg + Pandoc)
+bash apps/desktop/scripts/download-ffmpeg.sh
 bash apps/desktop/scripts/download-pandoc.sh
 
 # Run the desktop app in dev mode

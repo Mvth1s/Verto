@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import {
   isPermissionGranted,
   requestPermission,
@@ -31,6 +32,7 @@ export interface FileItem {
   inputSize: number
   status: FileStatus
   category: FileCategory
+  progress?: number
   outputPath?: string
   outputSize?: number
   savedBytes?: number
@@ -44,7 +46,19 @@ interface ConversionResult {
   saved_bytes: number
 }
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'avif']
+const IMAGE_EXTENSIONS = [
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'bmp',
+  'tiff',
+  'tif',
+  'gif',
+  'avif',
+  'heic',
+  'heif',
+]
 const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
 const AUDIO_EXTENSIONS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus']
 const VIDEO_EXTENSIONS = ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v']
@@ -71,6 +85,11 @@ export const useConversionStore = defineStore('conversion', () => {
   const queue = ref<FileItem[]>([])
   const isConverting = ref(false)
   const cancelRequested = ref(false)
+
+  listen<{ id: string; percent: number }>('conversion-progress', ({ payload }) => {
+    const file = queue.value.find((f) => f.id === payload.id)
+    if (file) file.progress = payload.percent
+  })
 
   const waiting = computed(() => queue.value.filter((f) => f.status === 'waiting'))
   const done = computed(() => queue.value.filter((f) => f.status === 'done'))
@@ -123,6 +142,7 @@ export const useConversionStore = defineStore('conversion', () => {
 
   function cancelConversion() {
     cancelRequested.value = true
+    invoke('cancel_conversion').catch(() => {})
   }
 
   async function convertAll(category: FileCategory = 'image') {
@@ -137,6 +157,7 @@ export const useConversionStore = defineStore('conversion', () => {
       if (cancelRequested.value) break
 
       file.status = 'converting'
+      file.progress = undefined
 
       const outputPath = buildOutputPath(file.path, settings.outputFormat, settings.outputDirectory)
 
@@ -155,6 +176,7 @@ export const useConversionStore = defineStore('conversion', () => {
             outputFormat: settings.outputFormat,
             bitrate: isLossless ? undefined : settings.bitrate,
             outputPath,
+            fileId: file.id,
           })
         } else if (category === 'video') {
           result = await invoke<ConversionResult>('convert_video', {
@@ -165,6 +187,7 @@ export const useConversionStore = defineStore('conversion', () => {
             resolutionHeight:
               settings.resizeEnabled && !settings.keepAspectRatio ? settings.resizeHeight : null,
             outputPath,
+            fileId: file.id,
           })
         } else {
           result = await invoke<ConversionResult>('convert_image', {
@@ -184,8 +207,13 @@ export const useConversionStore = defineStore('conversion', () => {
         file.outputSize = result.output_size
         file.savedBytes = result.saved_bytes
       } catch (err) {
-        file.status = 'error'
-        file.error = String(err)
+        if (cancelRequested.value) {
+          file.status = 'waiting'
+          file.progress = undefined
+        } else {
+          file.status = 'error'
+          file.error = String(err)
+        }
       }
     }
 

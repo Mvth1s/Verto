@@ -703,9 +703,16 @@ onUnmounted(() => {
             v-if="file.status === 'converting'"
             class="progress-row"
             role="progressbar"
+            :aria-valuenow="file.progress"
+            :aria-valuemin="0"
+            :aria-valuemax="100"
             :aria-label="file.name"
           >
-            <div class="bar indeterminate"></div>
+            <div
+              class="bar"
+              :class="{ indeterminate: file.progress == null }"
+              :style="file.progress != null ? { width: file.progress + '%' } : {}"
+            ></div>
           </div>
         </div>
       </div>

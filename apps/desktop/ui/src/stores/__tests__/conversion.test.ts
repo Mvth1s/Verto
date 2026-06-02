@@ -6,6 +6,9 @@ import { useSettingsStore } from '../settings'
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn().mockResolvedValue(() => {}),
+}))
 
 import { invoke } from '@tauri-apps/api/core'
 const mockInvoke = vi.mocked(invoke)

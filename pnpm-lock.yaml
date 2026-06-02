@@ -105,6 +105,9 @@ importers:
       vue:
         specifier: ^3.5.0
         version: 3.5.35(typescript@5.9.3)
+      vue-i18n:
+        specifier: ^9.14.5
+        version: 9.14.5(vue@3.5.35(typescript@5.9.3))
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.4
