@@ -157,7 +157,7 @@ Result<ConversionResult, String> → back to Vue
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
-Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.3.0`. La prochaine merge `dev→main` produira `v1.4.0` (présence de commits `feat:`).
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.5.1`.
 
 ---
 

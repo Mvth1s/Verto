@@ -20,20 +20,32 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 
 ## 2. Périmètre fonctionnel
 
-### 2.1 Fonctionnalités principales (v1.0)
+### 2.1 Fonctionnalités principales
 
 #### Conversion d'images
 - Formats supportés en entrée/sortie : JPEG, PNG, WebP, BMP, TIFF, GIF, AVIF
-- Options : qualité (0-100), redimensionnement (largeur × hauteur, ratio conservé)
+- Options : qualité (0-100), préréglages (Web / Print / Lossless), redimensionnement (largeur × hauteur, ratio conservé)
+- Prévisualisation miniature dans la file de conversion
 - Conversion unitaire et par lot (batch)
 
 #### Conversion de documents
-- Formats : PDF, DOCX, Markdown (.md), HTML, ODT
+- Formats : PDF, DOCX, Markdown (.md), HTML, RST, ODT, EPUB
 - Paires supportées :
   - DOCX → PDF, HTML, Markdown
   - Markdown → PDF, HTML, DOCX
   - HTML → PDF, Markdown
   - PDF → HTML (texte extrait)
+
+#### Conversion audio
+- Formats : MP3, FLAC, OGG, WAV, AAC
+- Options : débit (bitrate en kbps)
+- Moteur : FFmpeg sidecar
+
+#### Conversion vidéo
+- Formats : MP4, MKV, WebM, MOV
+- Options : codec (H.264, H.265, VP9), résolution (largeur × hauteur, ratio conservé)
+- Prévisualisation miniature dans la file de conversion
+- Moteur : FFmpeg sidecar
 
 #### Interface
 - Glisser-déposer (drag & drop) de fichiers et de dossiers
@@ -41,19 +53,20 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 - Sélection du format de sortie par menu déroulant
 - Sélection du dossier de destination
 - File de conversion avec état par fichier (en attente / en cours / terminé / erreur)
-- Notification visuelle de fin de conversion
-- Accès direct au dossier de sortie depuis l'app
+- Notification visuelle et système (OS) à la fin d'une conversion par lot
+- Navigation par catégorie : Images, Documents, Audio, Vidéo
+- Page de préférences avec persistance (format, répertoire, qualité, débit, codec)
+- Support multilingue : français et anglais (bascule dans la nav)
 
-### 2.2 Fonctionnalités secondaires (v1.0)
+### 2.2 Fonctionnalités secondaires
 
-- Historique des dernières conversions (session courante)
 - Préférences : format de sortie par défaut par catégorie, dossier de destination par défaut
-- Support multilingue : français, anglais (base i18n extensible)
+- Mise à jour automatique (vérification au lancement via Tauri updater)
+- Navigation clavier complète et labels ARIA
 
-### 2.3 Hors périmètre v1.0
+### 2.3 Hors périmètre
 
-- Conversion audio et vidéo (prévue v0.3 et v1.1)
-- Interface TUI (prévue post-v1.0)
+- Interface TUI (prévue post-v1.x)
 - Interface CLI
 - Plugins / formats tiers
 - Synchronisation cloud
@@ -73,13 +86,13 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 
 ### Confidentialité
 - Aucune télémétrie
-- Aucune connexion réseau sortante
+- Aucune connexion réseau sortante (sauf vérification de mise à jour opt-in)
 - Aucune donnée utilisateur transmise
 
 ### Compatibilité
 - Linux : Ubuntu 22.04+, Fedora 38+, Arch (via AppImage ou .deb)
 - Windows : 10 et 11 (x64)
-- macOS : 12+ (x64 et Apple Silicon)
+- macOS : 12+ (Apple Silicon)
 
 ### Accessibilité
 - Navigation clavier complète
@@ -93,6 +106,7 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 - Backend : **Rust** via **Tauri v2**
 - Frontend : **Vue 3** (Composition API) + **Vite** + **Tailwind CSS**
 - Gestion d'état : **Pinia**
+- i18n : **vue-i18n** (EN + FR)
 - Conversions images natives : crate **image**
 - Conversions avancées : **FFmpeg** et **Pandoc** (bundlés comme sidecars Tauri)
 - Monorepo : **pnpm workspaces**
@@ -113,6 +127,7 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 ### Conversion image
 - [ ] JPEG → PNG, WebP, AVIF avec option qualité
 - [ ] PNG → JPEG, WebP avec option qualité
+- [ ] Redimensionnement optionnel avec conservation du ratio
 - [ ] Batch de 5 fichiers converti sans erreur
 - [ ] Le fichier source n'est jamais modifié ni supprimé
 
@@ -120,6 +135,15 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 - [ ] Markdown → PDF fonctionne avec du contenu standard (titres, listes, liens)
 - [ ] DOCX → PDF produit un fichier lisible
 - [ ] Les erreurs Pandoc sont affichées à l'utilisateur
+
+### Conversion audio
+- [ ] MP3 → FLAC, OGG, WAV avec option bitrate
+- [ ] Les erreurs FFmpeg sont affichées à l'utilisateur
+
+### Conversion vidéo
+- [ ] MP4 → MKV, WebM, MOV avec sélection du codec
+- [ ] Résolution optionnelle avec conservation du ratio
+- [ ] Les erreurs FFmpeg sont affichées à l'utilisateur
 
 ### File de conversion
 - [ ] Chaque fichier a un état visible (en attente / en cours / terminé / erreur)
@@ -134,11 +158,12 @@ Convertir un fichier d'un format à un autre sous Linux (ou Windows/macOS) impli
 Présenter le projet, convaincre de l'installer, faciliter le téléchargement.
 
 ### Contenu
-1. **Hero** : titre, accroche, screenshot de l'app, boutons de téléchargement (Linux / Windows / macOS)
-2. **Fonctionnalités** : 4 cards (Images, Documents, Local, Open source)
-3. **Promesse privacy** : section "Vos fichiers restent sur votre machine"
-4. **Téléchargement** : liens vers les artifacts de la dernière release GitHub
-5. **Footer** : lien GitHub, licence
+1. **Nav** : logo, lien GitHub, bascule de langue EN/FR
+2. **Hero** : titre, accroche, mockup CSS de l'interface, boutons de téléchargement (Linux / Windows / macOS)
+3. **Fonctionnalités** : cards par catégorie (Images, Documents, Audio, Vidéo, Local, Open source)
+4. **Promesse privacy** : section "Vos fichiers restent sur votre machine"
+5. **Téléchargement** : liens dynamiques vers les artifacts de la dernière release GitHub (cache localStorage 1h)
+6. **Footer** : lien GitHub, licence
 
 ### Contraintes
 - Hébergement Vercel (déploiement automatique depuis `main`)
