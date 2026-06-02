@@ -15,6 +15,7 @@ pub struct ConversionResult {
 #[tauri::command]
 pub async fn convert_video(
     app: tauri::AppHandle,
+    state: tauri::State<'_, crate::ActiveConversion>,
     input_path: String,
     output_format: String,
     codec: Option<String>,
@@ -42,6 +43,7 @@ pub async fn convert_video(
 
     let result = ffmpeg_converter::convert_video(
         &app,
+        &state,
         &input_path,
         &output_format,
         &out,

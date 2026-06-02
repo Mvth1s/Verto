@@ -130,6 +130,7 @@ export const useConversionStore = defineStore('conversion', () => {
 
   function cancelConversion() {
     cancelRequested.value = true
+    invoke('cancel_conversion').catch(() => {})
   }
 
   async function convertAll(category: FileCategory = 'image') {
@@ -194,8 +195,13 @@ export const useConversionStore = defineStore('conversion', () => {
         file.outputSize = result.output_size
         file.savedBytes = result.saved_bytes
       } catch (err) {
-        file.status = 'error'
-        file.error = String(err)
+        if (cancelRequested.value) {
+          file.status = 'waiting'
+          file.progress = undefined
+        } else {
+          file.status = 'error'
+          file.error = String(err)
+        }
       }
     }
 

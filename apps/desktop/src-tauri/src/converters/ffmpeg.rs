@@ -64,6 +64,7 @@ const ALLOWED_FORMATS: &[&str] = &["mp3", "flac", "ogg", "wav", "aac", "opus", "
 
 pub async fn convert(
     app: &tauri::AppHandle,
+    active: &crate::ActiveConversion,
     input_path: &str,
     output_format: &str,
     output_path: Option<&str>,
@@ -118,13 +119,15 @@ pub async fn convert(
 
     args.push(out_path.clone());
 
-    let (mut rx, _child) = app
+    let (mut rx, child) = app
         .shell()
         .sidecar("ffmpeg")
         .map_err(|e| e.to_string())?
         .args(&args)
         .spawn()
         .map_err(|e| e.to_string())?;
+
+    *active.0.lock().map_err(|e| e.to_string())? = Some(child);
 
     let mut stderr_buf = String::new();
     let mut exit_code: Option<i32> = None;
@@ -161,6 +164,8 @@ pub async fn convert(
             _ => {}
         }
     }
+
+    *active.0.lock().map_err(|e| e.to_string())? = None;
 
     if exit_code != Some(0) {
         return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
@@ -201,6 +206,7 @@ fn audio_codec_for_format(output_format: &str) -> &'static str {
 #[allow(clippy::too_many_arguments)]
 pub async fn convert_video(
     app: &tauri::AppHandle,
+    active: &crate::ActiveConversion,
     input_path: &str,
     output_format: &str,
     output_path: &str,
@@ -279,13 +285,15 @@ pub async fn convert_video(
 
     args.push(output_path.to_string());
 
-    let (mut rx, _child) = app
+    let (mut rx, child) = app
         .shell()
         .sidecar("ffmpeg")
         .map_err(|e| e.to_string())?
         .args(&args)
         .spawn()
         .map_err(|e| e.to_string())?;
+
+    *active.0.lock().map_err(|e| e.to_string())? = Some(child);
 
     let mut stderr_buf = String::new();
     let mut exit_code: Option<i32> = None;
@@ -322,6 +330,8 @@ pub async fn convert_video(
             _ => {}
         }
     }
+
+    *active.0.lock().map_err(|e| e.to_string())? = None;
 
     if exit_code != Some(0) {
         return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));

@@ -12,6 +12,7 @@ pub struct ConversionResult {
 #[tauri::command]
 pub async fn convert_audio(
     app: tauri::AppHandle,
+    state: tauri::State<'_, crate::ActiveConversion>,
     input_path: String,
     output_format: String,
     bitrate: Option<u32>,
@@ -30,6 +31,7 @@ pub async fn convert_audio(
 
     let result = ffmpeg_converter::convert(
         &app,
+        &state,
         &input_path,
         &output_format,
         output_path.as_deref(),
