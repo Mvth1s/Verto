@@ -9,6 +9,58 @@ struct ProgressPayload {
     percent: f32,
 }
 
+/// Extracts the most meaningful error line from FFmpeg stderr.
+/// Filters out version headers, indented config output, stream info, and stats.
+fn extract_ffmpeg_error(stderr: &str) -> String {
+    let is_noise = |line: &str| -> bool {
+        let t = line.trim();
+        if t.is_empty() || t.eq_ignore_ascii_case("conversion failed!") {
+            return true;
+        }
+        if line.starts_with(' ') || line.starts_with('\t') {
+            return true;
+        }
+        if t.starts_with("ffmpeg version") || t.starts_with("built with") {
+            return true;
+        }
+        if t.starts_with("Input #")
+            || t.starts_with("Output #")
+            || t.starts_with("Stream #")
+            || t.starts_with("Stream mapping")
+            || t.starts_with("Duration:")
+            || t.starts_with("Metadata:")
+            || t.starts_with("Press [q]")
+        {
+            return true;
+        }
+        if t.starts_with('[') {
+            return true;
+        }
+        if t.starts_with("frame=")
+            || t.starts_with("Lsize=")
+            || t.starts_with("video:")
+            || t.starts_with("audio:")
+        {
+            return true;
+        }
+        false
+    };
+
+    stderr
+        .lines()
+        .filter(|l| !is_noise(l))
+        .last()
+        .map(|l| {
+            let t = l.trim();
+            if t.len() > 200 {
+                format!("{}…", &t[..200])
+            } else {
+                t.to_string()
+            }
+        })
+        .unwrap_or_else(|| "FFmpeg conversion failed".to_string())
+}
+
 /// Extracts total duration in microseconds from an FFmpeg stderr line.
 /// Looks for: `Duration: HH:MM:SS.cc`
 fn parse_duration_us(text: &str) -> Option<u64> {
@@ -169,7 +221,7 @@ pub async fn convert(
 
     if exit_code != Some(0) {
         let _ = std::fs::remove_file(&out_path);
-        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+        return Err(extract_ffmpeg_error(&stderr_buf));
     }
 
     let output_size = std::fs::metadata(&out_path)
@@ -336,7 +388,7 @@ pub async fn convert_video(
 
     if exit_code != Some(0) {
         let _ = std::fs::remove_file(output_path);
-        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+        return Err(extract_ffmpeg_error(&stderr_buf));
     }
 
     let output_size = std::fs::metadata(output_path)
@@ -413,7 +465,7 @@ pub async fn convert_image(
 
     if exit_code != Some(0) {
         let _ = std::fs::remove_file(output_path);
-        return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
+        return Err(extract_ffmpeg_error(&stderr_buf));
     }
 
     let output_size = std::fs::metadata(output_path)
