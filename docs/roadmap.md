@@ -62,26 +62,30 @@
 
 ---
 
-## v1.0.0 — Stable release
+## v1.0.0 — Stable release ✅
 
 **Goal**: Polished, tested, documented, cross-platform.
 
 - [x] All v0.x features stable
 - [x] Coverage ≥ targets (App.vue 81%, stores 100%, Rust 26 tests)
 - [x] Accessibility: keyboard nav, ARIA
-- [x] i18n: French + English
+- [x] i18n: French + English (desktop app)
 - [x] Auto-updater (Tauri built-in)
-- [x] Full landing page with screenshots, proper SEO
+- [x] Full landing page with SEO
 - [x] `CHANGELOG.md` complete
-- [ ] GitHub release with all platform artifacts *(déclenché par merge → main)*
+- [x] GitHub release with all platform artifacts
 
 ---
 
-## v1.1.0 — Video
+## v1.1.0 — Video ✅
 
 - [x] Video conversion: MP4, MKV, WebM, MOV (via FFmpeg)
 - [x] Resolution option (width × height, keep-ratio)
 - [x] Codec selection (H.264, H.265, VP9) — filtered by output format
+- [x] Video thumbnail preview in queue
+- [x] Settings page with persistence (output format, quality, bitrate, codec, directory)
+- [x] System notification when batch conversion completes
+- [x] i18n EN/FR on landing page (CSS mockup in hero)
 
 ---
 
