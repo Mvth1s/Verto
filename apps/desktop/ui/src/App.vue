@@ -9,7 +9,7 @@ import { useConversionStore } from './stores/conversion'
 import { useSettingsStore } from './stores/settings'
 import { type Locale } from './i18n'
 
-type Category = 'images' | 'documents' | 'audio' | 'video'
+type Category = 'images' | 'documents' | 'audio' | 'video' | 'history'
 
 const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
 const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
@@ -73,6 +73,7 @@ const categoryName = computed(() => {
   if (activeCategory.value === 'images') return t('nav.images')
   if (activeCategory.value === 'documents') return t('nav.documents')
   if (activeCategory.value === 'audio') return t('nav.audio')
+  if (activeCategory.value === 'history') return t('history.title')
   return t('nav.video')
 })
 
@@ -140,6 +141,15 @@ watch(
 
 function setCategory(cat: Category) {
   activeCategory.value = cat
+}
+
+function timeAgo(ts: number): string {
+  const s = Math.floor((Date.now() - ts) / 1000)
+  if (s < 60) return locale.value === 'fr' ? "À l'instant" : 'Just now'
+  const m = Math.floor(s / 60)
+  if (m < 60) return locale.value === 'fr' ? `Il y a ${m} min` : `${m} min ago`
+  const h = Math.floor(m / 60)
+  return locale.value === 'fr' ? `Il y a ${h} h` : `${h} h ago`
 }
 
 function formatBytes(bytes: number): string {
@@ -541,6 +551,28 @@ onUnmounted(() => {
         </div>
       </nav>
 
+      <div class="nav-divider" aria-hidden="true"></div>
+
+      <div
+        class="nav-item"
+        :class="{ active: activeCategory === 'history' }"
+        role="button"
+        tabindex="0"
+        :aria-pressed="activeCategory === 'history'"
+        :aria-label="t('history.title')"
+        @click="setCategory('history')"
+        @keydown.enter.space.prevent="setCategory('history')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+        <span>{{ t('history.title') }}</span>
+        <span v-if="conversion.history.length > 0" class="nav-badge">{{
+          conversion.history.length
+        }}</span>
+      </div>
+
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
@@ -572,154 +604,186 @@ onUnmounted(() => {
     <main class="main">
       <div class="main-header">
         <div class="main-title">{{ categoryName }}</div>
-        <div class="main-sub" aria-live="polite" aria-atomic="true">{{ queueSummary }}</div>
+        <div class="main-sub" aria-live="polite" aria-atomic="true">
+          {{ activeCategory === 'history' ? '' : queueSummary }}
+        </div>
       </div>
 
-      <div
-        class="dropzone"
-        :class="{ dragover: isDragover }"
-        role="button"
-        tabindex="0"
-        :aria-label="t('dropzone.title')"
-        @click="openFilePicker"
-        @keydown.enter.space.prevent="openFilePicker"
-        @dragenter.prevent="isDragover = true"
-        @dragover.prevent="isDragover = true"
-        @dragleave.prevent="isDragover = false"
-        @drop.prevent="isDragover = false"
-      >
-        <div class="drop-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 3v12" />
-            <path d="M7 8l5-5 5 5" />
-            <path d="M5 21h14" />
-          </svg>
+      <!-- HISTORY VIEW -->
+      <template v-if="activeCategory === 'history'">
+        <div v-if="conversion.history.length === 0" class="history-empty">
+          {{ t('history.empty') }}
         </div>
-        <div>
-          <div class="drop-title">{{ t('dropzone.title') }}</div>
-          <div class="drop-sub" style="text-align: center; margin-top: 4px">
-            {{ t('dropzone.sub') }}
-          </div>
-        </div>
-        <div class="drop-kbd" aria-hidden="true"><kbd>⌘</kbd><kbd>O</kbd></div>
-      </div>
-
-      <div v-if="activeQueue.length > 0" class="queue" role="list" :aria-label="t('queue.title')">
-        <div class="queue-header">
-          <div class="queue-title" aria-hidden="true">{{ t('queue.title') }}</div>
-          <div class="queue-actions">
-            <button
-              v-if="activeQueue.some((f) => f.status === 'done')"
-              class="queue-clear"
-              @click="conversion.clearDone"
-            >
-              {{ t('queue.clear_done') }}
+        <div v-else class="history-list">
+          <div class="history-header">
+            <button class="queue-clear" @click="conversion.clearHistory">
+              {{ t('history.clear') }}
             </button>
-            <div class="queue-meta" aria-hidden="true">{{ queueSummary }}</div>
           </div>
+          <div v-for="item in conversion.history" :key="item.id" class="history-row">
+            <div class="history-name">{{ item.name }}</div>
+            <div class="history-formats">
+              {{ item.inputFormat.toUpperCase() }} → {{ item.outputFormat.toUpperCase() }}
+            </div>
+            <div class="history-sizes">
+              <span v-if="item.savedBytes > 0" class="history-saved">
+                {{ t('history.saved', { saved: formatBytes(item.savedBytes) }) }}
+              </span>
+              <span v-else class="history-neutral">{{ t('history.same_size') }}</span>
+              · {{ formatBytes(item.outputSize) }}
+            </div>
+            <div class="history-time">{{ timeAgo(item.convertedAt) }}</div>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
+        <div
+          class="dropzone"
+          :class="{ dragover: isDragover }"
+          role="button"
+          tabindex="0"
+          :aria-label="t('dropzone.title')"
+          @click="openFilePicker"
+          @keydown.enter.space.prevent="openFilePicker"
+          @dragenter.prevent="isDragover = true"
+          @dragover.prevent="isDragover = true"
+          @dragleave.prevent="isDragover = false"
+          @drop.prevent="isDragover = false"
+        >
+          <div class="drop-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3v12" />
+              <path d="M7 8l5-5 5 5" />
+              <path d="M5 21h14" />
+            </svg>
+          </div>
+          <div>
+            <div class="drop-title">{{ t('dropzone.title') }}</div>
+            <div class="drop-sub" style="text-align: center; margin-top: 4px">
+              {{ t('dropzone.sub') }}
+            </div>
+          </div>
+          <div class="drop-kbd" aria-hidden="true"><kbd>⌘</kbd><kbd>O</kbd></div>
         </div>
 
-        <div
-          v-for="file in activeQueue"
-          :key="file.id"
-          class="queue-row"
-          :class="{ 'with-progress': file.status === 'converting' }"
-          role="listitem"
-        >
-          <img
-            v-if="activeCategory === 'images' && !thumbErrors[file.id]"
-            :src="convertFileSrc(file.path)"
-            class="thumb-img"
-            :alt="file.inputFormat.toUpperCase()"
-            loading="lazy"
-            @error="onThumbError(file.id)"
-          />
-          <img
-            v-else-if="activeCategory === 'video' && videoThumbs[file.id]"
-            :src="videoThumbs[file.id]"
-            class="thumb-img"
-            :alt="file.inputFormat.toUpperCase()"
-          />
-          <div v-else class="ftype" aria-hidden="true">
-            {{ file.inputFormat.toUpperCase().slice(0, 4) }}
+        <div v-if="activeQueue.length > 0" class="queue" role="list" :aria-label="t('queue.title')">
+          <div class="queue-header">
+            <div class="queue-title" aria-hidden="true">{{ t('queue.title') }}</div>
+            <div class="queue-actions">
+              <button
+                v-if="activeQueue.some((f) => f.status === 'done')"
+                class="queue-clear"
+                @click="conversion.clearDone"
+              >
+                {{ t('queue.clear_done') }}
+              </button>
+              <div class="queue-meta" aria-hidden="true">{{ queueSummary }}</div>
+            </div>
           </div>
-          <div class="fname">
-            <span>{{ file.name }}</span>
-            <span class="arrow" aria-hidden="true">→</span>
-            <span class="to"
-              >{{ file.name.replace(/\.[^/.]+$/, '') }}.{{ settings.outputFormat }}</span
-            >
-          </div>
+
           <div
-            class="fstatus"
-            :class="{
-              done: file.status === 'done',
-              progress: file.status === 'converting',
-              error: file.status === 'error',
-            }"
-            aria-live="polite"
+            v-for="file in activeQueue"
+            :key="file.id"
+            class="queue-row"
+            :class="{ 'with-progress': file.status === 'converting' }"
+            role="listitem"
           >
-            <template v-if="file.status === 'done'">
-              {{ formatPercent(file.inputSize!, file.outputSize!) }}
-            </template>
-            <template v-else-if="file.status === 'converting'">{{
-              t('queue.converting')
-            }}</template>
-            <template v-else-if="file.status === 'error'">{{ t('queue.error') }}</template>
-            <template v-else>{{ t('queue.waiting') }}</template>
-          </div>
-          <div
-            class="qaction"
-            :class="{ check: file.status === 'done', retry: file.status === 'error' }"
-            role="button"
-            tabindex="0"
-            :aria-label="
-              file.status === 'error'
-                ? t('actions.retry', { error: file.error })
-                : file.status === 'waiting' || file.status === 'done'
-                  ? t('actions.remove')
-                  : undefined
-            "
-            @click="handleQueueAction(file.id, file.status)"
-            @keydown.enter.space.prevent="handleQueueAction(file.id, file.status)"
-          >
-            <svg v-if="file.status === 'done'" viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v4l3 2" />
-            </svg>
-            <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </div>
-          <div
-            v-if="file.status === 'converting'"
-            class="progress-row"
-            role="progressbar"
-            :aria-valuenow="file.progress"
-            :aria-valuemin="0"
-            :aria-valuemax="100"
-            :aria-label="file.name"
-          >
+            <img
+              v-if="activeCategory === 'images' && !thumbErrors[file.id]"
+              :src="convertFileSrc(file.path)"
+              class="thumb-img"
+              :alt="file.inputFormat.toUpperCase()"
+              loading="lazy"
+              @error="onThumbError(file.id)"
+            />
+            <img
+              v-else-if="activeCategory === 'video' && videoThumbs[file.id]"
+              :src="videoThumbs[file.id]"
+              class="thumb-img"
+              :alt="file.inputFormat.toUpperCase()"
+            />
+            <div v-else class="ftype" aria-hidden="true">
+              {{ file.inputFormat.toUpperCase().slice(0, 4) }}
+            </div>
+            <div class="fname">
+              <span>{{ file.name }}</span>
+              <span class="arrow" aria-hidden="true">→</span>
+              <span class="to"
+                >{{ file.name.replace(/\.[^/.]+$/, '') }}.{{ settings.outputFormat }}</span
+              >
+            </div>
             <div
-              class="bar"
-              :class="{ indeterminate: file.progress == null }"
-              :style="file.progress != null ? { width: file.progress + '%' } : {}"
-            ></div>
+              class="fstatus"
+              :class="{
+                done: file.status === 'done',
+                progress: file.status === 'converting',
+                error: file.status === 'error',
+              }"
+              aria-live="polite"
+            >
+              <template v-if="file.status === 'done'">
+                {{ formatPercent(file.inputSize!, file.outputSize!) }}
+              </template>
+              <template v-else-if="file.status === 'converting'">{{
+                t('queue.converting')
+              }}</template>
+              <template v-else-if="file.status === 'error'">{{ t('queue.error') }}</template>
+              <template v-else>{{ t('queue.waiting') }}</template>
+            </div>
+            <div
+              class="qaction"
+              :class="{ check: file.status === 'done', retry: file.status === 'error' }"
+              role="button"
+              tabindex="0"
+              :aria-label="
+                file.status === 'error'
+                  ? t('actions.retry', { error: file.error })
+                  : file.status === 'waiting' || file.status === 'done'
+                    ? t('actions.remove')
+                    : undefined
+              "
+              @click="handleQueueAction(file.id, file.status)"
+              @keydown.enter.space.prevent="handleQueueAction(file.id, file.status)"
+            >
+              <svg v-if="file.status === 'done'" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <svg v-else-if="file.status === 'converting'" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v4l3 2" />
+              </svg>
+              <svg v-else-if="file.status === 'error'" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </div>
+            <div
+              v-if="file.status === 'converting'"
+              class="progress-row"
+              role="progressbar"
+              :aria-valuenow="file.progress"
+              :aria-valuemin="0"
+              :aria-valuemax="100"
+              :aria-label="file.name"
+            >
+              <div
+                class="bar"
+                :class="{ indeterminate: file.progress == null }"
+                :style="file.progress != null ? { width: file.progress + '%' } : {}"
+              ></div>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </main>
 
     <!-- RIGHT PANEL -->
-    <aside class="panel" :aria-label="t('settings.title')">
+    <aside v-if="activeCategory !== 'history'" class="panel" :aria-label="t('settings.title')">
       <div class="panel-title" aria-hidden="true">{{ t('settings.title') }}</div>
 
       <div class="field">
@@ -1128,6 +1192,81 @@ body {
   stroke-width: 1.6;
   fill: none;
   flex-shrink: 0;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 6px 8px;
+}
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #0a0a0a;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+/* History panel */
+.history-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  flex: 1;
+}
+.history-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 8px;
+}
+.history-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.history-name {
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-formats {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-family: monospace;
+}
+.history-sizes {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.history-saved {
+  color: var(--accent);
+}
+.history-neutral {
+  color: var(--text-muted);
+}
+.history-time {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-size: 11px;
 }
 
 .sidebar-spacer {

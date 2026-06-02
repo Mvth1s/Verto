@@ -24,6 +24,19 @@ async function notify(title: string, body: string) {
 export type FileStatus = 'waiting' | 'converting' | 'done' | 'error'
 export type FileCategory = 'image' | 'document' | 'audio' | 'video'
 
+export interface HistoryItem {
+  id: string
+  name: string
+  inputFormat: string
+  outputFormat: string
+  inputSize: number
+  outputSize: number
+  savedBytes: number
+  outputPath: string
+  convertedAt: number
+  category: FileCategory
+}
+
 export interface FileItem {
   id: string
   name: string
@@ -83,6 +96,7 @@ function buildOutputPath(
 
 export const useConversionStore = defineStore('conversion', () => {
   const queue = ref<FileItem[]>([])
+  const history = ref<HistoryItem[]>([])
   const isConverting = ref(false)
   const cancelRequested = ref(false)
 
@@ -138,6 +152,10 @@ export const useConversionStore = defineStore('conversion', () => {
 
   function clearDone() {
     queue.value = queue.value.filter((f) => f.status !== 'done')
+  }
+
+  function clearHistory() {
+    history.value = []
   }
 
   function cancelConversion() {
@@ -206,6 +224,18 @@ export const useConversionStore = defineStore('conversion', () => {
         file.inputSize = result.input_size
         file.outputSize = result.output_size
         file.savedBytes = result.saved_bytes
+        history.value.unshift({
+          id: file.id,
+          name: file.name,
+          inputFormat: file.inputFormat,
+          outputFormat: settings.outputFormat,
+          inputSize: result.input_size,
+          outputSize: result.output_size,
+          savedBytes: result.saved_bytes,
+          outputPath: result.output_path,
+          convertedAt: Date.now(),
+          category: file.category,
+        })
       } catch (err) {
         if (cancelRequested.value) {
           file.status = 'waiting'
@@ -238,6 +268,7 @@ export const useConversionStore = defineStore('conversion', () => {
 
   return {
     queue,
+    history,
     isConverting,
     waiting,
     done,
@@ -247,6 +278,7 @@ export const useConversionStore = defineStore('conversion', () => {
     removeFile,
     retryFile,
     clearDone,
+    clearHistory,
     cancelConversion,
     convertAll,
   }
