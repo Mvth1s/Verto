@@ -168,6 +168,7 @@ pub async fn convert(
     *active.0.lock().map_err(|e| e.to_string())? = None;
 
     if exit_code != Some(0) {
+        let _ = std::fs::remove_file(&out_path);
         return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
     }
 
@@ -334,6 +335,7 @@ pub async fn convert_video(
     *active.0.lock().map_err(|e| e.to_string())? = None;
 
     if exit_code != Some(0) {
+        let _ = std::fs::remove_file(output_path);
         return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
     }
 
@@ -410,6 +412,7 @@ pub async fn convert_image(
     }
 
     if exit_code != Some(0) {
+        let _ = std::fs::remove_file(output_path);
         return Err(format!("ffmpeg failed: {}", stderr_buf.trim()));
     }
 
