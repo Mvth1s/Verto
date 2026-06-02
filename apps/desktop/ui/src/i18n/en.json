@@ -77,6 +77,13 @@
     "changelog": "Changelog",
     "reset_defaults": "Reset to defaults"
   },
+  "history": {
+    "title": "History",
+    "clear": "Clear",
+    "empty": "No conversions yet this session",
+    "saved": "{saved} saved",
+    "same_size": "Same size"
+  },
   "update": {
     "available": "Update available — v{version}",
     "install": "Install",

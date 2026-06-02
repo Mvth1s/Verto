@@ -77,6 +77,13 @@
     "changelog": "Journal des modifications",
     "reset_defaults": "Réinitialiser les défauts"
   },
+  "history": {
+    "title": "Historique",
+    "clear": "Effacer",
+    "empty": "Aucune conversion cette session",
+    "saved": "{saved} économisés",
+    "same_size": "Taille identique"
+  },
   "update": {
     "available": "Mise à jour disponible — v{version}",
     "install": "Installer",
