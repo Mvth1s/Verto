@@ -29,7 +29,12 @@ const thumbErrors = ref<Record<string, true>>({})
 const videoThumbs = ref<Record<string, string>>({})
 const locale = ref<Locale>('en')
 const updateVersion = ref<string | null>(null)
-const updateDismissed = ref(false)
+const updateDismissedVersion = ref<string | null>(
+  localStorage.getItem('verto.updateDismissedVersion'),
+)
+const showUpdateBanner = computed(
+  () => updateVersion.value !== null && updateVersion.value !== updateDismissedVersion.value,
+)
 const showSettings = ref(false)
 const appVersion = ref('')
 
@@ -227,6 +232,13 @@ function handleQueueAction(fileId: string, status: string) {
   }
 }
 
+function dismissUpdate() {
+  if (updateVersion.value) {
+    updateDismissedVersion.value = updateVersion.value
+    localStorage.setItem('verto.updateDismissedVersion', updateVersion.value)
+  }
+}
+
 // Open-folder toast timer
 let openFolderTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -292,20 +304,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="updateVersion && !updateDismissed"
-    class="update-banner"
-    role="alert"
-    aria-live="assertive"
-  >
+  <div v-if="showUpdateBanner" class="update-banner" role="alert" aria-live="assertive">
     <span>{{ t('update.available', { version: updateVersion }) }}</span>
     <div class="update-actions">
       <button class="update-btn-install" @click="installUpdate">{{ t('update.install') }}</button>
-      <button
-        class="update-btn-dismiss"
-        :aria-label="t('update.dismiss')"
-        @click="updateDismissed = true"
-      >
+      <button class="update-btn-dismiss" :aria-label="t('update.dismiss')" @click="dismissUpdate">
         ✕
       </button>
     </div>
