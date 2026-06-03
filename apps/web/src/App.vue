@@ -233,10 +233,18 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <div class="ws-brand">
                 <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
               </div>
-              <div class="ws-item active"><span class="ico"></span>{{ t('features.images_title') }}</div>
-              <div class="ws-item"><span class="ico"></span>{{ t('features.documents_title') }}</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>{{ t('features.audio_title') }}</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>{{ t('features.video_title') }}</div>
+              <div class="ws-item active">
+                <span class="ico"></span>{{ t('features.images_title') }}
+              </div>
+              <div class="ws-item">
+                <span class="ico"></span>{{ t('features.documents_title') }}
+              </div>
+              <div class="ws-item" style="opacity: 0.4">
+                <span class="ico"></span>{{ t('features.audio_title') }}
+              </div>
+              <div class="ws-item" style="opacity: 0.4">
+                <span class="ico"></span>{{ t('features.video_title') }}
+              </div>
             </div>
             <div class="ws-main">
               <div class="ws-drop">
