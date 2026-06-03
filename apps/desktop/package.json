@@ -13,7 +13,8 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint ui/src",
     "format": "prettier --write ui/src",
-    "format:check": "prettier --check ui/src"
+    "format:check": "prettier --check ui/src",
+    "download-sidecars": "bash ../../scripts/download-sidecars.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

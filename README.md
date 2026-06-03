@@ -98,6 +98,19 @@ Run `Verto_*_x64-setup.exe` (NSIS installer) or `Verto_*_x64_en-US.msi`.
 
 Open `Verto_*_aarch64.dmg` and drag Verto to your Applications folder.
 
+<details>
+<summary>Advanced: download sidecars manually via curl</summary>
+
+If you prefer to download FFmpeg and Pandoc yourself rather than using the bundled binaries (useful for development without running the full CI setup):
+
+```bash
+pnpm --filter desktop download-sidecars
+```
+
+This requires `curl` and `bash`. The script auto-detects your platform and places the binaries in `apps/desktop/src-tauri/binaries/` with the correct Tauri sidecar filenames. Re-running it is safe — existing binaries are skipped. The bundled sidecar approach used by CI and releases is unaffected.
+
+</details>
+
 ## Development
 
 ### Prerequisites
