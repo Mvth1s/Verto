@@ -88,5 +88,10 @@
     "available": "Update available — v{version}",
     "install": "Install",
     "dismiss": "Dismiss"
+  },
+  "open_folder": {
+    "prompt": "Conversion complete",
+    "open": "Open folder",
+    "dismiss": "Dismiss"
   }
 }

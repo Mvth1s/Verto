@@ -99,6 +99,8 @@ export const useConversionStore = defineStore('conversion', () => {
   const history = ref<HistoryItem[]>([])
   const isConverting = ref(false)
   const cancelRequested = ref(false)
+  const showOpenFolderPrompt = ref(false)
+  const lastOutputDirectory = ref<string | null>(null)
 
   listen<{ id: string; percent: number }>('conversion-progress', ({ payload }) => {
     const file = queue.value.find((f) => f.id === payload.id)
@@ -161,6 +163,10 @@ export const useConversionStore = defineStore('conversion', () => {
   function cancelConversion() {
     cancelRequested.value = true
     invoke('cancel_conversion').catch(() => {})
+  }
+
+  function dismissOpenFolderPrompt() {
+    showOpenFolderPrompt.value = false
   }
 
   async function convertAll(category: FileCategory = 'image') {
@@ -263,6 +269,14 @@ export const useConversionStore = defineStore('conversion', () => {
       const savedMb = saved > 0 ? ` · ${(saved / 1024 / 1024).toFixed(1)} MB saved` : ''
       const errors = errorCount > 0 ? ` (${errorCount} error${errorCount > 1 ? 's' : ''})` : ''
       notify('Verto', `${doneCount} file${doneCount > 1 ? 's' : ''} converted${savedMb}${errors}`)
+
+      const firstDone = queue.value.find((f) => f.category === category && f.status === 'done')
+      const outputDir =
+        settings.outputDirectory ?? firstDone?.outputPath?.replace(/\/[^/]+$/, '') ?? null
+      if (outputDir) {
+        lastOutputDirectory.value = outputDir
+        showOpenFolderPrompt.value = true
+      }
     }
   }
 
@@ -270,6 +284,8 @@ export const useConversionStore = defineStore('conversion', () => {
     queue,
     history,
     isConverting,
+    showOpenFolderPrompt,
+    lastOutputDirectory,
     waiting,
     done,
     totalSaved,
@@ -280,6 +296,7 @@ export const useConversionStore = defineStore('conversion', () => {
     clearDone,
     clearHistory,
     cancelConversion,
+    dismissOpenFolderPrompt,
     convertAll,
   }
 })
