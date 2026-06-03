@@ -270,11 +270,8 @@ async function handleOpenFolder() {
 // Drag-and-drop via Tauri window events
 let unlistenDrop: (() => void) | null = null
 
-let updateCheckInterval: ReturnType<typeof setInterval> | null = null
-
 onMounted(async () => {
   checkForUpdates()
-  updateCheckInterval = setInterval(checkForUpdates, 60 * 60 * 1000)
   appVersion.value = await getVersion().catch(() => '—')
   const appWindow = getCurrentWebviewWindow()
 
@@ -303,7 +300,7 @@ onMounted(async () => {
 onUnmounted(() => {
   unlistenDrop?.()
   if (openFolderTimer) clearTimeout(openFolderTimer)
-  if (updateCheckInterval) clearInterval(updateCheckInterval)
+
 })
 </script>
 
