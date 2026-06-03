@@ -5,6 +5,31 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.7.0](https://github.com/Mvth1s/Verto/compare/v1.6.0...v1.7.0) (2026-06-03)
+
+
+### Bug Fixes
+
+* **backend:** extract readable error line from FFmpeg stderr ([d25600a](https://github.com/Mvth1s/Verto/commit/d25600abb4bbf3bc08a0ed1062b570b96fbf0f5a))
+* **backend:** use next_back() instead of last() on DoubleEndedIterator ([f32e360](https://github.com/Mvth1s/Verto/commit/f32e360462be0c0947090fc326aa9c080e091172))
+* **backend:** use rfind instead of filter+next_back (Clippy) ([807fc73](https://github.com/Mvth1s/Verto/commit/807fc73b09bae0ff30ebb0690aeea76569b745e2))
+* lint error on the front ([3c555f8](https://github.com/Mvth1s/Verto/commit/3c555f8c4b92c4bdb66da5b7a2a32b18541ccc61))
+* **web:** align download card buttons to bottom with flex: 1 ([cf0327a](https://github.com/Mvth1s/Verto/commit/cf0327a110934c184497274173ae1cbb8d92d23c))
+* **web:** remove stray img and label elements from win mockup ([32e5108](https://github.com/Mvth1s/Verto/commit/32e5108a042fad5efa9e560e4ced454b5c3f5d69))
+* **web:** replace linux svg icon with tux.png image ([06d9ae4](https://github.com/Mvth1s/Verto/commit/06d9ae4869abe62fab7c890c955063822853a275))
+
+
+### Features
+
+* **ci:** add curl one-liner installer script for Linux and macOS ([9ead626](https://github.com/Mvth1s/Verto/commit/9ead62603ac1bf790df61e1e078944d92bc9b9f8))
+* **ci:** ensure AppImage build + Arch Linux compatibility ([57d79dc](https://github.com/Mvth1s/Verto/commit/57d79dcd030507f70e413b768bbe2183d910a235))
+* **frontend:** check for updates in the background every hour ([208436d](https://github.com/Mvth1s/Verto/commit/208436df334d1ccd9f5b8b0df21117ab40edee53))
+* **frontend:** check for updates on launch with per-version dismiss ([55120fc](https://github.com/Mvth1s/Verto/commit/55120fcf3e25b9f3b9231a19c0b9239613389b32))
+* **frontend:** conversion history panel (session) ([52f7993](https://github.com/Mvth1s/Verto/commit/52f799390b90cc7314ea6cd7f6ec20353cb565ae))
+* **frontend:** show open-folder prompt after conversion completes ([e692cf4](https://github.com/Mvth1s/Verto/commit/e692cf498411ebb3305ad8bb4843af11feac185e))
+* **tooling:** add curl-based sidecar download script ([f19a79a](https://github.com/Mvth1s/Verto/commit/f19a79a61c27476eb82ccbd1d64b4f042ad3f05a))
+* update the landing page ([8b2017a](https://github.com/Mvth1s/Verto/commit/8b2017a3f693f7d397357c52f581454deef3bcea))
+
 ## [Unreleased]
 
 ### Added
