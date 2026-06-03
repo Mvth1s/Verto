@@ -49,7 +49,17 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 
 ## Installation
 
-Download the latest release from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases).
+### One-liner (Linux & macOS)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/Mvth1s/Verto/main/scripts/install.sh | bash
+```
+
+Linux installs the AppImage to `~/.local/bin/verto`. macOS copies `Verto.app` to `/Applications`.
+
+---
+
+Or download the package directly from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases):
 
 ### Linux — Debian / Ubuntu
 
