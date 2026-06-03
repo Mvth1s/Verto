@@ -227,6 +227,34 @@ function handleQueueAction(fileId: string, status: string) {
   }
 }
 
+// Open-folder toast timer
+let openFolderTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => conversion.showOpenFolderPrompt,
+  (visible) => {
+    if (visible) {
+      openFolderTimer = setTimeout(() => conversion.dismissOpenFolderPrompt(), 8000)
+    } else {
+      if (openFolderTimer) {
+        clearTimeout(openFolderTimer)
+        openFolderTimer = null
+      }
+    }
+  },
+)
+
+async function handleOpenFolder() {
+  if (conversion.lastOutputDirectory) {
+    try {
+      await invoke('open_output_folder', { path: conversion.lastOutputDirectory })
+    } catch (e) {
+      console.error('Failed to open folder:', e)
+    }
+  }
+  conversion.dismissOpenFolderPrompt()
+}
+
 // Drag-and-drop via Tauri window events
 let unlistenDrop: (() => void) | null = null
 
@@ -259,6 +287,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unlistenDrop?.()
+  if (openFolderTimer) clearTimeout(openFolderTimer)
 })
 </script>
 
@@ -281,6 +310,27 @@ onUnmounted(() => {
       </button>
     </div>
   </div>
+  <div
+    v-if="conversion.showOpenFolderPrompt"
+    class="open-folder-toast"
+    role="alert"
+    aria-live="polite"
+  >
+    <span>{{ t('open_folder.prompt') }}</span>
+    <div class="update-actions">
+      <button class="update-btn-install" @click="handleOpenFolder">
+        {{ t('open_folder.open') }}
+      </button>
+      <button
+        class="update-btn-dismiss"
+        :aria-label="t('open_folder.dismiss')"
+        @click="conversion.dismissOpenFolderPrompt"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+
   <!-- SETTINGS MODAL -->
   <Teleport to="body">
     <div
@@ -2315,5 +2365,25 @@ body {
 }
 .settings-link:hover {
   text-decoration: underline;
+}
+
+/* Open-folder toast */
+.open-folder-toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
 }
 </style>

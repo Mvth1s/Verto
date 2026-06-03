@@ -88,5 +88,10 @@
     "available": "Mise à jour disponible — v{version}",
     "install": "Installer",
     "dismiss": "Ignorer"
+  },
+  "open_folder": {
+    "prompt": "Conversion terminée",
+    "open": "Ouvrir le dossier",
+    "dismiss": "Ignorer"
   }
 }
