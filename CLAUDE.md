@@ -25,14 +25,17 @@ You are the **Tech Lead** of the Verto project. The CTO is Mathis Aguado — he 
 # Install all dependencies
 pnpm install
 
+# Download FFmpeg and Pandoc sidecars (needed after fresh clone)
+pnpm --filter desktop download-sidecars
+
 # Run desktop app in dev mode
-pnpm --filter desktop tauri dev
+pnpm dev:desktop   # or: pnpm --filter desktop tauri dev
 
 # Run landing page in dev mode
-pnpm --filter web dev
+pnpm dev:web       # or: pnpm --filter web dev
 
 # Build desktop app (current platform)
-pnpm --filter desktop tauri build
+pnpm build:desktop  # or: pnpm --filter desktop tauri build
 
 # Lint everything (ESLint + Prettier + Clippy)
 pnpm lint
@@ -72,7 +75,7 @@ apps/desktop/
 │   ├── src/
 │   │   ├── main.rs
 │   │   ├── lib.rs      # Tauri builder + invoke_handler registration
-│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs
+│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs, cancel.rs, shell.rs
 │   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
 │   └── capabilities/
 │       └── default.json
@@ -115,7 +118,26 @@ Rust command (src-tauri/src/commands/*.rs)
      └── Sidecar: FFmpeg (AVIF, audio, video) / Pandoc (documents)
      ▼
 Result<ConversionResult, String> → back to Vue
+     │  (also, during FFmpeg conversions:)
+     └── app.emit("conversion-progress", { id, percent }) → Vue event listener
 ```
+
+### Tauri events (Rust → Vue)
+
+Real-time progress is pushed via Tauri events — separate from the `invoke` return value.
+
+| Event | Payload | Emitter | Consumer |
+|---|---|---|---|
+| `conversion-progress` | `{ id: String, percent: f32 }` | `converters/ffmpeg.rs` | `stores/conversion.ts` |
+
+The Vue store registers a global listener with `listen('conversion-progress', ...)` once at initialisation. The `id` matches `FileItem.id` (UUID) to update the correct queue item reactively.
+
+**Progress calculation** (audio + video only):
+1. FFmpeg launched with `-progress pipe:1 -nostats` — structured key=value to stdout
+2. `Duration: HH:MM:SS.cc` parsed from early stderr
+3. `out_time_us=<µs>` parsed from each stdout block; `percent = (out_time_us / duration_us) * 100`, capped at 99 until process exits
+
+**Cancel** (`cancel_conversion` command): `lib.rs` holds a `ActiveConversion(Mutex<Option<CommandChild>>)` Tauri state. FFmpeg converters store the `CommandChild` in this state before awaiting; `cancel_conversion` locks the mutex and calls `child.kill()`.
 
 ### Tauri commands
 
@@ -129,6 +151,8 @@ Result<ConversionResult, String> → back to Vue
 | `list_directory` | `commands/fs.rs` | `std::fs` (max 1000 files) |
 | `check_for_updates` | `commands/updater.rs` | `tauri_plugin_updater` |
 | `install_update` | `commands/updater.rs` | `tauri_plugin_updater` |
+| `cancel_conversion` | `commands/cancel.rs` | `ActiveConversion` state → `child.kill()` |
+| `open_output_folder` | `commands/shell.rs` | `tauri_plugin_opener` → open folder in OS file manager |
 
 ### Conversion strategy
 
@@ -136,6 +160,7 @@ Result<ConversionResult, String> → back to Vue
 |---|---|
 | JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
 | AVIF | FFmpeg sidecar |
+| HEIC, HEIF (entrée seulement) | FFmpeg sidecar |
 | PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF, RST, ODT, EPUB | Pandoc sidecar |
 | Audio: MP3, FLAC, OGG, WAV, AAC | FFmpeg sidecar |
 | Video: MP4, MKV, WebM, MOV (H.264, H.265, VP9) | FFmpeg sidecar |
@@ -144,10 +169,12 @@ Result<ConversionResult, String> → back to Vue
 
 | Store | Key state |
 |---|---|
-| `useConversionStore` | `queue` (FileItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
-| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
+| `useConversionStore` | `queue` (FileItem[]), `history` (HistoryItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
+| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` — persisted via `localStorage` with `verto.*` prefix; **`outputFormat` and `resizeEnabled/Width/Height` are NOT persisted** (reset on launch) |
 
-`FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio`), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
+`FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio | video`), `progress?` (0–100 during FFmpeg), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
+
+`HistoryItem` has fields: `id`, `name`, `inputFormat`, `outputFormat`, `inputSize`, `outputSize`, `savedBytes`, `outputPath`, `convertedAt` (timestamp), `category`.
 
 ### Structure apps/web
 
@@ -177,7 +204,7 @@ apps/web/
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
-Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.5.1`.
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.6.0`.
 
 ---
 

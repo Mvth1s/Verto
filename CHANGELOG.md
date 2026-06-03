@@ -5,6 +5,17 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+
+* **frontend:** dismissible toast after conversion batch completes, offering to open the output folder in the file manager (auto-dismissed after 8 s)
+* **backend:** new `open_output_folder` Tauri command backed by `tauri-plugin-opener`
+* **ci:** add `libfuse2` to Linux apt-get step so AppImage is built correctly on ubuntu-22.04
+* **docs:** explicit Arch Linux / Manjaro installation instructions with `fuse2` workaround
+* **tooling:** `scripts/download-sidecars.sh` — unified curl-based script to populate `binaries/` for FFmpeg and Pandoc; surfaced as `pnpm --filter desktop download-sidecars`
+* **frontend:** update check on launch — dismiss is tracked per version (persisted in `localStorage` as `verto.updateDismissedVersion`) so restarting the app doesn't re-show a banner already dismissed for the same version, but a newer release will show it again
+
 # [1.6.0](https://github.com/Mvth1s/Verto/compare/v1.5.1...v1.6.0) (2026-06-02)
 
 

@@ -49,19 +49,55 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 
 ## Installation
 
-Download the latest release from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases).
-
-### Linux
+### One-liner (Linux & macOS)
 
 ```bash
-# AppImage (no install required)
-chmod +x Verto_*.AppImage && ./Verto_*.AppImage
+curl -sSL https://raw.githubusercontent.com/Mvth1s/Verto/main/scripts/install.sh | bash
+```
 
-# Debian/Ubuntu
+Linux installs the AppImage to `~/.local/bin/verto`. macOS copies `Verto.app` to `/Applications`.
+
+---
+
+Or download the package directly from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases):
+
+### Linux — Debian / Ubuntu
+
+```bash
 sudo dpkg -i Verto_*_amd64.deb
+```
 
-# Fedora/RHEL
+### Linux — Arch-based (Arch, Manjaro, EndeavourOS…)
+
+The recommended format is AppImage — it has no system dependencies.
+
+```bash
+chmod +x Verto_*.AppImage
+./Verto_*.AppImage
+```
+
+If you get a FUSE error on first launch, install the required library:
+
+```bash
+# Arch / Manjaro
+sudo pacman -S fuse2
+
+# Then re-run
+./Verto_*.AppImage
+```
+
+An AUR package (`verto-bin`) is planned for a future release.
+
+### Linux — Fedora / RHEL
+
+```bash
 sudo rpm -i Verto-*.x86_64.rpm
+```
+
+### Linux — AppImage (all distros)
+
+```bash
+chmod +x Verto_*.AppImage && ./Verto_*.AppImage
 ```
 
 ### Windows
@@ -71,6 +107,19 @@ Run `Verto_*_x64-setup.exe` (NSIS installer) or `Verto_*_x64_en-US.msi`.
 ### macOS
 
 Open `Verto_*_aarch64.dmg` and drag Verto to your Applications folder.
+
+<details>
+<summary>Advanced: download sidecars manually via curl</summary>
+
+If you prefer to download FFmpeg and Pandoc yourself rather than using the bundled binaries (useful for development without running the full CI setup):
+
+```bash
+pnpm --filter desktop download-sidecars
+```
+
+This requires `curl` and `bash`. The script auto-detects your platform and places the binaries in `apps/desktop/src-tauri/binaries/` with the correct Tauri sidecar filenames. Re-running it is safe — existing binaries are skipped. The bundled sidecar approach used by CI and releases is unaffected.
+
+</details>
 
 ## Development
 

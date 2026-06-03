@@ -89,6 +89,24 @@
 
 ---
 
+## v1.6.0 — UX & formats ✅
+
+- [x] Barre de progression FFmpeg en temps réel (audio + vidéo)
+- [x] Cancel immédiat du process FFmpeg actif (`child.kill()`)
+- [x] Suppression du fichier de sortie partiel après échec ou cancel
+- [x] Support HEIC/HEIF en entrée (décodage via FFmpeg)
+- [x] i18n EN/FR sur la landing page
+
+---
+
+## v1.7.0 — Qualité & historique *(en cours)*
+
+- [x] Messages d'erreur FFmpeg lisibles (extraction de la ligne significative)
+- [x] Historique de conversion session (onglet History, badge, clear)
+- [ ] Raccourcis clavier : `Suppr` retirer fichier, `Entrée` lancer, `Échap` cancel
+
+---
+
 ## v2.0.0 — New surfaces *(if validated)*
 
 - [ ] TUI interface (Ratatui / Rust)
