@@ -115,7 +115,26 @@ Rust command (src-tauri/src/commands/*.rs)
      └── Sidecar: FFmpeg (AVIF, audio, video) / Pandoc (documents)
      ▼
 Result<ConversionResult, String> → back to Vue
+     │  (also, during FFmpeg conversions:)
+     └── app.emit("conversion-progress", { id, percent }) → Vue event listener
 ```
+
+### Tauri events (Rust → Vue)
+
+Real-time progress is pushed via Tauri events — separate from the `invoke` return value.
+
+| Event | Payload | Emitter | Consumer |
+|---|---|---|---|
+| `conversion-progress` | `{ id: String, percent: f32 }` | `converters/ffmpeg.rs` | `stores/conversion.ts` |
+
+The Vue store registers a global listener with `listen('conversion-progress', ...)` once at initialisation. The `id` matches `FileItem.id` (UUID) to update the correct queue item reactively.
+
+**Progress calculation** (audio + video only):
+1. FFmpeg launched with `-progress pipe:1 -nostats` — structured key=value to stdout
+2. `Duration: HH:MM:SS.cc` parsed from early stderr
+3. `out_time_us=<µs>` parsed from each stdout block; `percent = (out_time_us / duration_us) * 100`, capped at 99 until process exits
+
+**Cancel** (`cancel_conversion` command): `lib.rs` holds a `ActiveConversion(Mutex<Option<CommandChild>>)` Tauri state. FFmpeg converters store the `CommandChild` in this state before awaiting; `cancel_conversion` locks the mutex and calls `child.kill()`.
 
 ### Tauri commands
 
@@ -147,7 +166,7 @@ Result<ConversionResult, String> → back to Vue
 | Store | Key state |
 |---|---|
 | `useConversionStore` | `queue` (FileItem[]), `history` (HistoryItem[]), `isConverting`, `cancelRequested` — drives the convert-all loop |
-| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` |
+| `useSettingsStore` | `outputFormat`, `quality` (1–100), `bitrate` (kbps), `videoCodec` ('h264'/'h265'/'vp9'), `resizeEnabled/Width/Height/keepAspectRatio`, `outputDirectory`, `preserveMetadata`, `overwriteOriginals` — persisted via `localStorage` with `verto.*` prefix; **`outputFormat` and `resizeEnabled/Width/Height` are NOT persisted** (reset on launch) |
 
 `FileItem` has fields: `id`, `name`, `path`, `inputFormat`, `inputSize`, `status` (`waiting | converting | done | error`), `category` (`image | document | audio | video`), `progress?` (0–100 during FFmpeg), `outputPath?`, `outputSize?`, `savedBytes?`, `error?`.
 
