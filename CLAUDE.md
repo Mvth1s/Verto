@@ -25,14 +25,17 @@ You are the **Tech Lead** of the Verto project. The CTO is Mathis Aguado — he 
 # Install all dependencies
 pnpm install
 
+# Download FFmpeg and Pandoc sidecars (needed after fresh clone)
+pnpm --filter desktop download-sidecars
+
 # Run desktop app in dev mode
-pnpm --filter desktop tauri dev
+pnpm dev:desktop   # or: pnpm --filter desktop tauri dev
 
 # Run landing page in dev mode
-pnpm --filter web dev
+pnpm dev:web       # or: pnpm --filter web dev
 
 # Build desktop app (current platform)
-pnpm --filter desktop tauri build
+pnpm build:desktop  # or: pnpm --filter desktop tauri build
 
 # Lint everything (ESLint + Prettier + Clippy)
 pnpm lint
@@ -72,7 +75,7 @@ apps/desktop/
 │   ├── src/
 │   │   ├── main.rs
 │   │   ├── lib.rs      # Tauri builder + invoke_handler registration
-│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs, cancel.rs
+│   │   ├── commands/   # Tauri commands: image.rs, document.rs, audio.rs, video.rs, fs.rs, updater.rs, cancel.rs, shell.rs
 │   │   └── converters/ # Wrappers: ffmpeg.rs, pandoc.rs, image.rs
 │   └── capabilities/
 │       └── default.json
@@ -149,6 +152,7 @@ The Vue store registers a global listener with `listen('conversion-progress', ..
 | `check_for_updates` | `commands/updater.rs` | `tauri_plugin_updater` |
 | `install_update` | `commands/updater.rs` | `tauri_plugin_updater` |
 | `cancel_conversion` | `commands/cancel.rs` | `ActiveConversion` state → `child.kill()` |
+| `open_output_folder` | `commands/shell.rs` | `tauri_plugin_opener` → open folder in OS file manager |
 
 ### Conversion strategy
 
