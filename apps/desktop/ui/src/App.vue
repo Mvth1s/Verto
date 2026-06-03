@@ -308,20 +308,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="showUpdateBanner"
-    class="update-banner"
-    role="alert"
-    aria-live="assertive"
-  >
+  <div v-if="showUpdateBanner" class="update-banner" role="alert" aria-live="assertive">
     <span>{{ t('update.available', { version: updateVersion }) }}</span>
     <div class="update-actions">
       <button class="update-btn-install" @click="installUpdate">{{ t('update.install') }}</button>
-      <button
-        class="update-btn-dismiss"
-        :aria-label="t('update.dismiss')"
-        @click="dismissUpdate"
-      >
+      <button class="update-btn-dismiss" :aria-label="t('update.dismiss')" @click="dismissUpdate">
         ✕
       </button>
     </div>
