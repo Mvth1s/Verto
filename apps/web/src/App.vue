@@ -1545,6 +1545,7 @@ section {
   color: var(--text-3);
 }
 .dl-formats {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
