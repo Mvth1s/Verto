@@ -51,17 +51,43 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 
 Download the latest release from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases).
 
-### Linux
+### Linux — Debian / Ubuntu
 
 ```bash
-# AppImage (no install required)
-chmod +x Verto_*.AppImage && ./Verto_*.AppImage
-
-# Debian/Ubuntu
 sudo dpkg -i Verto_*_amd64.deb
+```
 
-# Fedora/RHEL
+### Linux — Arch-based (Arch, Manjaro, EndeavourOS…)
+
+The recommended format is AppImage — it has no system dependencies.
+
+```bash
+chmod +x Verto_*.AppImage
+./Verto_*.AppImage
+```
+
+If you get a FUSE error on first launch, install the required library:
+
+```bash
+# Arch / Manjaro
+sudo pacman -S fuse2
+
+# Then re-run
+./Verto_*.AppImage
+```
+
+An AUR package (`verto-bin`) is planned for a future release.
+
+### Linux — Fedora / RHEL
+
+```bash
 sudo rpm -i Verto-*.x86_64.rpm
+```
+
+### Linux — AppImage (all distros)
+
+```bash
+chmod +x Verto_*.AppImage && ./Verto_*.AppImage
 ```
 
 ### Windows
