@@ -77,6 +77,13 @@ onMounted(async () => {
 
 const version = computed(() => release.value?.tag_name ?? null)
 
+const heroCtaLabel = computed(() => {
+  const ua = navigator.userAgent
+  if (ua.includes('Win')) return t('hero.cta_windows')
+  if (ua.includes('Mac') && !ua.includes('Mobile')) return t('hero.cta_macos')
+  return t('hero.cta_linux')
+})
+
 function findAssets(pred: (name: string) => boolean): GithubAsset[] {
   return (
     release.value?.assets.filter(
@@ -165,7 +172,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            {{ t('hero.cta_linux') }}
+            {{ heroCtaLabel }}
           </a>
           <a
             class="btn btn-outline btn-lg"
@@ -210,10 +217,6 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             </span>
           </div>
         </div>
-        <div class="terminal-snippet">
-          <span class="prompt">$</span>
-          <span>brew install --cask verto<span class="caret"></span></span>
-        </div>
       </div>
 
       <!-- App screenshot -->
@@ -223,17 +226,25 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             <div class="traffic">
               <span class="r"></span><span class="y"></span><span class="g"></span>
             </div>
-            <div class="label">Verto — Images</div>
+            <div class="label">{{ t('hero.mockup_title') }}</div>
           </div>
           <div class="win-body">
             <div class="ws-sidebar">
               <div class="ws-brand">
                 <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
               </div>
-              <div class="ws-item active"><span class="ico"></span>Images</div>
-              <div class="ws-item"><span class="ico"></span>Documents</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Audio</div>
-              <div class="ws-item" style="opacity: 0.4"><span class="ico"></span>Video</div>
+              <div class="ws-item active">
+                <span class="ico"></span>{{ t('features.images_title') }}
+              </div>
+              <div class="ws-item">
+                <span class="ico"></span>{{ t('features.documents_title') }}
+              </div>
+              <div class="ws-item" style="opacity: 0.4">
+                <span class="ico"></span>{{ t('features.audio_title') }}
+              </div>
+              <div class="ws-item" style="opacity: 0.4">
+                <span class="ico"></span>{{ t('features.video_title') }}
+              </div>
             </div>
             <div class="ws-main">
               <div class="ws-drop">
@@ -244,7 +255,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                     <path d="M5 21h14" />
                   </svg>
                 </div>
-                <div>Drop files here</div>
+                <div>{{ t('hero.mockup_drop') }}</div>
               </div>
               <div class="ws-row">
                 <span class="name">diagram.png</span>
@@ -255,7 +266,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             </div>
             <div class="ws-panel">
               <div>
-                <div class="ws-label" style="margin-bottom: 6px">Format</div>
+                <div class="ws-label" style="margin-bottom: 6px">{{ t('hero.mockup_format') }}</div>
                 <div class="ws-field"><span>WebP</span><span class="arrow-d">▾</span></div>
               </div>
               <div>
@@ -263,14 +274,14 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   class="ws-label"
                   style="margin-bottom: 6px; display: flex; justify-content: space-between"
                 >
-                  <span>Quality</span
+                  <span>{{ t('hero.mockup_quality') }}</span
                   ><span style="color: var(--text); font-family: 'JetBrains Mono', monospace"
                     >85%</span
                   >
                 </div>
                 <div class="ws-slider"></div>
               </div>
-              <div class="ws-btn">Convert</div>
+              <div class="ws-btn">{{ t('hero.mockup_convert') }}</div>
             </div>
           </div>
         </div>
@@ -283,11 +294,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
     <div class="container">
       <div class="section-head">
         <div class="section-eyebrow">{{ t('features.title') }}</div>
-        <h2 class="section-title">Everything you need.<br />Nothing you don't.</h2>
-        <p class="section-sub">
-          A single binary. Four file types. Zero network calls. Verto does one thing — convert files
-          — and refuses to be anything else.
-        </p>
+        <h2 class="section-title">{{ t('features.section_title') }}</h2>
+        <p class="section-sub">{{ t('features.section_sub') }}</p>
       </div>
       <div class="features-grid">
         <div class="feature">
@@ -302,7 +310,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-body">{{ t('features.images_desc') }}</div>
           <div class="feature-list">
             <span class="chip">.jpeg</span><span class="chip">.png</span
-            ><span class="chip">.webp</span><span class="chip">.gif</span
+            ><span class="chip">.webp</span><span class="chip">.avif</span
+            ><span class="chip">.heic</span><span class="chip">.gif</span
             ><span class="chip">.bmp</span><span class="chip">.tiff</span>
           </div>
         </div>
@@ -325,17 +334,50 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         <div class="feature">
           <div class="feature-icon">
             <svg viewBox="0 0 24 24">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+          </div>
+          <div class="feature-title">{{ t('features.audio_title') }}</div>
+          <div class="feature-body">{{ t('features.audio_desc') }}</div>
+          <div class="feature-list">
+            <span class="chip">.mp3</span><span class="chip">.flac</span
+            ><span class="chip">.ogg</span><span class="chip">.wav</span
+            ><span class="chip">.aac</span>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+              <line x1="7" y1="2" x2="7" y2="22" />
+              <line x1="17" y1="2" x2="17" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="2" y1="7" x2="7" y2="7" />
+              <line x1="2" y1="17" x2="7" y2="17" />
+              <line x1="17" y1="17" x2="22" y2="17" />
+              <line x1="17" y1="7" x2="22" y2="7" />
+            </svg>
+          </div>
+          <div class="feature-title">{{ t('features.video_title') }}</div>
+          <div class="feature-body">{{ t('features.video_desc') }}</div>
+          <div class="feature-list">
+            <span class="chip">.mp4</span><span class="chip">.mkv</span
+            ><span class="chip">.webm</span><span class="chip">.mov</span>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
               <path d="M3 6h18M3 12h18M3 18h18" />
               <rect x="3" y="3" width="4" height="4" rx="1" />
               <rect x="3" y="9" width="4" height="4" rx="1" />
               <rect x="3" y="15" width="4" height="4" rx="1" />
             </svg>
           </div>
-          <div class="feature-title">Batch &amp; Folders</div>
-          <div class="feature-body">
-            Drop a folder and Verto recursively enqueues every supported file. Convert dozens of
-            documents or images in one click.
-          </div>
+          <div class="feature-title">{{ t('features.batch_title') }}</div>
+          <div class="feature-body">{{ t('features.batch_desc') }}</div>
           <div class="feature-list">
             <span class="chip">recursive scan</span><span class="chip">drag &amp; drop</span
             ><span class="chip">file picker</span>
@@ -348,14 +390,25 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
             </svg>
           </div>
-          <div class="feature-title">Queue control</div>
-          <div class="feature-body">
-            Cancel a running batch mid-way, retry individual failed items, and browse a custom
-            output directory — all without restarting the app.
-          </div>
+          <div class="feature-title">{{ t('features.queue_title') }}</div>
+          <div class="feature-body">{{ t('features.queue_desc') }}</div>
           <div class="feature-list">
             <span class="chip">cancel</span><span class="chip">retry</span
             ><span class="chip">custom output dir</span>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div class="feature-title">{{ t('features.history_title') }}</div>
+          <div class="feature-body">{{ t('features.history_desc') }}</div>
+          <div class="feature-list">
+            <span class="chip">session log</span><span class="chip">file size saved</span
+            ><span class="chip">quick reopen</span>
           </div>
         </div>
         <div class="feature">
