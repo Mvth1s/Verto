@@ -300,7 +300,6 @@ onMounted(async () => {
 onUnmounted(() => {
   unlistenDrop?.()
   if (openFolderTimer) clearTimeout(openFolderTimer)
-
 })
 </script>
 
