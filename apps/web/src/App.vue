@@ -272,13 +272,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               </div>
               <div class="ws-btn">Convert</div>
             </div>
-            <div class="label">Verto</div>
           </div>
-          <img
-            src="/screenshot-app.png"
-            alt="Verto app showing the conversion queue with image thumbnails"
-            class="win-screenshot"
-          />
         </div>
       </div>
     </div>
