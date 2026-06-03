@@ -29,7 +29,12 @@ const thumbErrors = ref<Record<string, true>>({})
 const videoThumbs = ref<Record<string, string>>({})
 const locale = ref<Locale>('en')
 const updateVersion = ref<string | null>(null)
-const updateDismissed = ref(false)
+const updateDismissedVersion = ref<string | null>(
+  localStorage.getItem('verto.updateDismissedVersion'),
+)
+const showUpdateBanner = computed(
+  () => updateVersion.value !== null && updateVersion.value !== updateDismissedVersion.value,
+)
 const showSettings = ref(false)
 const appVersion = ref('')
 
@@ -227,6 +232,13 @@ function handleQueueAction(fileId: string, status: string) {
   }
 }
 
+function dismissUpdate() {
+  if (updateVersion.value) {
+    updateDismissedVersion.value = updateVersion.value
+    localStorage.setItem('verto.updateDismissedVersion', updateVersion.value)
+  }
+}
+
 // Open-folder toast timer
 let openFolderTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -258,8 +270,11 @@ async function handleOpenFolder() {
 // Drag-and-drop via Tauri window events
 let unlistenDrop: (() => void) | null = null
 
+let updateCheckInterval: ReturnType<typeof setInterval> | null = null
+
 onMounted(async () => {
   checkForUpdates()
+  updateCheckInterval = setInterval(checkForUpdates, 60 * 60 * 1000)
   appVersion.value = await getVersion().catch(() => '—')
   const appWindow = getCurrentWebviewWindow()
 
@@ -288,12 +303,13 @@ onMounted(async () => {
 onUnmounted(() => {
   unlistenDrop?.()
   if (openFolderTimer) clearTimeout(openFolderTimer)
+  if (updateCheckInterval) clearInterval(updateCheckInterval)
 })
 </script>
 
 <template>
   <div
-    v-if="updateVersion && !updateDismissed"
+    v-if="showUpdateBanner"
     class="update-banner"
     role="alert"
     aria-live="assertive"
@@ -304,7 +320,7 @@ onUnmounted(() => {
       <button
         class="update-btn-dismiss"
         :aria-label="t('update.dismiss')"
-        @click="updateDismissed = true"
+        @click="dismissUpdate"
       >
         ✕
       </button>

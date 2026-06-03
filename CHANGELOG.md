@@ -14,6 +14,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 * **ci:** add `libfuse2` to Linux apt-get step so AppImage is built correctly on ubuntu-22.04
 * **docs:** explicit Arch Linux / Manjaro installation instructions with `fuse2` workaround
 * **tooling:** `scripts/download-sidecars.sh` — unified curl-based script to populate `binaries/` for FFmpeg and Pandoc; surfaced as `pnpm --filter desktop download-sidecars`
+* **frontend:** background update check every hour — detects new releases while the app is running, not only on launch; dismiss is tracked per version (persisted in `localStorage`) so re-checks don't re-show an already-dismissed banner
 
 # [1.6.0](https://github.com/Mvth1s/Verto/compare/v1.5.1...v1.6.0) (2026-06-02)
 
