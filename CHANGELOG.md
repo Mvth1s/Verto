@@ -5,6 +5,20 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+
+* **backend:** extended image input formats: ICO, PSD, DDS, EXR, QOI (FFmpeg decode path); ICO added as output format
+* **backend:** extended audio output formats: AIFF, AIF, MKA, WV; lossless detection covers AIFF/WV in bitrate selector
+* **backend:** extended video output formats: 3GP (H.264/H.265 + AAC)
+* **backend:** extended document output formats: TEX (LaTeX), ORG (Emacs Org-mode), TXT (plain text)
+* **frontend:** image file picker now includes AVIF/HEIC/HEIF (was missing), ICO, PSD, DDS, EXR, QOI
+* **frontend:** document input: TEX, ORG, TXT, CSV, WIKI, ADOC, ASCIIDOC; output selector adds TEX, ORG, TXT
+* **frontend:** audio input: WMA, AMR, APE, WV, MKA, AIFF, AIF, CAF; output selector adds AIFF, MKA, WV
+* **frontend:** video input: TS, MTS, M2TS, VOB, 3GP, OGV, RM, RMVB, DIVX, F4V; output selector adds 3GP
+* **web:** format chips updated; category descriptions updated in EN and FR
+
 # [1.8.0](https://github.com/Mvth1s/Verto/compare/v1.7.0...v1.8.0) (2026-06-04)
 
 
