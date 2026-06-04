@@ -164,7 +164,11 @@ mod tests {
         assert!(result.is_ok(), "PNG to ICO failed: {:?}", result.err());
         assert!(std::path::Path::new(&output).exists());
         let bytes = std::fs::read(&output).unwrap();
-        assert_eq!(&bytes[0..4], &[0, 0, 1, 0], "ICO magic bytes should be 00 00 01 00");
+        assert_eq!(
+            &bytes[0..4],
+            &[0, 0, 1, 0],
+            "ICO magic bytes should be 00 00 01 00"
+        );
         let _ = std::fs::remove_file(&output);
     }
 
@@ -204,7 +208,11 @@ mod tests {
         assert!(result.is_ok(), "ICO to PNG failed: {:?}", result.err());
         assert!(std::path::Path::new(&output).exists());
         let bytes = std::fs::read(&output).unwrap();
-        assert_eq!(&bytes[0..4], &[137, 80, 78, 71], "Output should be valid PNG");
+        assert_eq!(
+            &bytes[0..4],
+            &[137, 80, 78, 71],
+            "Output should be valid PNG"
+        );
         let _ = std::fs::remove_file(&output);
     }
 
