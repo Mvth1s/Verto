@@ -147,10 +147,10 @@ pub async fn convert(
             .to_string(),
     };
 
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
-    if !out_path.starts_with('/') {
+    if !std::path::Path::new(&out_path).is_absolute() {
         return Err("Output path must be absolute".to_string());
     }
 

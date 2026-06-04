@@ -16,12 +16,12 @@ pub async fn convert_document(
     output_format: String,
     output_path: Option<String>,
 ) -> Result<ConversionResult, String> {
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(&input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
 
     if let Some(ref out) = output_path {
-        if !out.starts_with('/') {
+        if !std::path::Path::new(out).is_absolute() {
             return Err("Output path must be absolute".to_string());
         }
     }
