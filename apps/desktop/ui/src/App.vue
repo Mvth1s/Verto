@@ -37,8 +37,18 @@ const DOCUMENT_FORMAT_GROUPS: FormatGroup[] = [
   {
     label: 'Wiki & Other',
     formats: [
-      'wiki', 'dokuwiki', 'textile', 'muse', 'man', 'ms',
-      'tei', 'fb2', 'icml', 'jira', 'markua', 'zimwiki',
+      'wiki',
+      'dokuwiki',
+      'textile',
+      'muse',
+      'man',
+      'ms',
+      'tei',
+      'fb2',
+      'icml',
+      'jira',
+      'markua',
+      'zimwiki',
     ],
   },
 ]
@@ -1014,11 +1024,7 @@ onUnmounted(() => {
         <label class="field-label" for="format-select">{{ t('settings.format') }}</label>
         <select id="format-select" v-model="settings.outputFormat" class="select">
           <template v-if="activeFormatGroups">
-            <optgroup
-              v-for="group in activeFormatGroups"
-              :key="group.label"
-              :label="group.label"
-            >
+            <optgroup v-for="group in activeFormatGroups" :key="group.label" :label="group.label">
               <option v-for="fmt in group.formats" :key="fmt" :value="fmt">
                 {{ fmt.toUpperCase() }}
               </option>
