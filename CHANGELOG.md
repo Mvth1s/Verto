@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+* **packaging:** confirmed FFmpeg and Pandoc sidecars isolated to app resource directory via `externalBin` — prevents conflict with system `ffmpeg`/`pandoc` packages on `.deb` install
+* **ci:** set `APPIMAGE_EXTRACT_AND_RUN=1` in `build.yml` and `release.yml` so AppImage runs without FUSE on Arch Linux, Fedora 38+ and Ubuntu 24.04+
+
 ### Added
 
 * **frontend:** dismissible toast after conversion batch completes, offering to open the output folder in the file manager (auto-dismissed after 8 s)
