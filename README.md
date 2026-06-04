@@ -76,14 +76,20 @@ chmod +x Verto_*.AppImage
 ./Verto_*.AppImage
 ```
 
-If you get a FUSE error on first launch, install the required library:
+If you get a FUSE error on first launch, you have two options:
 
+**Option A — install the FUSE 2 library:**
 ```bash
 # Arch / Manjaro
 sudo pacman -S fuse2
 
 # Then re-run
 ./Verto_*.AppImage
+```
+
+**Option B — run without FUSE (no install required):**
+```bash
+./Verto_*.AppImage --appimage-extract-and-run
 ```
 
 An AUR package (`verto-bin`) is planned for a future release.
