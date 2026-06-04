@@ -12,9 +12,16 @@ pub struct ConversionResult {
 }
 
 /// Formats that require FFmpeg for encoding (output).
-const FFMPEG_OUTPUT_FORMATS: &[&str] = &["avif"];
-/// Formats that require FFmpeg for decoding (input only — no encode support on Linux).
-const FFMPEG_INPUT_FORMATS: &[&str] = &["heic", "heif"];
+const FFMPEG_OUTPUT_FORMATS: &[&str] = &["avif", "ico"];
+/// Formats that require FFmpeg for decoding (input only — no encode support via image crate).
+const FFMPEG_INPUT_FORMATS: &[&str] = &[
+    "heic", "heif", // Apple formats
+    "ico",          // Windows icon
+    "psd",          // Photoshop (FFmpeg extracts flattened render)
+    "dds",          // DirectDraw Surface (textures)
+    "exr",          // OpenEXR HDR
+    "qoi",          // Quite OK Image — FFmpeg ≥ 5.1 required
+];
 
 #[tauri::command]
 pub async fn convert_image(

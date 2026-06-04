@@ -23,12 +23,12 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 
 ## Supported conversions
 
-| Category  | Formats                                                        | Engine              |
-|-----------|----------------------------------------------------------------|---------------------|
-| Images    | JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF                         | `image` crate + FFmpeg sidecar |
-| Documents | MD, DOCX, HTML, RST, ODT, EPUB, PDF                           | Pandoc sidecar      |
-| Audio     | MP3, FLAC, OGG, WAV, AAC                                      | FFmpeg sidecar      |
-| Video     | MP4, MKV, WebM, MOV (H.264, H.265, VP9)                       | FFmpeg sidecar      |
+| Category  | Input formats                                                                                | Output formats                              | Engine              |
+|-----------|----------------------------------------------------------------------------------------------|---------------------------------------------|---------------------|
+| Images    | JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF, HEIC/HEIF, ICO, PSD, DDS, EXR, QOI                 | JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF, ICO | `image` crate + FFmpeg sidecar |
+| Documents | MD, DOCX, HTML, RST, ODT, EPUB, TEX, ORG, TXT, CSV, WIKI, ADOC                             | MD, DOCX, HTML, RST, ODT, EPUB, PDF, TEX, ORG, TXT | Pandoc sidecar |
+| Audio     | MP3, FLAC, OGG, WAV, AAC, M4A, OPUS, WMA, AMR, APE, WV, MKA, AIFF, CAF                    | MP3, FLAC, OGG, WAV, AAC, AIFF, MKA, WV   | FFmpeg sidecar      |
+| Video     | MP4, MKV, WebM, MOV, AVI, FLV, WMV, TS, MTS, VOB, 3GP, OGV, RM, DIVX, F4V               | MP4, MKV, WebM, MOV, 3GP (H.264, H.265, VP9) | FFmpeg sidecar   |
 
 ## Features
 

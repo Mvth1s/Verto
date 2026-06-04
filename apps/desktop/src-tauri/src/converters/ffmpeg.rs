@@ -111,7 +111,12 @@ pub struct ConversionResult {
     pub output_size: u64,
 }
 
-const ALLOWED_FORMATS: &[&str] = &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"];
+const ALLOWED_FORMATS: &[&str] = &[
+    "mp3", "flac", "ogg", "wav", "aac", "opus", "m4a",
+    "aiff", "aif", // Apple lossless PCM
+    "mka",         // Matroska audio container
+    "wv",          // WavPack lossless — FFmpeg libwavpack required
+];
 
 pub async fn convert(
     app: &tauri::AppHandle,
@@ -234,9 +239,9 @@ pub async fn convert(
     })
 }
 
-const AVIF_FORMATS: &[&str] = &["avif"];
+const FFMPEG_IMAGE_OUTPUT_FORMATS: &[&str] = &["avif", "ico"];
 
-pub const VIDEO_FORMATS: &[&str] = &["mp4", "mkv", "webm", "mov"];
+pub const VIDEO_FORMATS: &[&str] = &["mp4", "mkv", "webm", "mov", "3gp"];
 pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "vp9"];
 
 fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
@@ -251,6 +256,7 @@ fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
 fn audio_codec_for_format(output_format: &str) -> &'static str {
     match output_format {
         "webm" => "libopus",
+        "3gp" => "aac",
         _ => "aac",
     }
 }
@@ -412,10 +418,10 @@ pub async fn convert_image(
         return Err(format!("Input file not found: {}", input_path));
     }
 
-    if !AVIF_FORMATS.contains(&output_format) {
+    if !FFMPEG_IMAGE_OUTPUT_FORMATS.contains(&output_format) {
         return Err(format!(
             "ffmpeg image converter only handles: {}",
-            AVIF_FORMATS.join(", ")
+            FFMPEG_IMAGE_OUTPUT_FORMATS.join(", ")
         ));
     }
 
@@ -505,6 +511,7 @@ mod video_tests {
         assert!(VIDEO_FORMATS.contains(&"mkv"));
         assert!(VIDEO_FORMATS.contains(&"webm"));
         assert!(VIDEO_FORMATS.contains(&"mov"));
+        assert!(VIDEO_FORMATS.contains(&"3gp"));
     }
 
     #[test]
@@ -679,7 +686,8 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"] {
+        for fmt in &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a", "aiff", "aif", "mka", "wv"]
+        {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }

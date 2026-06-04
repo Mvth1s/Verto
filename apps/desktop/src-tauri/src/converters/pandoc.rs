@@ -9,7 +9,12 @@ pub struct ConversionResult {
     pub output_size: u64,
 }
 
-const ALLOWED_FORMATS: &[&str] = &["html", "pdf", "docx", "md", "rst", "odt", "epub"];
+const ALLOWED_FORMATS: &[&str] = &[
+    "html", "pdf", "docx", "md", "rst", "odt", "epub",
+    "tex", // LaTeX
+    "org", // Emacs Org-mode
+    "txt", // Plain text
+];
 
 pub async fn convert(
     app: &tauri::AppHandle,
@@ -120,14 +125,14 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf"] {
+        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf", "tex", "org", "txt"] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }
 
     #[test]
     fn test_disallowed_formats_rejected() {
-        for fmt in &["txt", "mp3", "png", "zip", "rtf", ""] {
+        for fmt in &["mp3", "png", "zip", "rtf", ""] {
             assert!(
                 !ALLOWED_FORMATS.contains(fmt),
                 "{} should not be allowed",

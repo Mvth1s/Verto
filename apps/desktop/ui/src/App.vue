@@ -11,16 +11,18 @@ import { type Locale } from './i18n'
 
 type Category = 'images' | 'documents' | 'audio' | 'video' | 'history'
 
-const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif']
-const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst']
-const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac']
-const VIDEO_FORMATS = ['mp4', 'mkv', 'webm', 'mov']
+const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif', 'ico']
+const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst', 'tex', 'org', 'txt']
+const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'aiff', 'mka', 'wv']
+const VIDEO_FORMATS = ['mp4', 'mkv', 'webm', 'mov', '3gp']
 const VIDEO_CODECS_FOR_FORMAT: Record<string, string[]> = {
   mp4: ['h264', 'h265'],
   mkv: ['h264', 'h265', 'vp9'],
   webm: ['vp9'],
   mov: ['h264', 'h265'],
+  '3gp': ['h264', 'h265'],
 }
+const AUDIO_LOSSLESS_FORMATS = ['flac', 'wav', 'aiff', 'aif', 'wv']
 
 const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
@@ -182,20 +184,44 @@ async function openFilePicker() {
   let filters: { name: string; extensions: string[] }[]
   if (activeCategory.value === 'images') {
     filters = [
-      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'] },
+      {
+        name: 'Images',
+        extensions: [
+          'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif',
+          'avif', 'heic', 'heif',
+          'ico', 'psd', 'dds', 'exr', 'qoi',
+        ],
+      },
     ]
   } else if (activeCategory.value === 'documents') {
     filters = [
       {
         name: 'Documents',
-        extensions: ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub'],
+        extensions: [
+          'md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub',
+          'tex', 'org', 'txt', 'csv', 'wiki', 'adoc', 'asciidoc',
+        ],
       },
     ]
   } else if (activeCategory.value === 'audio') {
-    filters = [{ name: 'Audio', extensions: ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus'] }]
+    filters = [
+      {
+        name: 'Audio',
+        extensions: [
+          'mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus',
+          'wma', 'amr', 'ape', 'wv', 'mka', 'aiff', 'aif', 'caf',
+        ],
+      },
+    ]
   } else {
     filters = [
-      { name: 'Video', extensions: ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v'] },
+      {
+        name: 'Video',
+        extensions: [
+          'mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v',
+          'ts', 'mts', 'm2ts', 'vob', '3gp', 'ogv', 'rm', 'rmvb', 'divx', 'f4v',
+        ],
+      },
     ]
   }
   const selected = await open({ multiple: true, filters })
@@ -913,9 +939,9 @@ onUnmounted(() => {
           id="bitrate-select"
           v-model.number="settings.bitrate"
           class="select"
-          :disabled="['flac', 'wav'].includes(settings.outputFormat)"
+          :disabled="AUDIO_LOSSLESS_FORMATS.includes(settings.outputFormat)"
           :aria-describedby="
-            ['flac', 'wav'].includes(settings.outputFormat) ? 'bitrate-hint' : undefined
+            AUDIO_LOSSLESS_FORMATS.includes(settings.outputFormat) ? 'bitrate-hint' : undefined
           "
         >
           <option :value="64">64 kbps</option>
@@ -925,7 +951,7 @@ onUnmounted(() => {
           <option :value="320">320 kbps</option>
         </select>
         <div
-          v-if="['flac', 'wav'].includes(settings.outputFormat)"
+          v-if="AUDIO_LOSSLESS_FORMATS.includes(settings.outputFormat)"
           id="bitrate-hint"
           class="field-hint"
         >

@@ -60,21 +60,22 @@ interface ConversionResult {
 }
 
 const IMAGE_EXTENSIONS = [
-  'jpg',
-  'jpeg',
-  'png',
-  'webp',
-  'bmp',
-  'tiff',
-  'tif',
-  'gif',
-  'avif',
-  'heic',
-  'heif',
+  'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif',
+  'avif', 'heic', 'heif',
+  'ico', 'psd', 'dds', 'exr', 'qoi',
 ]
-const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub']
-const AUDIO_EXTENSIONS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus']
-const VIDEO_EXTENSIONS = ['mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v']
+const DOCUMENT_EXTENSIONS = [
+  'md', 'markdown', 'docx', 'html', 'htm', 'rst', 'odt', 'epub',
+  'tex', 'org', 'txt', 'csv', 'wiki', 'adoc', 'asciidoc',
+]
+const AUDIO_EXTENSIONS = [
+  'mp3', 'flac', 'ogg', 'wav', 'aac', 'm4a', 'opus',
+  'wma', 'amr', 'ape', 'wv', 'mka', 'aiff', 'aif', 'caf',
+]
+const VIDEO_EXTENSIONS = [
+  'mp4', 'mkv', 'webm', 'mov', 'avi', 'flv', 'wmv', 'm4v',
+  'ts', 'mts', 'm2ts', 'vob', '3gp', 'ogv', 'rm', 'rmvb', 'divx', 'f4v',
+]
 
 function supportedExtensions(category: FileCategory): string[] {
   if (category === 'image') return IMAGE_EXTENSIONS

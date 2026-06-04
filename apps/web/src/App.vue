@@ -340,7 +340,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             <span class="chip">.jpeg</span><span class="chip">.png</span
             ><span class="chip">.webp</span><span class="chip">.avif</span
             ><span class="chip">.heic</span><span class="chip">.gif</span
-            ><span class="chip">.bmp</span><span class="chip">.tiff</span>
+            ><span class="chip">.bmp</span><span class="chip">.tiff</span
+            ><span class="chip">.ico</span><span class="chip">.psd</span
+            ><span class="chip">.exr</span>
           </div>
         </div>
         <div class="feature">
@@ -356,7 +358,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-list">
             <span class="chip">.md</span><span class="chip">.docx</span
             ><span class="chip">.html</span><span class="chip">.rst</span
-            ><span class="chip">.odt</span><span class="chip">.epub</span>
+            ><span class="chip">.odt</span><span class="chip">.epub</span
+            ><span class="chip">.tex</span><span class="chip">.org</span
+            ><span class="chip">.txt</span>
           </div>
         </div>
         <div class="feature">
@@ -372,7 +376,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-list">
             <span class="chip">.mp3</span><span class="chip">.flac</span
             ><span class="chip">.ogg</span><span class="chip">.wav</span
-            ><span class="chip">.aac</span>
+            ><span class="chip">.aac</span><span class="chip">.aiff</span
+            ><span class="chip">.wma</span>
           </div>
         </div>
         <div class="feature">
@@ -392,7 +397,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-body">{{ t('features.video_desc') }}</div>
           <div class="feature-list">
             <span class="chip">.mp4</span><span class="chip">.mkv</span
-            ><span class="chip">.webm</span><span class="chip">.mov</span>
+            ><span class="chip">.webm</span><span class="chip">.mov</span
+            ><span class="chip">.3gp</span><span class="chip">.ts</span>
           </div>
         </div>
         <div class="feature">
