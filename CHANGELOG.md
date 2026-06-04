@@ -14,6 +14,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
+* **frontend:** keyboard shortcuts — `Delete` removes the selected queue item, `Enter` starts the conversion, `Escape` cancels an ongoing conversion (or closes settings if open); selected row highlighted with a subtle accent outline; shortcut hints on Convert (`↵`) and Cancel (`Esc`) buttons
+* **web:** `typecheck` script in `apps/web/package.json` (`vue-tsc --noEmit`) for standalone type checking
 * **web:** OS-aware hero download button — detects Linux / Windows / macOS via `navigator.userAgent` and links directly to the matching release asset; falls back to `#download` when the OS is unknown or the release has not loaded yet
 * **web:** "See all platforms" secondary button in the hero section, always visible, scrolls to the full download grid
 * **web:** complete i18n coverage — all previously hardcoded strings extracted to `en.json` / `fr.json`: privacy section detail texts, download section title and subtitle, OS badge labels, feature chips, and download button labels; download buttons now use `t('download.format', { ext })` interpolation instead of template concatenation
