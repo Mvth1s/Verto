@@ -776,7 +776,10 @@ onUnmounted(() => {
             v-for="file in activeQueue"
             :key="file.id"
             class="queue-row"
-            :class="{ 'with-progress': file.status === 'converting', selected: selectedFileId === file.id }"
+            :class="{
+              'with-progress': file.status === 'converting',
+              selected: selectedFileId === file.id,
+            }"
             role="listitem"
             @click="selectedFileId = file.id"
           >
