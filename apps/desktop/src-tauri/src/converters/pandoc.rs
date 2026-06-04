@@ -11,15 +11,11 @@ pub struct ConversionResult {
 
 const ALLOWED_FORMATS: &[&str] = &[
     // Core
-    "html", "pdf", "docx", "md", "rst", "odt", "epub",
-    // Text/markup - priority
-    "txt", "tex", "adoc", "org", "rtf", "pptx",
-    // Data
-    "ipynb", "docbook", "json", "xml",
-    // Niche
-    "textile", "wiki", "dokuwiki", "muse", "man", "ms", "beamer",
-    "tei", "fb2", "icml", "jira", "markua", "zimwiki",
-    // Web presentations
+    "html", "pdf", "docx", "md", "rst", "odt", "epub", // Text/markup - priority
+    "txt", "tex", "adoc", "org", "rtf", "pptx", // Data
+    "ipynb", "docbook", "json", "xml", // Niche
+    "textile", "wiki", "dokuwiki", "muse", "man", "ms", "beamer", "tei", "fb2", "icml", "jira",
+    "markua", "zimwiki", // Web presentations
     "s5", "slidy", "slideous", "revealjs",
 ];
 
@@ -27,14 +23,14 @@ const ALLOWED_FORMATS: &[&str] = &[
 /// For most formats the name matches the extension; only exceptions need explicit mapping.
 fn output_format_flag(format: &str) -> &str {
     match format {
-        "txt"      => "plain",
-        "tex"      => "latex",
-        "adoc"     => "asciidoc",
-        "md"       => "markdown",
-        "wiki"     => "mediawiki",
-        "docbook"  => "docbook5",
-        "xml"      => "jats",
-        other      => other,
+        "txt" => "plain",
+        "tex" => "latex",
+        "adoc" => "asciidoc",
+        "md" => "markdown",
+        "wiki" => "mediawiki",
+        "docbook" => "docbook5",
+        "xml" => "jats",
+        other => other,
     }
 }
 
@@ -80,7 +76,13 @@ pub async fn convert(
         .shell()
         .sidecar("pandoc")
         .map_err(|e| e.to_string())?
-        .args([input_path, "-t", output_format_flag(output_format), "-o", &out_path])
+        .args([
+            input_path,
+            "-t",
+            output_format_flag(output_format),
+            "-o",
+            &out_path,
+        ])
         .spawn()
         .map_err(|e| e.to_string())?;
 
@@ -148,10 +150,8 @@ mod tests {
     #[test]
     fn test_allowed_formats_accepted() {
         for fmt in &[
-            "html", "docx", "md", "rst", "odt", "epub", "pdf",
-            "tex", "org", "txt", "adoc", "rtf", "pptx",
-            "ipynb", "docbook", "json", "xml",
-            "wiki", "fb2", "revealjs",
+            "html", "docx", "md", "rst", "odt", "epub", "pdf", "tex", "org", "txt", "adoc", "rtf",
+            "pptx", "ipynb", "docbook", "json", "xml", "wiki", "fb2", "revealjs",
         ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }

@@ -115,10 +115,8 @@ const ALLOWED_FORMATS: &[&str] = &[
     // Lossy modern
     "mp3", "aac", "m4a", "opus", "ogg", "spx",
     // Lossy legacy (may fail if FFmpeg not built with these codecs)
-    "wma", "amr", "gsm", "mp2", "ra",
-    // Lossless
-    "flac", "wav", "aiff", "aif", "wv", "ape", "tta", "caf", "au",
-    // Broadcast
+    "wma", "amr", "gsm", "mp2", "ra", // Lossless
+    "flac", "wav", "aiff", "aif", "wv", "ape", "tta", "caf", "au", // Broadcast
     "ac3", "eac3", "dts", "mka",
 ];
 
@@ -126,30 +124,30 @@ const ALLOWED_FORMATS: &[&str] = &[
 fn audio_codec_for_format(output_format: &str) -> Result<&'static str, String> {
     match output_format {
         // Lossless
-        "wav"          => Ok("pcm_s16le"),
-        "flac"         => Ok("flac"),
+        "wav" => Ok("pcm_s16le"),
+        "flac" => Ok("flac"),
         "aiff" | "aif" => Ok("pcm_s16be"),
-        "wv"           => Ok("wavpack"),
-        "ape"          => Ok("ape"),
-        "tta"          => Ok("tta"),
-        "caf" | "au"   => Ok("pcm_s16be"),
+        "wv" => Ok("wavpack"),
+        "ape" => Ok("ape"),
+        "tta" => Ok("tta"),
+        "caf" | "au" => Ok("pcm_s16be"),
         // Lossy modern
-        "mp3"          => Ok("libmp3lame"),
-        "aac" | "m4a"  => Ok("aac"),
-        "opus"         => Ok("libopus"),
-        "ogg"          => Ok("libvorbis"),
-        "spx"          => Ok("libspeex"),
+        "mp3" => Ok("libmp3lame"),
+        "aac" | "m4a" => Ok("aac"),
+        "opus" => Ok("libopus"),
+        "ogg" => Ok("libvorbis"),
+        "spx" => Ok("libspeex"),
         // Lossy legacy (may fail if FFmpeg not built with these codecs)
-        "wma"          => Ok("wmav2"),
-        "amr"          => Ok("libopencore_amrnb"),
-        "gsm"          => Ok("libgsm"),
-        "ra"           => Ok("real_144"),
+        "wma" => Ok("wmav2"),
+        "amr" => Ok("libopencore_amrnb"),
+        "gsm" => Ok("libgsm"),
+        "ra" => Ok("real_144"),
         // Broadcast
-        "mka"          => Ok("flac"),
-        "ac3"          => Ok("ac3"),
-        "eac3"         => Ok("eac3"),
-        "dts"          => Ok("dca"),
-        "mp2"          => Ok("mp2"),
+        "mka" => Ok("flac"),
+        "ac3" => Ok("ac3"),
+        "eac3" => Ok("eac3"),
+        "dts" => Ok("dca"),
+        "mp2" => Ok("mp2"),
         other => Err(format!("Unsupported audio format: {}", other)),
     }
 }
@@ -283,14 +281,10 @@ const FFMPEG_IMAGE_OUTPUT_FORMATS: &[&str] = &["avif"];
 
 pub const VIDEO_FORMATS: &[&str] = &[
     // Modern
-    "mp4", "mkv", "mov", "webm",
-    // Common
-    "avi", "m4v", "ogv", "gif", "ts", "flv",
-    // Mobile
-    "3gp", "f4v", "3g2",
-    // Broadcast & Pro
-    "mts", "mxf", "mpg", "vob", "wmv",
-    // Legacy
+    "mp4", "mkv", "mov", "webm", // Common
+    "avi", "m4v", "ogv", "gif", "ts", "flv", // Mobile
+    "3gp", "f4v", "3g2", // Broadcast & Pro
+    "mts", "mxf", "mpg", "vob", "wmv", // Legacy
     "asf", "divx", "rm", "apng",
 ];
 pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "vp9"];
@@ -308,30 +302,30 @@ fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
 /// user-selectable h264/h265/vp9 encoding.
 fn video_codec_override(output_format: &str) -> Option<&'static str> {
     match output_format {
-        "gif"             => Some("gif"),
-        "apng"            => Some("apng"),
-        "ogv"             => Some("libtheora"),
-        "mpg"             => Some("mpeg2video"),
-        "vob"             => Some("mpeg2video"),
-        "wmv" | "asf"     => Some("wmv2"),   // may fail if FFmpeg not built with wmv2
-        "rm"              => Some("rv10"),    // may fail if FFmpeg not built with rv10
-        _                 => None,
+        "gif" => Some("gif"),
+        "apng" => Some("apng"),
+        "ogv" => Some("libtheora"),
+        "mpg" => Some("mpeg2video"),
+        "vob" => Some("mpeg2video"),
+        "wmv" | "asf" => Some("wmv2"), // may fail if FFmpeg not built with wmv2
+        "rm" => Some("rv10"),          // may fail if FFmpeg not built with rv10
+        _ => None,
     }
 }
 
 /// Audio codec to embed in a video container.
 fn audio_codec_for_video_container(output_format: &str) -> &'static str {
     match output_format {
-        "webm"                     => "libopus",
-        "ogv"                      => "libvorbis",
-        "avi" | "flv" | "divx"     => "libmp3lame",
-        "vob"                      => "ac3",
-        "wmv" | "asf"              => "wmav2", // may fail
-        "rm"                       => "ac3",
-        "mxf"                      => "pcm_s16le",
-        "mpg"                      => "mp2",
-        "gif" | "apng"             => "",      // no audio stream
-        _                          => "aac",
+        "webm" => "libopus",
+        "ogv" => "libvorbis",
+        "avi" | "flv" | "divx" => "libmp3lame",
+        "vob" => "ac3",
+        "wmv" | "asf" => "wmav2", // may fail
+        "rm" => "ac3",
+        "mxf" => "pcm_s16le",
+        "mpg" => "mp2",
+        "gif" | "apng" => "", // no audio stream
+        _ => "aac",
     }
 }
 
@@ -595,8 +589,14 @@ mod video_tests {
 
     #[test]
     fn test_video_formats_list() {
-        for fmt in &["mp4", "mkv", "webm", "mov", "3gp", "avi", "ogv", "gif", "ts", "flv", "mpg", "wmv"] {
-            assert!(VIDEO_FORMATS.contains(fmt), "{} should be in VIDEO_FORMATS", fmt);
+        for fmt in &[
+            "mp4", "mkv", "webm", "mov", "3gp", "avi", "ogv", "gif", "ts", "flv", "mpg", "wmv",
+        ] {
+            assert!(
+                VIDEO_FORMATS.contains(fmt),
+                "{} should be in VIDEO_FORMATS",
+                fmt
+            );
         }
     }
 
@@ -797,9 +797,8 @@ mod tests {
     #[test]
     fn test_allowed_formats_accepted() {
         for fmt in &[
-            "mp3", "aac", "m4a", "opus", "ogg", "flac", "wav", "aiff", "aif",
-            "wv", "ape", "tta", "caf", "au", "ac3", "eac3", "mp2", "mka",
-            "wma", "spx",
+            "mp3", "aac", "m4a", "opus", "ogg", "flac", "wav", "aiff", "aif", "wv", "ape", "tta",
+            "caf", "au", "ac3", "eac3", "mp2", "mka", "wma", "spx",
         ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
