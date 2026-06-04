@@ -5,6 +5,20 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.8.0](https://github.com/Mvth1s/Verto/compare/v1.7.0...v1.8.0) (2026-06-04)
+
+
+### Bug Fixes
+
+* **ci:** add APPIMAGE_EXTRACT_AND_RUN for universal AppImage compatibility ([a6d6858](https://github.com/Mvth1s/Verto/commit/a6d6858c02715b2ac2893ea4528242e3fa7948b0))
+
+
+### Features
+
+* **desktop:** keyboard shortcuts — Delete, Enter, Escape ([f3e31ff](https://github.com/Mvth1s/Verto/commit/f3e31ff291c9970bc4fa3b893abbbfa5bc379c0a))
+* **web:** complete i18n audit and OS-aware download button ([4038b2b](https://github.com/Mvth1s/Verto/commit/4038b2bbac2b0dff446ee9c504d2a199ff338de0))
+* **web:** replace inline GitHub SVG with icons8 logo in hero CTA ([e7c4ae2](https://github.com/Mvth1s/Verto/commit/e7c4ae2d0620e3f71626787022a4cb5618094f77))
+
 # [1.7.0](https://github.com/Mvth1s/Verto/compare/v1.6.0...v1.7.0) (2026-06-03)
 
 
