@@ -57,6 +57,17 @@ pub fn convert(
             ))
             .map_err(|e| e.to_string())?;
         }
+        ImageFormat::Ico => {
+            // ICO encoder requires RGBA and supports at most 256x256 pixels.
+            let img = if img.width() > 256 || img.height() > 256 {
+                img.thumbnail(256, 256)
+            } else {
+                img
+            };
+            image::DynamicImage::ImageRgba8(img.into_rgba8())
+                .save_with_format(&out_path, ImageFormat::Ico)
+                .map_err(|e| e.to_string())?;
+        }
         _ => {
             img.save_with_format(&out_path, format)
                 .map_err(|e| e.to_string())?;
@@ -154,6 +165,26 @@ mod tests {
         assert!(std::path::Path::new(&output).exists());
         let bytes = std::fs::read(&output).unwrap();
         assert_eq!(&bytes[0..4], &[0, 0, 1, 0], "ICO magic bytes should be 00 00 01 00");
+        let _ = std::fs::remove_file(&output);
+    }
+
+    #[test]
+    fn test_jpeg_to_ico() {
+        let input = fixture("sample.jpg");
+        let output = std::env::temp_dir()
+            .join("verto_test_jpeg_to_ico.ico")
+            .to_string_lossy()
+            .into_owned();
+
+        if !std::path::Path::new(&input).exists() {
+            return;
+        }
+
+        let result = convert(&input, "ico", None, Some(&output), None);
+        assert!(result.is_ok(), "JPEG to ICO failed: {:?}", result.err());
+        assert!(std::path::Path::new(&output).exists());
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(&bytes[0..4], &[0, 0, 1, 0], "ICO magic bytes expected");
         let _ = std::fs::remove_file(&output);
     }
 
