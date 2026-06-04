@@ -707,7 +707,7 @@ onUnmounted(() => {
     <!-- SIDEBAR -->
     <aside class="sidebar" aria-label="Navigation">
       <div class="brand">
-        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
+        <img src="/verto.png" alt="Verto" class="brand-logo" />
       </div>
 
       <div class="nav-label" aria-hidden="true">{{ t('nav.convert') }}</div>
@@ -1368,9 +1368,8 @@ body {
 .brand-logo {
   width: 88px;
   height: 88px;
-  border-radius: 10px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .nav-label {

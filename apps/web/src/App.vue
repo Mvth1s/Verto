@@ -150,7 +150,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <header class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#" style="text-decoration: none; color: inherit">
-        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
+        <img src="/verto.png" alt="Verto" class="brand-logo" />
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
@@ -259,7 +259,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="win-body">
             <div class="ws-sidebar">
               <div class="ws-brand">
-                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
+                <img src="/verto.png" alt="Verto" class="ws-brand-img" />
               </div>
               <div class="ws-item active">
                 <span class="ico"></span>{{ t('features.images_title') }}
@@ -850,9 +850,8 @@ header.nav {
 .brand-logo {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 .brand-name {
   font-weight: 600;
@@ -1177,9 +1176,8 @@ header.nav {
 .ws-brand-img {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 .ws-item {
   display: flex;
@@ -1766,25 +1764,116 @@ footer {
   }
 }
 
-@media (max-width: 900px) {
+/* ≤ 1100px : hero single colonne, mockup perd la 3D */
+@media (max-width: 1100px) {
   .hero-grid {
     grid-template-columns: 1fr;
+    gap: 48px;
   }
+  .mockup {
+    transform: none;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+}
+
+/* ≤ 900px : tablet - grilles 2 colonnes, privacy vertical */
+@media (max-width: 900px) {
   .features-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .download-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .privacy-visual {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .pv-node {
+    width: 100%;
+    max-width: 320px;
+  }
+  .pv-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .pv-arrow .x {
+    position: static;
+    transform: none;
   }
   .pv-arrow .line {
     width: 1px;
-    height: 40px;
+    height: 32px;
     background: none;
     background-image: linear-gradient(180deg, var(--text-4) 50%, transparent 50%);
     background-size: 1px 8px;
+  }
+}
+
+/* ≤ 640px : mobile */
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  /* Nav : masquer les liens texte, garder lang + CTA */
+  .nav-link {
+    display: none;
+  }
+
+  section {
+    padding: 64px 0;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 40px 0 56px;
+  }
+
+  /* Mockup trop complexe pour mobile : masqué */
+  .mockup {
+    display: none;
+  }
+
+  .hero-ctas {
+    flex-direction: column;
+  }
+  .hero-ctas .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .os-row {
+    flex-wrap: wrap;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature {
+    padding: 24px 20px;
+  }
+
+  .section-head {
+    margin-bottom: 36px;
+  }
+
+  .download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }
 </style>
