@@ -238,7 +238,7 @@ pub async fn convert(
     })
 }
 
-const FFMPEG_IMAGE_OUTPUT_FORMATS: &[&str] = &["avif", "ico"];
+const FFMPEG_IMAGE_OUTPUT_FORMATS: &[&str] = &["avif"];
 
 pub const VIDEO_FORMATS: &[&str] = &["mp4", "mkv", "webm", "mov", "3gp"];
 pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "vp9"];

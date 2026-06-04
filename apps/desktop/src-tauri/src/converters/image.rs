@@ -82,6 +82,7 @@ fn parse_format(s: &str) -> Result<ImageFormat, String> {
         "bmp" => Ok(ImageFormat::Bmp),
         "tiff" | "tif" => Ok(ImageFormat::Tiff),
         "gif" => Ok(ImageFormat::Gif),
+        "ico" => Ok(ImageFormat::Ico),
         _ => Err(format!("Unsupported format: {}", s)),
     }
 }
@@ -94,6 +95,7 @@ fn format_to_extension(format: ImageFormat) -> &'static str {
         ImageFormat::Bmp => "bmp",
         ImageFormat::Tiff => "tiff",
         ImageFormat::Gif => "gif",
+        ImageFormat::Ico => "ico",
         _ => "bin",
     }
 }
@@ -119,9 +121,60 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_format_ico() {
+        assert!(matches!(parse_format("ico"), Ok(ImageFormat::Ico)));
+        assert!(matches!(parse_format("ICO"), Ok(ImageFormat::Ico)));
+    }
+
+    #[test]
+    fn test_format_to_extension_ico() {
+        assert_eq!(format_to_extension(ImageFormat::Ico), "ico");
+    }
+
+    #[test]
     fn test_parse_format_unsupported() {
         assert!(parse_format("avif").is_err());
         assert!(parse_format("heic").is_err());
+    }
+
+    #[test]
+    fn test_png_to_ico() {
+        let input = fixture("sample.png");
+        let output = std::env::temp_dir()
+            .join("verto_test_png_to_ico.ico")
+            .to_string_lossy()
+            .into_owned();
+
+        if !std::path::Path::new(&input).exists() {
+            return;
+        }
+
+        let result = convert(&input, "ico", None, Some(&output), None);
+        assert!(result.is_ok(), "PNG to ICO failed: {:?}", result.err());
+        assert!(std::path::Path::new(&output).exists());
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(&bytes[0..4], &[0, 0, 1, 0], "ICO magic bytes should be 00 00 01 00");
+        let _ = std::fs::remove_file(&output);
+    }
+
+    #[test]
+    fn test_ico_to_png() {
+        let input = fixture("sample.ico");
+        let output = std::env::temp_dir()
+            .join("verto_test_ico_to_png.png")
+            .to_string_lossy()
+            .into_owned();
+
+        if !std::path::Path::new(&input).exists() {
+            return;
+        }
+
+        let result = convert(&input, "png", None, Some(&output), None);
+        assert!(result.is_ok(), "ICO to PNG failed: {:?}", result.err());
+        assert!(std::path::Path::new(&output).exists());
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(&bytes[0..4], &[137, 80, 78, 71], "Output should be valid PNG");
+        let _ = std::fs::remove_file(&output);
     }
 
     #[test]
