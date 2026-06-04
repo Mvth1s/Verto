@@ -193,13 +193,17 @@ apps/web/
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
-Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.8.0`.
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Les fichiers bumpés automatiquement : `CHANGELOG.md`, `package.json` (racine + desktop), `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`.
+
+La cible macOS est `aarch64-apple-darwin` uniquement (x86_64 retiré, PR #32).
 
 ---
 
 ## Code conventions
 
 ### Git & commits
+
+**Workflow de branches** : toujours créer une branche de feature et ouvrir une PR. Ne jamais committer directement sur `main` ou `dev`. Après chaque merge vers `main` (release SR), merger `main → dev` pour synchroniser CHANGELOG et version.
 
 Conventional Commits enforced by Commitlint + Husky:
 
@@ -210,7 +214,8 @@ Conventional Commits enforced by Commitlint + Husky:
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`
 - Scopes: `desktop`, `web`, `backend`, `frontend`, `ci`, `deps`
 - Versioning: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major
-- **Ne jamais mettre de numéro de version dans le titre du commit** — c'est SR qui calcule la version. Écrire `feat(desktop): add AVIF support` et non `feat(desktop): v0.4.0 — AVIF support`.
+- **Ne jamais mettre de numéro de version dans le titre du commit** — c'est SR qui calcule la version. Écrire `feat(desktop): add AVIF support` et non `feat(desktop): v0.4.0 add AVIF support`.
+- **Pas de tirets cadratin (`—`)** dans tout le projet : i18n, README, CHANGELOG, commentaires. Utiliser à la place deux-points, virgule ou point.
 
 ### TypeScript / Vue
 
