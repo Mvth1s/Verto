@@ -250,7 +250,9 @@ export const useConversionStore = defineStore('conversion', () => {
             outputPath,
           })
         } else if (category === 'audio') {
-          const isLossless = ['flac', 'wav', 'aiff', 'aif', 'wv'].includes(settings.outputFormat)
+          const isLossless = ['flac', 'wav', 'aiff', 'aif', 'wv', 'ape', 'tta', 'caf', 'au'].includes(
+            settings.outputFormat,
+          )
           result = await invoke<ConversionResult>('convert_audio', {
             inputPath: file.path,
             outputFormat: settings.outputFormat,
