@@ -112,10 +112,9 @@ pub struct ConversionResult {
 }
 
 const ALLOWED_FORMATS: &[&str] = &[
-    "mp3", "flac", "ogg", "wav", "aac", "opus", "m4a",
-    "aiff", "aif", // Apple lossless PCM
-    "mka",         // Matroska audio container
-    "wv",          // WavPack lossless — FFmpeg libwavpack required
+    "mp3", "flac", "ogg", "wav", "aac", "opus", "m4a", "aiff", "aif", // Apple lossless PCM
+    "mka", // Matroska audio container
+    "wv",  // WavPack lossless - FFmpeg libwavpack required
 ];
 
 pub async fn convert(
@@ -686,8 +685,9 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a", "aiff", "aif", "mka", "wv"]
-        {
+        for fmt in &[
+            "mp3", "flac", "ogg", "wav", "aac", "opus", "m4a", "aiff", "aif", "mka", "wv",
+        ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }

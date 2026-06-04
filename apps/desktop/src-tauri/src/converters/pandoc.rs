@@ -10,8 +10,7 @@ pub struct ConversionResult {
 }
 
 const ALLOWED_FORMATS: &[&str] = &[
-    "html", "pdf", "docx", "md", "rst", "odt", "epub",
-    "tex", // LaTeX
+    "html", "pdf", "docx", "md", "rst", "odt", "epub", "tex", // LaTeX
     "org", // Emacs Org-mode
     "txt", // Plain text
 ];
@@ -125,7 +124,9 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf", "tex", "org", "txt"] {
+        for fmt in &[
+            "html", "docx", "md", "rst", "odt", "epub", "pdf", "tex", "org", "txt",
+        ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }
@@ -208,7 +209,7 @@ mod tests {
 
         assert!(status.success(), "pandoc md→docx failed");
         assert!(PathBuf::from(&output).exists());
-        // DOCX is a ZIP archive — verify PK magic bytes
+        // DOCX is a ZIP archive, verify PK magic bytes
         let bytes = std::fs::read(&output).unwrap();
         assert_eq!(&bytes[..2], b"PK", "docx should be a valid ZIP/OOXML");
         let _ = std::fs::remove_file(&output);
