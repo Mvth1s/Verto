@@ -5,6 +5,25 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.9.0](https://github.com/Mvth1s/Verto/compare/v1.8.0...v1.9.0) (2026-06-04)
+
+
+### Bug Fixes
+
+* **backend:** convert to RGBA and cap to 256x256 for ICO output ([7b73022](https://github.com/Mvth1s/Verto/commit/7b73022aa58cf0f511c2457f48e0018d6e3166c1))
+* **backend:** route ICO through image crate instead of FFmpeg ([08d271c](https://github.com/Mvth1s/Verto/commit/08d271c35205c313bc0b8d89bd24119ff8fcaace))
+* **backend:** use Path::is_absolute() instead of starts_with('/') for cross-platform path validation ([76efee9](https://github.com/Mvth1s/Verto/commit/76efee9d6128a4a9c00c5118b1a26d454bde7409))
+* **frontend:** extend isLossless check to cover AIFF, WV in audio conversion ([298a753](https://github.com/Mvth1s/Verto/commit/298a753439bb6c21ecf83c83d17896bc3fd021f1))
+* **frontend:** remove hardcoded v0.4.0 version pill from sidebar footer ([97ba9d7](https://github.com/Mvth1s/Verto/commit/97ba9d7226b7891c95216195e56a7dacb7845271))
+
+
+### Features
+
+* **backend:** exhaustive FFmpeg audio/video and Pandoc document output formats ([370e48e](https://github.com/Mvth1s/Verto/commit/370e48e9ecb52cae7919ead544e99ec11a4f001f))
+* **backend:** extend supported input/output formats across all categories ([6c60ecc](https://github.com/Mvth1s/Verto/commit/6c60ecc709a4cca65f52148f1e3db075aff88ef3))
+* **desktop:** update app logo and icons with new verto.png ([93ab9ff](https://github.com/Mvth1s/Verto/commit/93ab9ff89d5de9a2e1187b84372aaef2e0d964fe))
+* **web:** responsive landing page — 3 breakpoints ([4a64ec2](https://github.com/Mvth1s/Verto/commit/4a64ec2eb0ff6a20bf53f0fade21bbccf1d2ae89))
+
 ## [Unreleased]
 
 ### Added
