@@ -12,11 +12,10 @@ pub struct ConversionResult {
 }
 
 /// Formats that require FFmpeg for encoding (output).
-const FFMPEG_OUTPUT_FORMATS: &[&str] = &["avif", "ico"];
+const FFMPEG_OUTPUT_FORMATS: &[&str] = &["avif"];
 /// Formats that require FFmpeg for decoding (input only, no encode support via image crate).
 const FFMPEG_INPUT_FORMATS: &[&str] = &[
     "heic", "heif", // Apple formats
-    "ico",  // Windows icon
     "psd",  // Photoshop (FFmpeg extracts flattened render)
     "dds",  // DirectDraw Surface (textures)
     "exr",  // OpenEXR HDR
