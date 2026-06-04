@@ -23,7 +23,6 @@ interface GithubRelease {
 }
 
 interface Fallback {
-  label: string
   ext: string
 }
 
@@ -32,16 +31,9 @@ const API_URL = 'https://api.github.com/repos/Mvth1s/Verto/releases/latest'
 const CACHE_KEY = 'verto_release'
 const CACHE_TTL = 3_600_000 // 1 hour
 
-const LINUX_FALLBACKS: Fallback[] = [
-  { label: 'Download .AppImage', ext: '.AppImage' },
-  { label: 'Download .deb', ext: '.deb' },
-  { label: 'Download .rpm', ext: '.rpm' },
-]
-const WINDOWS_FALLBACKS: Fallback[] = [
-  { label: 'Download .exe', ext: '.exe' },
-  { label: 'Download .msi', ext: '.msi' },
-]
-const MACOS_FALLBACKS: Fallback[] = [{ label: 'Download .dmg', ext: '.dmg' }]
+const LINUX_FALLBACKS: Fallback[] = [{ ext: '.AppImage' }, { ext: '.deb' }, { ext: '.rpm' }]
+const WINDOWS_FALLBACKS: Fallback[] = [{ ext: '.exe' }, { ext: '.msi' }]
+const MACOS_FALLBACKS: Fallback[] = [{ ext: '.dmg' }]
 
 const release = ref<GithubRelease | null>(null)
 
@@ -77,11 +69,44 @@ onMounted(async () => {
 
 const version = computed(() => release.value?.tag_name ?? null)
 
-const heroCtaLabel = computed(() => {
+type DetectedOS = 'windows' | 'macos' | 'linux' | 'unknown'
+
+function detectOS(): DetectedOS {
   const ua = navigator.userAgent
-  if (ua.includes('Win')) return t('hero.cta_windows')
-  if (ua.includes('Mac') && !ua.includes('Mobile')) return t('hero.cta_macos')
-  return t('hero.cta_linux')
+  if (/Windows/i.test(ua)) return 'windows'
+  if (/Mac OS X|Macintosh/i.test(ua)) return 'macos'
+  if (/Linux/i.test(ua)) return 'linux'
+  return 'unknown'
+}
+
+const detectedOS = detectOS()
+
+const heroPrimaryLabel = computed(() => {
+  if (detectedOS === 'unknown') return t('download.generic')
+  const osLabel: Record<Exclude<DetectedOS, 'unknown'>, string> = {
+    windows: t('os.windows'),
+    macos: t('os.macos'),
+    linux: t('os.linux'),
+  }
+  return t('download.forOs', { os: osLabel[detectedOS] })
+})
+
+const heroPrimaryHref = computed((): string => {
+  if (detectedOS === 'unknown' || !release.value) return '#download'
+  const assets = release.value.assets.filter(
+    (a) => !a.name.endsWith('.sig') && !a.name.endsWith('.tar.gz') && !a.name.endsWith('.zip'),
+  )
+  const find = (pred: (n: string) => boolean) => assets.find((a) => pred(a.name))
+  if (detectedOS === 'windows') {
+    return (
+      find((n) => n.endsWith('-setup.exe') || n.endsWith('.msi'))?.browser_download_url ??
+      '#download'
+    )
+  }
+  if (detectedOS === 'macos') {
+    return find((n) => n.endsWith('.dmg'))?.browser_download_url ?? '#download'
+  }
+  return find((n) => n.endsWith('.AppImage'))?.browser_download_url ?? '#download'
 })
 
 function findAssets(pred: (name: string) => boolean): GithubAsset[] {
@@ -166,13 +191,20 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         </h1>
         <p class="hero-body">{{ t('hero.body') }}</p>
         <div class="hero-ctas">
-          <a class="btn btn-primary btn-lg" href="#download">
+          <a
+            class="btn btn-primary btn-lg"
+            :href="heroPrimaryHref"
+            v-bind="heroPrimaryHref !== '#download' ? { target: '_blank', rel: 'noopener' } : {}"
+          >
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            {{ heroCtaLabel }}
+            {{ heroPrimaryLabel }}
+          </a>
+          <a class="btn btn-outline btn-lg" href="#download">
+            {{ t('download.allPlatforms') }}
           </a>
           <a
             class="btn btn-outline btn-lg"
@@ -197,7 +229,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489.005.04.011.08.018.118-.078.224-.144.452-.183.692-.317 1.96.46 4.005 2.13 5.605 1.81 1.732 4.357 2.633 6.96 2.483 2.45-.137 4.62-1.157 6.18-2.825.78-.836 1.39-1.836 1.74-2.95.36-1.14.42-2.35.21-3.61-.06-.42-.18-.84-.36-1.26.06-.45.06-.9-.06-1.35-.24-.96-.78-1.86-1.5-2.55-.6-.6-1.32-1.05-2.1-1.32-.42-.15-.84-.24-1.26-.27-.045-.524-.06-1.05-.15-1.575-.36-2.1-1.32-4.2-2.97-5.355-.795-.555-1.755-.81-2.715-.81z"
                 />
               </svg>
-              Linux
+              {{ t('os.linux') }}
             </span>
             <span class="os-badge">
               <svg viewBox="0 0 24 24">
@@ -205,7 +237,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.351"
                 />
               </svg>
-              Windows
+              {{ t('os.windows') }}
             </span>
             <span class="os-badge">
               <svg viewBox="0 0 24 24">
@@ -213,7 +245,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
                 />
               </svg>
-              macOS
+              {{ t('os.macos') }}
             </span>
           </div>
         </div>
@@ -379,8 +411,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-title">{{ t('features.batch_title') }}</div>
           <div class="feature-body">{{ t('features.batch_desc') }}</div>
           <div class="feature-list">
-            <span class="chip">recursive scan</span><span class="chip">drag &amp; drop</span
-            ><span class="chip">file picker</span>
+            <span class="chip">{{ t('features.batch_chip_1') }}</span
+            ><span class="chip">{{ t('features.batch_chip_2') }}</span
+            ><span class="chip">{{ t('features.batch_chip_3') }}</span>
           </div>
         </div>
         <div class="feature">
@@ -393,8 +426,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-title">{{ t('features.queue_title') }}</div>
           <div class="feature-body">{{ t('features.queue_desc') }}</div>
           <div class="feature-list">
-            <span class="chip">cancel</span><span class="chip">retry</span
-            ><span class="chip">custom output dir</span>
+            <span class="chip">{{ t('features.queue_chip_1') }}</span
+            ><span class="chip">{{ t('features.queue_chip_2') }}</span
+            ><span class="chip">{{ t('features.queue_chip_3') }}</span>
           </div>
         </div>
         <div class="feature">
@@ -407,8 +441,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-title">{{ t('features.history_title') }}</div>
           <div class="feature-body">{{ t('features.history_desc') }}</div>
           <div class="feature-list">
-            <span class="chip">session log</span><span class="chip">file size saved</span
-            ><span class="chip">quick reopen</span>
+            <span class="chip">{{ t('features.history_chip_1') }}</span
+            ><span class="chip">{{ t('features.history_chip_2') }}</span
+            ><span class="chip">{{ t('features.history_chip_3') }}</span>
           </div>
         </div>
         <div class="feature">
@@ -421,8 +456,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="feature-title">{{ t('features.local_title') }}</div>
           <div class="feature-body">{{ t('features.local_desc') }}</div>
           <div class="feature-list">
-            <span class="chip">offline-first</span><span class="chip">no telemetry</span
-            ><span class="chip">air-gapped</span>
+            <span class="chip">{{ t('features.local_chip_1') }}</span
+            ><span class="chip">{{ t('features.local_chip_2') }}</span
+            ><span class="chip">{{ t('features.local_chip_3') }}</span>
           </div>
         </div>
         <div class="feature">
@@ -457,7 +493,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <line x1="2" y1="20" x2="22" y2="20" />
             </svg>
           </div>
-          <div>Your machine</div>
+          <div>{{ t('privacy.your_machine') }}</div>
           <div class="lock">
             <svg viewBox="0 0 24 24">
               <rect x="3" y="11" width="18" height="10" rx="2" />
@@ -466,7 +502,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           </div>
         </div>
         <div class="pv-arrow">
-          <span class="x">no upload</span>
+          <span class="x">{{ t('privacy.no_upload') }}</span>
           <span class="line"></span>
         </div>
         <div class="pv-node" style="opacity: 0.5">
@@ -475,44 +511,38 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
               <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
             </svg>
           </div>
-          <div>Cloud / Server</div>
+          <div>{{ t('privacy.cloud_server') }}</div>
         </div>
       </div>
       <div class="privacy-details">
         <div class="pv-detail">
           <span class="pv-check">✓</span>
           <div>
-            <strong>No network calls, ever.</strong> The app never opens a socket after launch.
-            Conversions run as local child processes (Pandoc, image crate) — nothing leaves your
-            machine.
+            <strong>{{ t('privacy.detail_1_title') }}</strong> {{ t('privacy.detail_1_body') }}
           </div>
         </div>
         <div class="pv-detail">
           <span class="pv-check">✓</span>
           <div>
-            <strong>No account required.</strong> No sign-up, no licence key, no activation. Just
-            download and run.
+            <strong>{{ t('privacy.detail_2_title') }}</strong> {{ t('privacy.detail_2_body') }}
           </div>
         </div>
         <div class="pv-detail">
           <span class="pv-check">✓</span>
           <div>
-            <strong>No telemetry or crash reporting.</strong> We don't know you exist. There is no
-            analytics SDK, no Sentry, no usage tracking of any kind.
+            <strong>{{ t('privacy.detail_3_title') }}</strong> {{ t('privacy.detail_3_body') }}
           </div>
         </div>
         <div class="pv-detail">
           <span class="pv-check">✓</span>
           <div>
-            <strong>Bundled converters.</strong> Pandoc ships inside the binary. No system
-            dependency to install, no risk of a malicious system-wide binary being used instead.
+            <strong>{{ t('privacy.detail_4_title') }}</strong> {{ t('privacy.detail_4_body') }}
           </div>
         </div>
         <div class="pv-detail">
           <span class="pv-check">✓</span>
           <div>
-            <strong>Source is auditable.</strong> MIT licensed, hosted on GitHub. Every conversion
-            path is in the open — no compiled blobs, no obfuscated code.
+            <strong>{{ t('privacy.detail_5_title') }}</strong> {{ t('privacy.detail_5_body') }}
           </div>
         </div>
       </div>
@@ -524,9 +554,9 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
     <div class="container">
       <div class="section-head" style="text-align: center; margin-left: auto; margin-right: auto">
         <div class="section-eyebrow">{{ t('download.eyebrow') }}</div>
-        <h2 class="section-title">Ready to install?</h2>
+        <h2 class="section-title">{{ t('download.section_title') }}</h2>
         <p class="section-sub" style="margin-left: auto; margin-right: auto">
-          ~18 MB. Single binary. No installer trickery, no bundled extras.
+          {{ t('download.section_sub') }}
         </p>
       </div>
       <div class="download-grid">
@@ -569,7 +599,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ t('download.fallback') }} {{ extOf(a.name) }}
+                {{ t('download.format', { ext: extOf(a.name) }) }}
               </a>
             </template>
             <template v-else>
@@ -586,7 +616,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ f.label }}
+                {{ t('download.format', { ext: f.ext }) }}
               </a>
             </template>
           </div>
@@ -635,7 +665,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ t('download.fallback') }} {{ extOf(a.name) }}
+                {{ t('download.format', { ext: extOf(a.name) }) }}
               </a>
             </template>
             <template v-else>
@@ -652,7 +682,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ f.label }}
+                {{ t('download.format', { ext: f.ext }) }}
               </a>
             </template>
           </div>
@@ -703,7 +733,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ t('download.fallback') }} {{ extOf(a.name) }}
+                {{ t('download.format', { ext: extOf(a.name) }) }}
               </a>
             </template>
             <template v-else>
@@ -720,7 +750,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {{ f.label }}
+                {{ t('download.format', { ext: f.ext }) }}
               </a>
             </template>
           </div>

@@ -14,6 +14,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
+* **web:** OS-aware hero download button — detects Linux / Windows / macOS via `navigator.userAgent` and links directly to the matching release asset; falls back to `#download` when the OS is unknown or the release has not loaded yet
+* **web:** "See all platforms" secondary button in the hero section, always visible, scrolls to the full download grid
+* **web:** complete i18n coverage — all previously hardcoded strings extracted to `en.json` / `fr.json`: privacy section detail texts, download section title and subtitle, OS badge labels, feature chips, and download button labels; download buttons now use `t('download.format', { ext })` interpolation instead of template concatenation
+* **web:** new i18n keys — `os.{linux,windows,macos}`, `download.{section_title,section_sub,forOs,generic,allPlatforms,format}`, `privacy.{your_machine,no_upload,cloud_server,detail_1..5_{title,body}}`, `features.{batch,queue,history,local}_chip_{1,2,3}` — added in both `en.json` and `fr.json` with full French translations
+
 * **frontend:** dismissible toast after conversion batch completes, offering to open the output folder in the file manager (auto-dismissed after 8 s)
 * **backend:** new `open_output_folder` Tauri command backed by `tauri-plugin-opener`
 * **ci:** add `libfuse2` to Linux apt-get step so AppImage is built correctly on ubuntu-22.04
