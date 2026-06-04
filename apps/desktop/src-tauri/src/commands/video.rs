@@ -24,12 +24,12 @@ pub async fn convert_video(
     output_path: Option<String>,
     file_id: String,
 ) -> Result<ConversionResult, String> {
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(&input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
 
     if let Some(ref out) = output_path {
-        if !out.starts_with('/') {
+        if !std::path::Path::new(out).is_absolute() {
             return Err("Output path must be absolute".to_string());
         }
     }
@@ -67,7 +67,7 @@ pub async fn get_video_thumbnail(
     app: tauri::AppHandle,
     input_path: String,
 ) -> Result<String, String> {
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(&input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
     if !std::path::Path::new(&input_path).exists() {

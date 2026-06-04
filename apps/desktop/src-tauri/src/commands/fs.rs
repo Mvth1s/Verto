@@ -5,7 +5,7 @@ const MAX_FILES: usize = 1000;
 
 #[tauri::command]
 pub async fn list_directory(dir_path: String, recursive: bool) -> Result<Vec<String>, String> {
-    if !dir_path.starts_with('/') {
+    if !std::path::Path::new(&dir_path).is_absolute() {
         return Err("Directory path must be absolute".to_string());
     }
 
