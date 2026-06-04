@@ -111,7 +111,46 @@ pub struct ConversionResult {
     pub output_size: u64,
 }
 
-const ALLOWED_FORMATS: &[&str] = &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"];
+const ALLOWED_FORMATS: &[&str] = &[
+    // Lossy modern
+    "mp3", "aac", "m4a", "opus", "ogg", "spx",
+    // Lossy legacy (may fail if FFmpeg not built with these codecs)
+    "wma", "amr", "gsm", "mp2", "ra", // Lossless
+    "flac", "wav", "aiff", "aif", "wv", "ape", "tta", "caf", "au", // Broadcast
+    "ac3", "eac3", "dts", "mka",
+];
+
+/// Explicit audio codec for pure audio output.
+fn audio_codec_for_format(output_format: &str) -> Result<&'static str, String> {
+    match output_format {
+        // Lossless
+        "wav" => Ok("pcm_s16le"),
+        "flac" => Ok("flac"),
+        "aiff" | "aif" => Ok("pcm_s16be"),
+        "wv" => Ok("wavpack"),
+        "ape" => Ok("ape"),
+        "tta" => Ok("tta"),
+        "caf" | "au" => Ok("pcm_s16be"),
+        // Lossy modern
+        "mp3" => Ok("libmp3lame"),
+        "aac" | "m4a" => Ok("aac"),
+        "opus" => Ok("libopus"),
+        "ogg" => Ok("libvorbis"),
+        "spx" => Ok("libspeex"),
+        // Lossy legacy (may fail if FFmpeg not built with these codecs)
+        "wma" => Ok("wmav2"),
+        "amr" => Ok("libopencore_amrnb"),
+        "gsm" => Ok("libgsm"),
+        "ra" => Ok("real_144"),
+        // Broadcast
+        "mka" => Ok("flac"),
+        "ac3" => Ok("ac3"),
+        "eac3" => Ok("eac3"),
+        "dts" => Ok("dca"),
+        "mp2" => Ok("mp2"),
+        other => Err(format!("Unsupported audio format: {}", other)),
+    }
+}
 
 pub async fn convert(
     app: &tauri::AppHandle,
@@ -143,10 +182,10 @@ pub async fn convert(
             .to_string(),
     };
 
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
-    if !out_path.starts_with('/') {
+    if !std::path::Path::new(&out_path).is_absolute() {
         return Err("Output path must be absolute".to_string());
     }
 
@@ -162,6 +201,10 @@ pub async fn convert(
         "pipe:1".to_string(),
         "-nostats".to_string(),
     ];
+
+    let codec = audio_codec_for_format(output_format)?;
+    args.push("-c:a".to_string());
+    args.push(codec.to_string());
 
     if let Some(br) = bitrate {
         args.push("-b:a".to_string());
@@ -234,9 +277,16 @@ pub async fn convert(
     })
 }
 
-const AVIF_FORMATS: &[&str] = &["avif"];
+const FFMPEG_IMAGE_OUTPUT_FORMATS: &[&str] = &["avif"];
 
-pub const VIDEO_FORMATS: &[&str] = &["mp4", "mkv", "webm", "mov"];
+pub const VIDEO_FORMATS: &[&str] = &[
+    // Modern
+    "mp4", "mkv", "mov", "webm", // Common
+    "avi", "m4v", "ogv", "gif", "ts", "flv", // Mobile
+    "3gp", "f4v", "3g2", // Broadcast & Pro
+    "mts", "mxf", "mpg", "vob", "wmv", // Legacy
+    "asf", "divx", "rm", "apng",
+];
 pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "vp9"];
 
 fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
@@ -248,9 +298,33 @@ fn video_codec_flag(codec: &str) -> Result<&'static str, String> {
     }
 }
 
-fn audio_codec_for_format(output_format: &str) -> &'static str {
+/// Returns a fixed video codec for container formats that do not support
+/// user-selectable h264/h265/vp9 encoding.
+fn video_codec_override(output_format: &str) -> Option<&'static str> {
+    match output_format {
+        "gif" => Some("gif"),
+        "apng" => Some("apng"),
+        "ogv" => Some("libtheora"),
+        "mpg" => Some("mpeg2video"),
+        "vob" => Some("mpeg2video"),
+        "wmv" | "asf" => Some("wmv2"), // may fail if FFmpeg not built with wmv2
+        "rm" => Some("rv10"),          // may fail if FFmpeg not built with rv10
+        _ => None,
+    }
+}
+
+/// Audio codec to embed in a video container.
+fn audio_codec_for_video_container(output_format: &str) -> &'static str {
     match output_format {
         "webm" => "libopus",
+        "ogv" => "libvorbis",
+        "avi" | "flv" | "divx" => "libmp3lame",
+        "vob" => "ac3",
+        "wmv" | "asf" => "wmav2", // may fail
+        "rm" => "ac3",
+        "mxf" => "pcm_s16le",
+        "mpg" => "mp2",
+        "gif" | "apng" => "", // no audio stream
         _ => "aac",
     }
 }
@@ -279,8 +353,9 @@ pub async fn convert_video(
         ));
     }
 
+    // Validate user codec only for formats without a fixed encoder override
     if let Some(c) = codec {
-        if !VIDEO_CODECS.contains(&c) {
+        if video_codec_override(output_format).is_none() && !VIDEO_CODECS.contains(&c) {
             return Err(format!(
                 "Unsupported codec: {}. Allowed: {}",
                 c,
@@ -302,14 +377,22 @@ pub async fn convert_video(
         "-nostats".to_string(),
     ];
 
-    // Video codec
-    let codec_name = codec.unwrap_or("h264");
-    let vcodec = video_codec_flag(codec_name)?;
-    args.push("-c:v".to_string());
-    args.push(vcodec.to_string());
+    // Video codec: use format override first, then user selection
+    let (vcodec, user_selected_vp9) = if let Some(fixed) = video_codec_override(output_format) {
+        (fixed.to_string(), false)
+    } else {
+        let codec_name = codec.unwrap_or("h264");
+        let flag = video_codec_flag(codec_name)?;
+        (flag.to_string(), codec_name == "vp9")
+    };
+
+    if !vcodec.is_empty() {
+        args.push("-c:v".to_string());
+        args.push(vcodec);
+    }
 
     // VP9 constant-quality mode requires -b:v 0
-    if codec_name == "vp9" {
+    if user_selected_vp9 {
         args.push("-b:v".to_string());
         args.push("0".to_string());
     }
@@ -331,9 +414,14 @@ pub async fn convert_video(
         (None, None) => {}
     }
 
-    // Audio codec
-    args.push("-c:a".to_string());
-    args.push(audio_codec_for_format(output_format).to_string());
+    // Audio codec (empty string = no audio track)
+    let audio_codec = audio_codec_for_video_container(output_format);
+    if audio_codec.is_empty() {
+        args.push("-an".to_string());
+    } else {
+        args.push("-c:a".to_string());
+        args.push(audio_codec.to_string());
+    }
 
     args.push(output_path.to_string());
 
@@ -412,10 +500,10 @@ pub async fn convert_image(
         return Err(format!("Input file not found: {}", input_path));
     }
 
-    if !AVIF_FORMATS.contains(&output_format) {
+    if !FFMPEG_IMAGE_OUTPUT_FORMATS.contains(&output_format) {
         return Err(format!(
             "ffmpeg image converter only handles: {}",
-            AVIF_FORMATS.join(", ")
+            FFMPEG_IMAGE_OUTPUT_FORMATS.join(", ")
         ));
     }
 
@@ -501,10 +589,39 @@ mod video_tests {
 
     #[test]
     fn test_video_formats_list() {
-        assert!(VIDEO_FORMATS.contains(&"mp4"));
-        assert!(VIDEO_FORMATS.contains(&"mkv"));
-        assert!(VIDEO_FORMATS.contains(&"webm"));
-        assert!(VIDEO_FORMATS.contains(&"mov"));
+        for fmt in &[
+            "mp4", "mkv", "webm", "mov", "3gp", "avi", "ogv", "gif", "ts", "flv", "mpg", "wmv",
+        ] {
+            assert!(
+                VIDEO_FORMATS.contains(fmt),
+                "{} should be in VIDEO_FORMATS",
+                fmt
+            );
+        }
+    }
+
+    #[test]
+    fn test_video_codec_override() {
+        assert_eq!(video_codec_override("gif"), Some("gif"));
+        assert_eq!(video_codec_override("apng"), Some("apng"));
+        assert_eq!(video_codec_override("ogv"), Some("libtheora"));
+        assert_eq!(video_codec_override("mpg"), Some("mpeg2video"));
+        assert_eq!(video_codec_override("vob"), Some("mpeg2video"));
+        assert_eq!(video_codec_override("wmv"), Some("wmv2"));
+        assert_eq!(video_codec_override("mp4"), None);
+        assert_eq!(video_codec_override("mkv"), None);
+    }
+
+    #[test]
+    fn test_audio_codec_for_video_container() {
+        assert_eq!(audio_codec_for_video_container("webm"), "libopus");
+        assert_eq!(audio_codec_for_video_container("ogv"), "libvorbis");
+        assert_eq!(audio_codec_for_video_container("avi"), "libmp3lame");
+        assert_eq!(audio_codec_for_video_container("gif"), "");
+        assert_eq!(audio_codec_for_video_container("apng"), "");
+        assert_eq!(audio_codec_for_video_container("mpg"), "mp2");
+        assert_eq!(audio_codec_for_video_container("vob"), "ac3");
+        assert_eq!(audio_codec_for_video_container("mp4"), "aac");
     }
 
     #[test]
@@ -536,17 +653,17 @@ mod video_tests {
 
     #[test]
     fn test_audio_codec_webm() {
-        assert_eq!(audio_codec_for_format("webm"), "libopus");
+        assert_eq!(audio_codec_for_video_container("webm"), "libopus");
     }
 
     #[test]
     fn test_audio_codec_mp4() {
-        assert_eq!(audio_codec_for_format("mp4"), "aac");
+        assert_eq!(audio_codec_for_video_container("mp4"), "aac");
     }
 
     #[test]
     fn test_audio_codec_mkv() {
-        assert_eq!(audio_codec_for_format("mkv"), "aac");
+        assert_eq!(audio_codec_for_video_container("mkv"), "aac");
     }
 
     // ── Integration: real FFmpeg ──────────────────────────────────────────────
@@ -679,9 +796,26 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["mp3", "flac", "ogg", "wav", "aac", "opus", "m4a"] {
+        for fmt in &[
+            "mp3", "aac", "m4a", "opus", "ogg", "flac", "wav", "aiff", "aif", "wv", "ape", "tta",
+            "caf", "au", "ac3", "eac3", "mp2", "mka", "wma", "spx",
+        ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
+    }
+
+    #[test]
+    fn test_audio_codec_for_format() {
+        assert_eq!(audio_codec_for_format("mp3"), Ok("libmp3lame"));
+        assert_eq!(audio_codec_for_format("flac"), Ok("flac"));
+        assert_eq!(audio_codec_for_format("wav"), Ok("pcm_s16le"));
+        assert_eq!(audio_codec_for_format("aiff"), Ok("pcm_s16be"));
+        assert_eq!(audio_codec_for_format("aif"), Ok("pcm_s16be"));
+        assert_eq!(audio_codec_for_format("opus"), Ok("libopus"));
+        assert_eq!(audio_codec_for_format("ogg"), Ok("libvorbis"));
+        assert_eq!(audio_codec_for_format("ac3"), Ok("ac3"));
+        assert_eq!(audio_codec_for_format("mp2"), Ok("mp2"));
+        assert!(audio_codec_for_format("unknown_fmt").is_err());
     }
 
     #[test]

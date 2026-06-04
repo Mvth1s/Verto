@@ -9,7 +9,30 @@ pub struct ConversionResult {
     pub output_size: u64,
 }
 
-const ALLOWED_FORMATS: &[&str] = &["html", "pdf", "docx", "md", "rst", "odt", "epub"];
+const ALLOWED_FORMATS: &[&str] = &[
+    // Core
+    "html", "pdf", "docx", "md", "rst", "odt", "epub", // Text/markup - priority
+    "txt", "tex", "adoc", "org", "rtf", "pptx", // Data
+    "ipynb", "docbook", "json", "xml", // Niche
+    "textile", "wiki", "dokuwiki", "muse", "man", "ms", "beamer", "tei", "fb2", "icml", "jira",
+    "markua", "zimwiki", // Web presentations
+    "s5", "slidy", "slideous", "revealjs",
+];
+
+/// Returns the Pandoc `-t` format name for a given file extension.
+/// For most formats the name matches the extension; only exceptions need explicit mapping.
+fn output_format_flag(format: &str) -> &str {
+    match format {
+        "txt" => "plain",
+        "tex" => "latex",
+        "adoc" => "asciidoc",
+        "md" => "markdown",
+        "wiki" => "mediawiki",
+        "docbook" => "docbook5",
+        "xml" => "jats",
+        other => other,
+    }
+}
 
 pub async fn convert(
     app: &tauri::AppHandle,
@@ -38,10 +61,10 @@ pub async fn convert(
             .to_string(),
     };
 
-    if !input_path.starts_with('/') {
+    if !std::path::Path::new(input_path).is_absolute() {
         return Err("Input path must be absolute".to_string());
     }
-    if !out_path.starts_with('/') {
+    if !std::path::Path::new(&out_path).is_absolute() {
         return Err("Output path must be absolute".to_string());
     }
 
@@ -53,7 +76,13 @@ pub async fn convert(
         .shell()
         .sidecar("pandoc")
         .map_err(|e| e.to_string())?
-        .args([input_path, "-o", &out_path])
+        .args([
+            input_path,
+            "-t",
+            output_format_flag(output_format),
+            "-o",
+            &out_path,
+        ])
         .spawn()
         .map_err(|e| e.to_string())?;
 
@@ -120,20 +149,42 @@ mod tests {
 
     #[test]
     fn test_allowed_formats_accepted() {
-        for fmt in &["html", "docx", "md", "rst", "odt", "epub", "pdf"] {
+        for fmt in &[
+            "html", "docx", "md", "rst", "odt", "epub", "pdf", "tex", "org", "txt", "adoc", "rtf",
+            "pptx", "ipynb", "docbook", "json", "xml", "wiki", "fb2", "revealjs",
+        ] {
             assert!(ALLOWED_FORMATS.contains(fmt), "{} should be allowed", fmt);
         }
     }
 
     #[test]
     fn test_disallowed_formats_rejected() {
-        for fmt in &["txt", "mp3", "png", "zip", "rtf", ""] {
+        for fmt in &["mp3", "png", "zip", ""] {
             assert!(
                 !ALLOWED_FORMATS.contains(fmt),
                 "{} should not be allowed",
                 fmt
             );
         }
+    }
+
+    #[test]
+    fn test_output_format_flag() {
+        assert_eq!(output_format_flag("txt"), "plain");
+        assert_eq!(output_format_flag("tex"), "latex");
+        assert_eq!(output_format_flag("adoc"), "asciidoc");
+        assert_eq!(output_format_flag("md"), "markdown");
+        assert_eq!(output_format_flag("wiki"), "mediawiki");
+        assert_eq!(output_format_flag("docbook"), "docbook5");
+        assert_eq!(output_format_flag("xml"), "jats");
+        // identity mappings
+        assert_eq!(output_format_flag("html"), "html");
+        assert_eq!(output_format_flag("pdf"), "pdf");
+        assert_eq!(output_format_flag("docx"), "docx");
+        assert_eq!(output_format_flag("pptx"), "pptx");
+        assert_eq!(output_format_flag("org"), "org");
+        assert_eq!(output_format_flag("rtf"), "rtf");
+        assert_eq!(output_format_flag("revealjs"), "revealjs");
     }
 
     // ── Output path computation ───────────────────────────────────────────────
@@ -203,7 +254,7 @@ mod tests {
 
         assert!(status.success(), "pandoc md→docx failed");
         assert!(PathBuf::from(&output).exists());
-        // DOCX is a ZIP archive — verify PK magic bytes
+        // DOCX is a ZIP archive, verify PK magic bytes
         let bytes = std::fs::read(&output).unwrap();
         assert_eq!(&bytes[..2], b"PK", "docx should be a valid ZIP/OOXML");
         let _ = std::fs::remove_file(&output);

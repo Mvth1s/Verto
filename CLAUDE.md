@@ -91,20 +91,6 @@ apps/desktop/
 └── tsconfig*.json
 ```
 
-### Structure apps/web (landing page)
-
-```
-apps/web/
-├── src/
-│   ├── App.vue     # Single-component landing page
-│   ├── main.ts
-│   ├── style.css
-│   └── i18n/       # vue-i18n: en.json, fr.json, index.ts (même Locale type)
-├── public/
-├── vite.config.ts
-└── package.json    # workspace package "web"
-```
-
 ### Communication flow (desktop)
 
 ```
@@ -158,12 +144,15 @@ The Vue store registers a global listener with `listen('conversion-progress', ..
 
 | Format type | Tool |
 |---|---|
-| JPEG, PNG, WebP, BMP, TIFF, GIF | `image` Rust crate |
-| AVIF | FFmpeg sidecar |
-| HEIC, HEIF (entrée seulement) | FFmpeg sidecar |
-| PDF ↔ DOCX, MD ↔ HTML, MD ↔ PDF, RST, ODT, EPUB | Pandoc sidecar |
-| Audio: MP3, FLAC, OGG, WAV, AAC | FFmpeg sidecar |
-| Video: MP4, MKV, WebM, MOV (H.264, H.265, VP9) | FFmpeg sidecar |
+| JPEG, PNG, WebP, BMP, TIFF, GIF, ICO | `image` Rust crate |
+| AVIF (sortie) | FFmpeg sidecar |
+| HEIC, HEIF, PSD, DDS, EXR, QOI (entrée seulement) | FFmpeg sidecar (décoder uniquement) |
+| Documents : html, pdf, docx, md, rst, odt, epub, txt, tex, adoc, org, rtf, pptx, ipynb, revealjs... | Pandoc sidecar |
+| Audio lossy : mp3, aac, m4a, opus, ogg, spx, wma, amr, mp2, ra, ac3, eac3, dts, mka | FFmpeg sidecar |
+| Audio lossless : flac, wav, aiff/aif, wv, ape, tta, caf, au | FFmpeg sidecar |
+| Video : mp4, mkv, mov, webm, avi, m4v, ogv, gif, ts, flv, 3gp, mts, mxf, mpg, vob, wmv, asf, divx, rm, apng | FFmpeg sidecar |
+
+**Routage image** (`commands/image.rs`) : si le format d'entrée est dans `FFMPEG_INPUT_FORMATS` (heic, heif, psd, dds, exr, qoi) ou la sortie dans `FFMPEG_OUTPUT_FORMATS` (avif), FFmpeg est utilisé même si la sortie serait normalement gérée par le crate `image`.
 
 ### Pinia stores (desktop)
 
@@ -204,13 +193,17 @@ apps/web/
 | PR → main | `lint.yml` + `build.yml` (Linux, Windows, macOS matrix) |
 | Merge → main | `lint.yml` + `build.yml` + `release.yml` (Semantic Release) |
 
-Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Le dernier tag est `v1.6.0`.
+Semantic Release gère intégralement les versions : tag git, CHANGELOG.md, GitHub release, bump de `package.json`. Les fichiers bumpés automatiquement : `CHANGELOG.md`, `package.json` (racine + desktop), `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`.
+
+La cible macOS est `aarch64-apple-darwin` uniquement (x86_64 retiré, PR #32).
 
 ---
 
 ## Code conventions
 
 ### Git & commits
+
+**Workflow de branches** : toujours créer une branche de feature et ouvrir une PR. Ne jamais committer directement sur `main` ou `dev`. Après chaque merge vers `main` (release SR), merger `main → dev` pour synchroniser CHANGELOG et version.
 
 Conventional Commits enforced by Commitlint + Husky:
 
@@ -221,7 +214,8 @@ Conventional Commits enforced by Commitlint + Husky:
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`
 - Scopes: `desktop`, `web`, `backend`, `frontend`, `ci`, `deps`
 - Versioning: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major
-- **Ne jamais mettre de numéro de version dans le titre du commit** — c'est SR qui calcule la version. Écrire `feat(desktop): add AVIF support` et non `feat(desktop): v0.4.0 — AVIF support`.
+- **Ne jamais mettre de numéro de version dans le titre du commit** — c'est SR qui calcule la version. Écrire `feat(desktop): add AVIF support` et non `feat(desktop): v0.4.0 add AVIF support`.
+- **Pas de tirets cadratin (`—`)** dans tout le projet : i18n, README, CHANGELOG, commentaires. Utiliser à la place deux-points, virgule ou point.
 
 ### TypeScript / Vue
 
@@ -256,6 +250,10 @@ Conventional Commits enforced by Commitlint + Husky:
 | `--accent` / `--accent-bright` / `--accent-soft` | Vert emerald (#10b981, #34d399, rgba soft) |
 
 Dark theme par défaut dans les deux apps. Pour le web, utiliser les CSS vars, pas les classes Tailwind.
+
+### i18n (apps/desktop)
+
+Même stack que le web (`vue-i18n`, `legacy: false`, `Locale = 'en' | 'fr'`). Fichiers dans `ui/src/i18n/` (en.json, fr.json, index.ts). Toute chaîne visible dans l'UI passe par `t('clé')` via `useI18n()`. Les clés sont organisées par domaine fonctionnel (ex. `settings`, `queue`, `history`, `formats`).
 
 ### i18n (apps/web)
 

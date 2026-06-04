@@ -1,6 +1,6 @@
 [package]
 name = "verto"
-version = "0.2.0"
+version = "1.8.0"
 description = "Verto — convertisseur de fichiers local"
 authors = ["Mathis Aguado"]
 edition = "2021"
@@ -23,7 +23,7 @@ tauri-plugin-opener = "2"
 base64 = "0.22"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "tiff", "webp"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "tiff", "webp", "ico"] }
 
 [dev-dependencies]
 tempfile = "3"

@@ -5,6 +5,25 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+
+* **backend:** extended image input formats: ICO, PSD, DDS, EXR, QOI (FFmpeg decode path); ICO added as output format
+* **backend:** extended audio output formats: AIFF, AIF, MKA, WV; lossless detection covers AIFF/WV in bitrate selector
+* **backend:** extended video output formats: 3GP (H.264/H.265 + AAC)
+* **backend:** extended document output formats: TEX (LaTeX), ORG (Emacs Org-mode), TXT (plain text)
+* **frontend:** image file picker now includes AVIF/HEIC/HEIF (was missing), ICO, PSD, DDS, EXR, QOI
+* **frontend:** document input: TEX, ORG, TXT, CSV, WIKI, ADOC, ASCIIDOC; output selector adds TEX, ORG, TXT
+* **frontend:** audio input: WMA, AMR, APE, WV, MKA, AIFF, AIF, CAF; output selector adds AIFF, MKA, WV
+* **frontend:** video input: TS, MTS, M2TS, VOB, 3GP, OGV, RM, RMVB, DIVX, F4V; output selector adds 3GP
+* **web:** format chips updated; category descriptions updated in EN and FR
+* **backend:** exhaustive Pandoc output formats (25+ formats): `output_format_flag()` maps extension to Pandoc `-t` flag; new formats include RTF, PPTX, IPYNB, DOCBOOK, JSON, XML, WIKI, FB2, REVEALJS, ADOC, MUSE, TEXTILE, MAN and more
+* **backend:** exhaustive FFmpeg audio output formats: explicit `-c:a <codec>` added; new formats include AC3, EAC3, DTS, MKA, APE, TTA, CAF, AU, SPX, WMA, AMR, GSM, MP2, RA; `audio_codec_for_format(Result<>)` introduced, renamed video function to `audio_codec_for_video_container`
+* **backend:** exhaustive FFmpeg video output formats (20+ formats): AVI, M4V, OGV, GIF, TS, FLV, 3G2, MTS, MXF, MPG, VOB, WMV, ASF, DIVX, RM, APNG; `video_codec_override()` handles fixed-encoder formats; GIF/APNG use `-an`
+* **frontend:** format selectors with grouped `<optgroup>` for audio (Lossy/Lossless/Broadcast), video (Modern/Common/Mobile/Broadcast/Legacy), documents (Core/Text/Presentations/Data/Wiki)
+* **frontend:** codec selector hidden for fixed-encoder video formats (GIF, OGV, MPG, WMV, etc.); lossless guard extended to APE, TTA, CAF, AU
+
 # [1.8.0](https://github.com/Mvth1s/Verto/compare/v1.7.0...v1.8.0) (2026-06-04)
 
 
