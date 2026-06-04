@@ -12,17 +12,74 @@ import { type Locale } from './i18n'
 type Category = 'images' | 'documents' | 'audio' | 'video' | 'history'
 
 const IMAGE_FORMATS = ['webp', 'jpeg', 'png', 'avif', 'bmp', 'tiff', 'gif', 'ico']
-const DOCUMENT_FORMATS = ['html', 'docx', 'md', 'epub', 'odt', 'rst', 'tex', 'org', 'txt']
-const AUDIO_FORMATS = ['mp3', 'flac', 'ogg', 'wav', 'aac', 'aiff', 'mka', 'wv']
-const VIDEO_FORMATS = ['mp4', 'mkv', 'webm', 'mov', '3gp']
+
+interface FormatGroup {
+  label: string
+  formats: string[]
+}
+
+const AUDIO_FORMAT_GROUPS: FormatGroup[] = [
+  {
+    label: 'Lossy',
+    formats: ['mp3', 'aac', 'm4a', 'opus', 'ogg', 'wma', 'spx', 'amr', 'gsm', 'mp2'],
+  },
+  {
+    label: 'Lossless',
+    formats: ['flac', 'wav', 'aiff', 'aif', 'wv', 'ape', 'tta', 'caf', 'au'],
+  },
+  { label: 'Broadcast', formats: ['ac3', 'eac3', 'dts', 'mka'] },
+]
+const DOCUMENT_FORMAT_GROUPS: FormatGroup[] = [
+  { label: 'Core', formats: ['html', 'pdf', 'docx', 'md', 'odt', 'epub', 'rst'] },
+  { label: 'Text & Markup', formats: ['txt', 'tex', 'adoc', 'org', 'rtf'] },
+  { label: 'Presentations', formats: ['pptx', 's5', 'slidy', 'slideous', 'revealjs'] },
+  { label: 'Data', formats: ['ipynb', 'docbook', 'json', 'xml'] },
+  {
+    label: 'Wiki & Other',
+    formats: [
+      'wiki',
+      'dokuwiki',
+      'textile',
+      'muse',
+      'man',
+      'ms',
+      'tei',
+      'fb2',
+      'icml',
+      'jira',
+      'markua',
+      'zimwiki',
+    ],
+  },
+]
+const VIDEO_FORMAT_GROUPS: FormatGroup[] = [
+  { label: 'Modern', formats: ['mp4', 'mkv', 'mov', 'webm'] },
+  { label: 'Common', formats: ['avi', 'm4v', 'ogv', 'gif', 'ts', 'flv'] },
+  { label: 'Mobile', formats: ['3gp', 'f4v', '3g2'] },
+  { label: 'Broadcast & Pro', formats: ['mts', 'mxf', 'mpg', 'vob', 'wmv'] },
+  { label: 'Legacy', formats: ['asf', 'divx', 'rm', 'apng'] },
+]
+
 const VIDEO_CODECS_FOR_FORMAT: Record<string, string[]> = {
   mp4: ['h264', 'h265'],
   mkv: ['h264', 'h265', 'vp9'],
   webm: ['vp9'],
   mov: ['h264', 'h265'],
+  avi: ['h264', 'h265'],
+  m4v: ['h264', 'h265'],
+  ts: ['h264', 'h265'],
+  flv: ['h264'],
+  f4v: ['h264'],
   '3gp': ['h264', 'h265'],
+  '3g2': ['h264', 'h265'],
+  mts: ['h264', 'h265'],
+  mxf: ['h264', 'h265'],
+  divx: ['h264'],
 }
-const AUDIO_LOSSLESS_FORMATS = ['flac', 'wav', 'aiff', 'aif', 'wv']
+// Formats using a fixed encoder — codec selector is hidden for these
+const VIDEO_FIXED_CODEC_FORMATS = new Set(['gif', 'apng', 'ogv', 'mpg', 'vob', 'wmv', 'asf', 'rm'])
+
+const AUDIO_LOSSLESS_FORMATS = ['flac', 'wav', 'aiff', 'aif', 'wv', 'ape', 'tta', 'caf', 'au']
 
 const { t, locale: i18nLocale } = useI18n()
 const activeCategory = ref<Category>('images')
@@ -84,11 +141,13 @@ const categoryName = computed(() => {
   return t('nav.video')
 })
 
-const activeFormats = computed(() => {
-  if (activeCategory.value === 'images') return IMAGE_FORMATS
-  if (activeCategory.value === 'documents') return DOCUMENT_FORMATS
-  if (activeCategory.value === 'audio') return AUDIO_FORMATS
-  return VIDEO_FORMATS
+const activeFormats = computed(() => IMAGE_FORMATS)
+
+const activeFormatGroups = computed((): FormatGroup[] | null => {
+  if (activeCategory.value === 'audio') return AUDIO_FORMAT_GROUPS
+  if (activeCategory.value === 'video') return VIDEO_FORMAT_GROUPS
+  if (activeCategory.value === 'documents') return DOCUMENT_FORMAT_GROUPS
+  return null
 })
 
 const activeFileCategory = computed(() => {
@@ -134,9 +193,9 @@ const queueSummary = computed(() => {
 watch(activeCategory, (cat) => {
   selectedFileId.value = null
   if (cat === 'images') settings.outputFormat = IMAGE_FORMATS[0]
-  else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMATS[0]
-  else if (cat === 'audio') settings.outputFormat = AUDIO_FORMATS[0]
-  else settings.outputFormat = VIDEO_FORMATS[0]
+  else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMAT_GROUPS[0].formats[0]
+  else if (cat === 'audio') settings.outputFormat = AUDIO_FORMAT_GROUPS[0].formats[0]
+  else if (cat !== 'history') settings.outputFormat = VIDEO_FORMAT_GROUPS[0].formats[0]
 })
 
 watch(
@@ -964,9 +1023,18 @@ onUnmounted(() => {
       <div class="field">
         <label class="field-label" for="format-select">{{ t('settings.format') }}</label>
         <select id="format-select" v-model="settings.outputFormat" class="select">
-          <option v-for="fmt in activeFormats" :key="fmt" :value="fmt">
-            {{ fmt.toUpperCase() }}
-          </option>
+          <template v-if="activeFormatGroups">
+            <optgroup v-for="group in activeFormatGroups" :key="group.label" :label="group.label">
+              <option v-for="fmt in group.formats" :key="fmt" :value="fmt">
+                {{ fmt.toUpperCase() }}
+              </option>
+            </optgroup>
+          </template>
+          <template v-else>
+            <option v-for="fmt in activeFormats" :key="fmt" :value="fmt">
+              {{ fmt.toUpperCase() }}
+            </option>
+          </template>
         </select>
       </div>
 
@@ -1014,7 +1082,10 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-if="activeCategory === 'video'" class="field">
+      <div
+        v-if="activeCategory === 'video' && !VIDEO_FIXED_CODEC_FORMATS.has(settings.outputFormat)"
+        class="field"
+      >
         <label class="field-label" for="codec-select">{{ t('settings.codec') }}</label>
         <select id="codec-select" v-model="settings.videoCodec" class="select">
           <option v-for="c in availableCodecs" :key="c" :value="c">
