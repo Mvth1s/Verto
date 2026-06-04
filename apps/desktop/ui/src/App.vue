@@ -806,7 +806,6 @@ onUnmounted(() => {
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-footer">
-        <div class="pill-version"><span class="dot" aria-hidden="true"></span>v0.4.0</div>
         <button
           class="icon-btn lang-btn"
           :aria-label="`Language: ${locale === 'en' ? 'English' : 'Français'}`"
@@ -1524,23 +1523,6 @@ body {
   justify-content: space-between;
   padding: 10px 4px 0;
   border-top: 1px solid var(--border-soft);
-}
-.pill-version {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--text-3);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.pill-version .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
 }
 .icon-btn {
   width: 28px;
