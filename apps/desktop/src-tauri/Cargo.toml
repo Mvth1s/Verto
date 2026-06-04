@@ -1,6 +1,6 @@
 [package]
 name = "verto"
-version = "0.2.0"
+version = "1.8.0"
 description = "Verto — convertisseur de fichiers local"
 authors = ["Mathis Aguado"]
 edition = "2021"

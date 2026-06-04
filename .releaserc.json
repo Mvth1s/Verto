@@ -13,9 +13,21 @@
       { "npmPublish": false }
     ],
     [
+      "@semantic-release/exec",
+      { "prepareCmd": "node scripts/set-version.mjs ${nextRelease.version}" }
+    ],
+    [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "package.json", "pnpm-lock.yaml"],
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "pnpm-lock.yaml",
+          "apps/desktop/package.json",
+          "apps/desktop/src-tauri/tauri.conf.json",
+          "apps/desktop/src-tauri/Cargo.toml",
+          "apps/desktop/src-tauri/Cargo.lock"
+        ],
         "message": "chore(release): v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
