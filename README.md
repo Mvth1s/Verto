@@ -4,7 +4,7 @@
 
 **Convert anything. Locally.**
 
-Simple, fast, open-source file conversion for Linux, Windows and macOS — no internet, no account, no telemetry.
+Simple, fast, open-source file conversion for Linux, Windows and macOS. No internet, no account, no telemetry.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)](#installation)
@@ -17,7 +17,7 @@ Simple, fast, open-source file conversion for Linux, Windows and macOS — no in
 
 ## What is Verto?
 
-Verto is a desktop application that converts files — images, documents, audio and video — entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
+Verto is a desktop application that converts files (images, documents, audio and video) entirely on your machine. No upload, no cloud, no subscription. Just drag, drop, convert.
 
 It was born out of a simple frustration: never remembering the right `ffmpeg` or `pandoc` command for a one-off file conversion.
 
@@ -36,15 +36,15 @@ It was born out of a simple frustration: never remembering the right `ffmpeg` or
 - File picker for individual files, folder browser for output directory
 - Cancel in-progress queue / retry failed items
 - Real-time progress bar for audio and video conversions
-- Images, Documents, Audio and Video categories — separate queues and format selectors
+- Images, Documents, Audio and Video categories with separate queues and format selectors
 - Quality slider (images), bitrate selector (audio), codec selector (video)
-- Image resize (width × height, keep aspect ratio) and quality presets (Web / Print / Lossless)
+- Image resize (width x height, keep aspect ratio) and quality presets (Web / Print / Lossless)
 - Thumbnail preview for images and videos in the queue
 - Settings page with persistence (output format, directory, quality, bitrate, codec)
 - System notification when a batch conversion completes
 - i18n: English and French (toggle in the UI)
 - Auto-updater (checks for new releases on launch)
-- 100% local — files never leave your machine
+- 100% local. Files never leave your machine.
 - Cross-platform: Linux, Windows, macOS
 
 ## Installation
@@ -61,15 +61,15 @@ Linux installs the AppImage to `~/.local/bin/verto`. macOS copies `Verto.app` to
 
 Or download the package directly from [github.com/Mvth1s/Verto/releases](https://github.com/Mvth1s/Verto/releases):
 
-### Linux — Debian / Ubuntu
+### Linux - Debian / Ubuntu
 
 ```bash
 sudo dpkg -i Verto_*_amd64.deb
 ```
 
-### Linux — Arch-based (Arch, Manjaro, EndeavourOS…)
+### Linux - Arch-based (Arch, Manjaro, EndeavourOS...)
 
-The recommended format is AppImage — it has no system dependencies.
+The recommended format is AppImage. It has no system dependencies.
 
 ```bash
 chmod +x Verto_*.AppImage
@@ -78,7 +78,7 @@ chmod +x Verto_*.AppImage
 
 If you get a FUSE error on first launch, you have two options:
 
-**Option A — install the FUSE 2 library:**
+**Option A: install the FUSE 2 library:**
 ```bash
 # Arch / Manjaro
 sudo pacman -S fuse2
@@ -87,20 +87,20 @@ sudo pacman -S fuse2
 ./Verto_*.AppImage
 ```
 
-**Option B — run without FUSE (no install required):**
+**Option B: run without FUSE (no install required):**
 ```bash
 ./Verto_*.AppImage --appimage-extract-and-run
 ```
 
 An AUR package (`verto-bin`) is planned for a future release.
 
-### Linux — Fedora / RHEL
+### Linux - Fedora / RHEL
 
 ```bash
 sudo rpm -i Verto-*.x86_64.rpm
 ```
 
-### Linux — AppImage (all distros)
+### Linux - AppImage (all distros)
 
 ```bash
 chmod +x Verto_*.AppImage && ./Verto_*.AppImage
@@ -123,7 +123,7 @@ If you prefer to download FFmpeg and Pandoc yourself rather than using the bundl
 pnpm --filter desktop download-sidecars
 ```
 
-This requires `curl` and `bash`. The script auto-detects your platform and places the binaries in `apps/desktop/src-tauri/binaries/` with the correct Tauri sidecar filenames. Re-running it is safe — existing binaries are skipped. The bundled sidecar approach used by CI and releases is unaffected.
+This requires `curl` and `bash`. The script auto-detects your platform and places the binaries in `apps/desktop/src-tauri/binaries/` with the correct Tauri sidecar filenames. Re-running it is safe (existing binaries are skipped). The bundled sidecar approach used by CI and releases is unaffected.
 
 </details>
 
@@ -132,8 +132,8 @@ This requires `curl` and `bash`. The script auto-detects your platform and place
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (stable toolchain)
-- [Node.js](https://nodejs.org/) ≥ 20
-- [pnpm](https://pnpm.io/) ≥ 9
+- [Node.js](https://nodejs.org/) >= 20
+- [pnpm](https://pnpm.io/) >= 9
 - [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
 
 ### Setup
@@ -170,7 +170,7 @@ verto/
 │   ├── desktop/              # Tauri v2 app
 │   │   ├── src-tauri/        # Rust backend (commands, converters, sidecars)
 │   │   └── ui/               # Vue 3 frontend
-│   └── web/                  # Landing page (Vue 3 + Vite → Vercel)
+│   └── web/                  # Landing page (Vue 3 + Vite -> Vercel)
 ├── assets/                   # Source assets (logo, etc.)
 ├── agents/                   # Claude Code sub-agent definitions
 ├── docs/                     # Architecture, roadmap, specs
@@ -183,8 +183,8 @@ See [docs/architecture.md](./docs/architecture.md) for the full technical overvi
 
 Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
 
-Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) — enforced by Commitlint + Husky.
+Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/), enforced by Commitlint + Husky.
 
 ## License
 
-[MIT](./LICENSE) — Mathis Aguado, 2026
+[MIT](./LICENSE) - Mathis Aguado, 2026

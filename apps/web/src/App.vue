@@ -49,7 +49,7 @@ onMounted(async () => {
       }
     }
   } catch {
-    // ignore — fallback to API or static links
+    // ignore, fallback to API or static links
   }
 
   // Fetch from GitHub API
@@ -63,7 +63,7 @@ onMounted(async () => {
       }
     }
   } catch {
-    // ignore — fallback to API or static links
+    // ignore, fallback to API or static links
   }
 })
 
