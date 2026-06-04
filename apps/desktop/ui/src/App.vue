@@ -102,6 +102,8 @@ const activeQueue = computed(() =>
   conversion.queue.filter((f) => f.category === activeFileCategory.value),
 )
 
+const selectedFileId = ref<string | null>(null)
+
 watch(
   () => conversion.queue.filter((f) => f.category === 'video'),
   (videoFiles) => {
@@ -128,6 +130,7 @@ const queueSummary = computed(() => {
 })
 
 watch(activeCategory, (cat) => {
+  selectedFileId.value = null
   if (cat === 'images') settings.outputFormat = IMAGE_FORMATS[0]
   else if (cat === 'documents') settings.outputFormat = DOCUMENT_FORMATS[0]
   else if (cat === 'audio') settings.outputFormat = AUDIO_FORMATS[0]
@@ -232,6 +235,38 @@ function handleQueueAction(fileId: string, status: string) {
   }
 }
 
+function handleKeydown(e: KeyboardEvent) {
+  const el = e.target as HTMLElement
+  const interactiveRoles = ['button', 'switch', 'checkbox', 'radio', 'textbox', 'slider']
+  const isInteractive =
+    ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(el.tagName) ||
+    interactiveRoles.includes(el.getAttribute('role') ?? '')
+
+  if (e.key === 'Delete') {
+    if (isInteractive) return
+    if (selectedFileId.value) {
+      conversion.removeFile(selectedFileId.value)
+      selectedFileId.value = null
+    }
+  } else if (e.key === 'Enter') {
+    if (isInteractive) return
+    if (showSettings.value) return
+    if (!conversion.isConverting && activeWaiting.value.length > 0) {
+      conversion.convertAll(activeFileCategory.value)
+    }
+  } else if (e.key === 'Escape') {
+    if (showSettings.value) {
+      showSettings.value = false
+      return
+    }
+    if (conversion.isConverting) {
+      conversion.cancelConversion()
+      return
+    }
+    selectedFileId.value = null
+  }
+}
+
 function dismissUpdate() {
   if (updateVersion.value) {
     updateDismissedVersion.value = updateVersion.value
@@ -271,6 +306,7 @@ async function handleOpenFolder() {
 let unlistenDrop: (() => void) | null = null
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
   checkForUpdates()
   appVersion.value = await getVersion().catch(() => '—')
   const appWindow = getCurrentWebviewWindow()
@@ -298,6 +334,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
   unlistenDrop?.()
   if (openFolderTimer) clearTimeout(openFolderTimer)
 })
@@ -739,8 +776,12 @@ onUnmounted(() => {
             v-for="file in activeQueue"
             :key="file.id"
             class="queue-row"
-            :class="{ 'with-progress': file.status === 'converting' }"
+            :class="{
+              'with-progress': file.status === 'converting',
+              selected: selectedFileId === file.id,
+            }"
             role="listitem"
+            @click="selectedFileId = file.id"
           >
             <img
               v-if="activeCategory === 'images' && !thumbErrors[file.id]"
@@ -1077,7 +1118,7 @@ onUnmounted(() => {
       >
         <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 8" /></svg>
         <span>{{ t('actions.convert') }}</span>
-        <span class="shortcut" aria-hidden="true">⌘↵</span>
+        <span class="shortcut" aria-hidden="true">↵</span>
       </button>
       <button
         v-else
@@ -1089,6 +1130,7 @@ onUnmounted(() => {
           <rect x="6" y="6" width="12" height="12" rx="1" />
         </svg>
         <span>{{ t('actions.cancel') }}</span>
+        <span class="shortcut shortcut-cancel" aria-hidden="true">Esc</span>
       </button>
     </aside>
   </div>
@@ -1657,6 +1699,11 @@ body {
   grid-template-columns: 32px 1fr 80px 22px;
   grid-template-rows: auto auto;
 }
+.queue-row.selected {
+  background: var(--accent-soft-2);
+  outline: 1px solid rgba(16, 185, 129, 0.18);
+  outline-offset: -1px;
+}
 
 /* Right panel */
 .panel {
@@ -1956,6 +2003,16 @@ body {
   stroke: currentColor;
   stroke-width: 1.8;
   fill: currentColor;
+}
+.shortcut-cancel {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 500;
 }
 
 /* Quality presets */
