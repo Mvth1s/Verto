@@ -150,7 +150,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <header class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#" style="text-decoration: none; color: inherit">
-        <img src="/logo.jpeg" alt="Verto" class="brand-logo" />
+        <img src="/verto.png" alt="Verto" class="brand-logo" />
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
@@ -259,7 +259,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="win-body">
             <div class="ws-sidebar">
               <div class="ws-brand">
-                <img src="/logo.jpeg" alt="Verto" class="ws-brand-img" />
+                <img src="/verto.png" alt="Verto" class="ws-brand-img" />
               </div>
               <div class="ws-item active">
                 <span class="ico"></span>{{ t('features.images_title') }}
@@ -840,9 +840,8 @@ header.nav {
 .brand-logo {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 .brand-name {
   font-weight: 600;
@@ -1167,9 +1166,8 @@ header.nav {
 .ws-brand-img {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 .ws-item {
   display: flex;
