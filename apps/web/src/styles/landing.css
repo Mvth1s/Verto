@@ -8,7 +8,7 @@
   --border-soft: #27272a;
   --text: #f4f4f5;
   --text-2: #a1a1aa;
-  --text-3: #71717a;
+  --text-3: #8e8e97; /* 4.5:1 minimum on every surface (WCAG AA) */
   --text-4: #52525b;
   --accent: #10b981;
   --accent-bright: #34d399;
