@@ -151,7 +151,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
   <header class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#" style="text-decoration: none; color: inherit">
-        <img src="/verto.png" alt="Verto" class="brand-logo" />
+        <img src="/verto.png" alt="" width="28" height="28" class="brand-logo" />
         <div class="brand-name">Verto</div>
       </a>
       <div class="nav-right">
@@ -213,7 +213,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
             target="_blank"
             rel="noopener"
           >
-            <img src="/github.svg" alt="GitHub" class="btn-icon" />
+            <img src="/github.svg" alt="" width="16" height="16" class="btn-icon" />
             {{ t('hero.cta_github') }}
           </a>
         </div>
@@ -260,7 +260,7 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
           <div class="win-body">
             <div class="ws-sidebar">
               <div class="ws-brand">
-                <img src="/verto.png" alt="Verto" class="ws-brand-img" />
+                <img src="/verto.png" alt="Verto" width="44" height="44" class="ws-brand-img" />
               </div>
               <div class="ws-item active">
                 <span class="ico"></span>{{ t('features.images_title') }}
@@ -571,7 +571,14 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
         <div class="dl-card">
           <div class="dl-os">
             <div class="dl-os-icon">
-              <img src="/tux.png" alt="Linux" class="dl-os-icon-img" />
+              <img
+                src="/tux.png"
+                alt="Linux"
+                width="18"
+                height="18"
+                loading="lazy"
+                class="dl-os-icon-img"
+              />
             </div>
             <div>
               <div class="dl-os-name">{{ t('download.linux') }}</div>
