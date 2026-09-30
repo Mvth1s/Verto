@@ -1,5 +1,8 @@
 // Schema.org JSON-LD injected into index.html at build time (see vite.config.ts).
 // Only factual data: no ratings, no placeholder handles.
+// The FAQPage is built from the same i18n strings as the visible FAQ (English, the default locale).
+
+import en from '../i18n/en.json'
 
 const REPO_URL = 'https://github.com/Mvth1s/Verto'
 
@@ -50,6 +53,15 @@ export function buildStructuredData({ siteUrl, version }: StructuredDataOptions)
         name: 'Mathis Aguado',
         url: 'https://mathisaguado.vercel.app',
         sameAs: ['https://github.com/Mvth1s', 'https://www.linkedin.com/in/mathis-aguado'],
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${siteUrl}/#faq`,
+        mainEntity: en.faq.items.map(({ q, a }) => ({
+          '@type': 'Question',
+          name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
       },
     ],
   }

@@ -97,6 +97,36 @@
     "loading": "Loading…",
     "fallback": "Download"
   },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Does Verto work offline?",
+        "a": "Yes. Every conversion runs on your computer with engines bundled in the app (FFmpeg, Pandoc and a Rust image library). The only network request is a check for new releases on GitHub at launch."
+      },
+      {
+        "q": "Do my files leave my computer?",
+        "a": "No. Files are read and written locally and are never uploaded. There is no account, no analytics and no telemetry. You can check it yourself in the source code on GitHub."
+      },
+      {
+        "q": "Which file formats are supported?",
+        "a": "Images (JPEG, PNG, WebP, AVIF, GIF, TIFF, ICO, HEIC as input), documents (Markdown, DOCX, HTML, ODT, EPUB, LaTeX, PDF as output), audio (MP3, FLAC, WAV, OGG, AAC, Opus) and video (MP4, MKV, WebM, MOV, AVI), among others."
+      },
+      {
+        "q": "Which operating systems are supported?",
+        "a": "Linux (AppImage, .deb, .rpm) and Windows (.exe installer or .msi) on x86_64, and macOS on Apple Silicon (.dmg)."
+      },
+      {
+        "q": "Is Verto free and open source?",
+        "a": "Yes. Verto is free, with no account, no licence key and no paid tier. The full source code is published on GitHub under the MIT license."
+      },
+      {
+        "q": "How is it different from an online converter?",
+        "a": "An online converter uploads your files to someone else's server and needs a connection. Verto converts on your own machine: nothing is uploaded, it works without internet, and you can convert whole folders in one batch."
+      }
+    ]
+  },
   "footer": {
     "license": "MIT License",
     "source": "Source code"

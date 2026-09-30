@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type Locale } from './i18n'
+import FaqSection from './components/FaqSection.vue'
 
 const { t, locale: i18nLocale } = useI18n()
 const locale = ref<Locale>('en')
@@ -764,6 +765,8 @@ const macosAssets = computed(() => findAssets((n) => n.endsWith('.dmg')))
       </div>
     </div>
   </section>
+
+  <FaqSection />
 
   <footer>
     <div class="container footer-inner">
