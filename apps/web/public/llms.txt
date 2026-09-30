@@ -1,0 +1,24 @@
+# Verto
+
+> Verto is a free, open-source (MIT) desktop app for Linux, Windows and macOS that converts images, documents, audio and video files entirely on the user's machine. No upload, no account, no telemetry. Conversions use engines bundled in the app: a Rust image library, FFmpeg and Pandoc.
+
+- Platforms: Linux x86_64 (AppImage, .deb, .rpm), Windows x86_64 (.exe, .msi), macOS on Apple Silicon (.dmg).
+- Categories: images (JPEG, PNG, WebP, AVIF, GIF, TIFF, ICO; HEIC, PSD, EXR as input), documents (Markdown, DOCX, HTML, ODT, EPUB, LaTeX; PDF as output), audio (MP3, FLAC, WAV, OGG, AAC, Opus and more), video (MP4, MKV, WebM, MOV, AVI and more).
+- Network: conversions work offline. The only network request is a check for new releases on GitHub at launch.
+- Built with Tauri v2 (Rust) and Vue 3.
+
+## Project
+
+- [Website](https://verto-web.vercel.app/): landing page with features, privacy details, downloads and FAQ
+- [GitHub repository](https://github.com/Mvth1s/Verto): source code, issues and contribution guide
+- [README](https://github.com/Mvth1s/Verto/blob/main/README.md): supported formats, features, installation and build instructions
+
+## Downloads
+
+- [Latest release](https://github.com/Mvth1s/Verto/releases/latest): installers for every platform
+- [All releases](https://github.com/Mvth1s/Verto/releases): version history with release notes
+
+## Optional
+
+- [Changelog](https://github.com/Mvth1s/Verto/blob/main/CHANGELOG.md): detailed list of changes per version
+- [License](https://github.com/Mvth1s/Verto/blob/main/LICENSE): MIT
