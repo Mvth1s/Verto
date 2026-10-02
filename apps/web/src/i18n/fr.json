@@ -97,6 +97,36 @@
     "loading": "Chargement…",
     "fallback": "Télécharger"
   },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Questions fréquentes",
+    "items": [
+      {
+        "q": "Verto fonctionne-t-il hors ligne ?",
+        "a": "Oui. Chaque conversion s'exécute sur votre ordinateur avec des moteurs intégrés à l'application (FFmpeg, Pandoc et une bibliothèque d'images Rust). La seule requête réseau est une vérification des nouvelles versions sur GitHub au lancement."
+      },
+      {
+        "q": "Mes fichiers quittent-ils mon ordinateur ?",
+        "a": "Non. Les fichiers sont lus et écrits localement, jamais envoyés en ligne. Aucun compte, aucune analytics, aucune télémétrie. Vous pouvez le vérifier vous-même dans le code source sur GitHub."
+      },
+      {
+        "q": "Quels formats de fichiers sont pris en charge ?",
+        "a": "Images (JPEG, PNG, WebP, AVIF, GIF, TIFF, ICO, HEIC en entrée), documents (Markdown, DOCX, HTML, ODT, EPUB, LaTeX, PDF en sortie), audio (MP3, FLAC, WAV, OGG, AAC, Opus) et vidéo (MP4, MKV, WebM, MOV, AVI), entre autres."
+      },
+      {
+        "q": "Quels systèmes d'exploitation sont pris en charge ?",
+        "a": "Linux (AppImage, .deb, .rpm) et Windows (installeur .exe ou .msi) en x86_64, et macOS sur Apple Silicon (.dmg)."
+      },
+      {
+        "q": "Verto est-il gratuit et open source ?",
+        "a": "Oui. Verto est gratuit, sans compte, sans clé de licence et sans offre payante. Le code source complet est publié sur GitHub sous licence MIT."
+      },
+      {
+        "q": "Quelle différence avec un convertisseur en ligne ?",
+        "a": "Un convertisseur en ligne envoie vos fichiers sur le serveur d'un tiers et nécessite une connexion. Verto convertit sur votre propre machine : rien n'est envoyé, il fonctionne sans internet et vous pouvez convertir des dossiers entiers en une fois."
+      }
+    ]
+  },
   "footer": {
     "license": "Licence MIT",
     "source": "Code source"
