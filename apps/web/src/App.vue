@@ -2,6 +2,8 @@
 import { defineAsyncComponent, onMounted } from 'vue'
 import SiteHeader from './components/SiteHeader.vue'
 import HeroSection from './components/HeroSection.vue'
+import CookieBanner from './components/CookieBanner.vue'
+import { useAnalytics } from './composables/useAnalytics'
 import { useLatestRelease } from './composables/useLatestRelease'
 
 // Sections below the fold are split into their own chunks
@@ -20,9 +22,11 @@ const FaqSection = defineAsyncComponent(sectionLoaders[3])
 const SiteFooter = defineAsyncComponent(sectionLoaders[4])
 
 const { loadLatestRelease } = useLatestRelease()
+const { initAnalytics } = useAnalytics()
 
 onMounted(async () => {
   loadLatestRelease()
+  initAnalytics()
 
   // A deep link such as /#download targets a lazy section: scroll once it is rendered
   if (window.location.hash) {
@@ -42,4 +46,5 @@ onMounted(async () => {
   <DownloadSection />
   <FaqSection />
   <SiteFooter />
+  <CookieBanner />
 </template>

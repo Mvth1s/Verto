@@ -129,6 +129,13 @@
   },
   "footer": {
     "license": "MIT License",
-    "source": "Source code"
+    "source": "Source code",
+    "cookie_settings": "Cookie settings"
+  },
+  "cookies": {
+    "title": "Cookies on this website",
+    "body": "We would like to use Google Analytics to measure visits to this page. These cookies are only set if you accept. The Verto app itself never collects anything.",
+    "accept": "Accept",
+    "decline": "Decline"
   }
 }
