@@ -5,6 +5,13 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+# [1.10.0](https://github.com/Mvth1s/Verto/compare/v1.9.0...v1.10.0) (2026-10-03)
+
+
+### Features
+
+* **web:** add Google Analytics behind a cookie consent banner ([7d72117](https://github.com/Mvth1s/Verto/commit/7d72117978fa30772612df38d0f3f7b20c96c412))
+
 # [1.9.0](https://github.com/Mvth1s/Verto/compare/v1.8.0...v1.9.0) (2026-06-04)
 
 
