@@ -2,12 +2,11 @@ import { ref } from 'vue'
 
 export type ConsentChoice = 'granted' | 'denied'
 
-const GA_ID = 'G-VFWPEK2CB8'
+// Also read by the inline Google tag injected in index.html (vite.config.ts)
 const CONSENT_KEY = 'verto_consent'
 
 declare global {
   interface Window {
-    dataLayer: unknown[]
     gtag?: (...args: unknown[]) => void
   }
 }
@@ -24,32 +23,6 @@ function readStoredChoice(): ConsentChoice | null {
 // Shared between the banner and the footer link
 const consent = ref<ConsentChoice | null>(readStoredChoice())
 const bannerVisible = ref(consent.value === null)
-
-// gtag.js is only fetched once the visitor accepts: nothing reaches Google before that.
-// Skipped in dev so local runs do not pollute the stats.
-function loadGtag() {
-  if (window.gtag || !import.meta.env.PROD) return
-
-  window.dataLayer = window.dataLayer || []
-  window.gtag = function gtag() {
-    // gtag.js expects the arguments object itself, not an array
-    // eslint-disable-next-line prefer-rest-params
-    window.dataLayer.push(arguments)
-  }
-  window.gtag('consent', 'default', {
-    analytics_storage: 'granted',
-    ad_storage: 'denied',
-    ad_user_data: 'denied',
-    ad_personalization: 'denied',
-  })
-  window.gtag('js', new Date())
-  window.gtag('config', GA_ID)
-
-  const script = document.createElement('script')
-  script.async = true
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`
-  document.head.appendChild(script)
-}
 
 // Removes the _ga cookies left by a previous consent
 function clearGaCookies() {
@@ -72,16 +45,9 @@ function setConsent(choice: ConsentChoice) {
     // storage unavailable: the choice holds for this visit only
   }
 
-  if (choice === 'granted') {
-    loadGtag()
-  } else {
-    window.gtag?.('consent', 'update', { analytics_storage: 'denied' })
-    clearGaCookies()
-  }
-}
-
-function initAnalytics() {
-  if (consent.value === 'granted') loadGtag()
+  // gtag is absent in dev builds, where the Google tag is not injected
+  window.gtag?.('consent', 'update', { analytics_storage: choice })
+  if (choice === 'denied') clearGaCookies()
 }
 
 function openConsentBanner() {
@@ -89,5 +55,5 @@ function openConsentBanner() {
 }
 
 export function useAnalytics() {
-  return { consent, bannerVisible, setConsent, initAnalytics, openConsentBanner }
+  return { consent, bannerVisible, setConsent, openConsentBanner }
 }
