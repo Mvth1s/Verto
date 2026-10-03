@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useAnalytics } from '../composables/useAnalytics'
 
 const { t } = useI18n()
+const { openConsentBanner } = useAnalytics()
 </script>
 
 <template>
@@ -20,6 +22,9 @@ const { t } = useI18n()
         <a href="https://github.com/Mvth1s/Verto/releases" target="_blank" rel="noopener"
           >Releases</a
         >
+        <button type="button" class="footer-link-button" @click="openConsentBanner">
+          {{ t('footer.cookie_settings') }}
+        </button>
       </div>
     </div>
   </footer>

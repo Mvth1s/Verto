@@ -129,6 +129,13 @@
   },
   "footer": {
     "license": "Licence MIT",
-    "source": "Code source"
+    "source": "Code source",
+    "cookie_settings": "Gestion des cookies"
+  },
+  "cookies": {
+    "title": "Cookies sur ce site",
+    "body": "Nous aimerions utiliser Google Analytics pour mesurer la fréquentation de cette page. Ces cookies ne sont déposés que si vous acceptez. L'application Verto, elle, ne collecte jamais rien.",
+    "accept": "Accepter",
+    "decline": "Refuser"
   }
 }
