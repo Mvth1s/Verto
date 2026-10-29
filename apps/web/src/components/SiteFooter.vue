@@ -22,6 +22,8 @@ const { openConsentBanner } = useAnalytics()
         <a href="https://github.com/Mvth1s/Verto/releases" target="_blank" rel="noopener"
           >Releases</a
         >
+        <a href="#legal">{{ t('footer.legal') }}</a>
+        <a href="#privacy-policy">{{ t('footer.privacy') }}</a>
         <button type="button" class="footer-link-button" @click="openConsentBanner">
           {{ t('footer.cookie_settings') }}
         </button>
