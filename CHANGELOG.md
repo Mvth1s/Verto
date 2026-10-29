@@ -5,6 +5,13 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [1.11.2](https://github.com/Mvth1s/Verto/compare/v1.11.1...v1.11.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* **web:** compléter les mentions légales ([#72](https://github.com/Mvth1s/Verto/issues/72)) ([db41269](https://github.com/Mvth1s/Verto/commit/db41269132c29f909bd775d97f85476099871f54))
+
 ## [1.11.1](https://github.com/Mvth1s/Verto/compare/v1.11.0...v1.11.1) (2026-10-29)
 
 
