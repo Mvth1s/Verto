@@ -18,12 +18,11 @@ const PRIVACY_ITEMS = ['website', 'analytics', 'third_parties', 'storage', 'app'
         <dt>{{ t('legal.publisher_t') }}</dt>
         <dd>{{ t('legal.publisher') }}</dd>
         <dt>{{ t('legal.contact_t') }}</dt>
-        <dd>{{ t('legal.contact') }}</dd>
-        <dt>{{ t('legal.host_t') }}</dt>
         <dd>
-          {{ t('legal.host') }}
-          <a href="https://vercel.com/legal" target="_blank" rel="noopener">vercel.com/legal</a>
+          <a :href="`mailto:${t('legal.contact')}`">{{ t('legal.contact') }}</a>
         </dd>
+        <dt>{{ t('legal.host_t') }}</dt>
+        <dd>{{ t('legal.host') }}</dd>
       </dl>
 
       <h2 id="privacy-policy" class="legal-title">{{ t('legal.privacy_title') }}</h2>
