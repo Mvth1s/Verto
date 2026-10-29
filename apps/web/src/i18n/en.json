@@ -130,12 +130,40 @@
   "footer": {
     "license": "MIT License",
     "source": "Source code",
-    "cookie_settings": "Cookie settings"
+    "cookie_settings": "Cookie settings",
+    "legal": "Legal notice",
+    "privacy": "Privacy"
   },
   "cookies": {
     "title": "Cookies on this website",
     "body": "We would like to use Google Analytics to measure visits to this page. These cookies are only set if you accept. The Verto app itself never collects anything.",
     "accept": "Accept",
     "decline": "Decline"
+  },
+  "legal": {
+    "eyebrow": "Legal information",
+    "title": "Legal notice",
+    "intro": "Verto is a personal, open source, free and non-commercial project published by a private individual. It sells nothing and shows no ads.",
+    "publisher_t": "Publisher",
+    "publisher": "Mathis Aguado, private individual.",
+    "contact_t": "Contact",
+    "contact": "mag.d3v+verto@pm.me",
+    "host_t": "Hosting provider",
+    "host": "Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, United States. Contact: privacy@vercel.com (phone number not provided by the hosting provider). Vercel is certified under the EU-U.S. Data Privacy Framework.",
+    "privacy_title": "Privacy policy",
+    "privacy": {
+      "website_t": "This website",
+      "website": "This page has no account, no form and no ads. It collects no personal data apart from the audience measurement described below, and only if you accept it.",
+      "analytics_t": "Google Analytics",
+      "analytics": "Purpose: measuring visits to this page (page views, referrer, device type), with no advertising or personalisation. Legal basis: your consent. Until you click \"Accept\", the Google script is not loaded and nothing is sent to Google. Once accepted, _ga cookies are set; the data is processed by Google, which may transfer it outside the European Union. Declining is as easy as accepting, and you can withdraw your consent at any time with \"Cookie settings\": the _ga cookies are then deleted. Retention period: 2 months.",
+      "third_parties_t": "Other services",
+      "third_parties": "To show the latest version, your browser queries the GitHub API, which receives your IP address. The hosting provider Vercel logs technical connection data for the security of its service. Fonts are hosted on this website.",
+      "storage_t": "Local storage",
+      "storage": "Your cookie choice is kept in your browser's local storage (key verto_consent) until you change it or clear the site data.",
+      "app_t": "Verto app",
+      "app": "The desktop app works offline: no telemetry, no analytics, your files never leave your machine.",
+      "rights_t": "Your rights",
+      "rights": "You can request access to, correction or deletion of your data, or object to its processing, at the contact address above. You can also lodge a complaint with the CNIL (French data protection authority)."
+    }
   }
 }

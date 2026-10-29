@@ -11,6 +11,7 @@ const sectionLoaders = [
   () => import('./components/PrivacySection.vue'),
   () => import('./components/DownloadSection.vue'),
   () => import('./components/FaqSection.vue'),
+  () => import('./components/LegalSection.vue'),
   () => import('./components/SiteFooter.vue'),
 ] as const
 
@@ -18,7 +19,8 @@ const FeaturesSection = defineAsyncComponent(sectionLoaders[0])
 const PrivacySection = defineAsyncComponent(sectionLoaders[1])
 const DownloadSection = defineAsyncComponent(sectionLoaders[2])
 const FaqSection = defineAsyncComponent(sectionLoaders[3])
-const SiteFooter = defineAsyncComponent(sectionLoaders[4])
+const LegalSection = defineAsyncComponent(sectionLoaders[4])
+const SiteFooter = defineAsyncComponent(sectionLoaders[5])
 
 const { loadLatestRelease } = useLatestRelease()
 
@@ -42,6 +44,7 @@ onMounted(async () => {
   <PrivacySection />
   <DownloadSection />
   <FaqSection />
+  <LegalSection />
   <SiteFooter />
   <CookieBanner />
 </template>

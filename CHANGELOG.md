@@ -5,6 +5,34 @@ All notable changes to Verto are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [1.11.2](https://github.com/Mvth1s/Verto/compare/v1.11.1...v1.11.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* **web:** compléter les mentions légales ([#72](https://github.com/Mvth1s/Verto/issues/72)) ([db41269](https://github.com/Mvth1s/Verto/commit/db41269132c29f909bd775d97f85476099871f54))
+
+## [1.11.1](https://github.com/Mvth1s/Verto/compare/v1.11.0...v1.11.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* **web:** ajouter mentions légales et charger Google Analytics après consentement ([#69](https://github.com/Mvth1s/Verto/issues/69)) ([#70](https://github.com/Mvth1s/Verto/issues/70)) ([29ecd3e](https://github.com/Mvth1s/Verto/commit/29ecd3e032599125f2406cb6d8c8d6f0b55eb35b))
+
+# [1.11.0](https://github.com/Mvth1s/Verto/compare/v1.10.0...v1.11.0) (2026-10-03)
+
+
+### Features
+
+* **web:** load the Google tag on every page with consent mode ([d9acc08](https://github.com/Mvth1s/Verto/commit/d9acc08e1484ea42f44fbe8796c837859e290a24))
+
+# [1.10.0](https://github.com/Mvth1s/Verto/compare/v1.9.0...v1.10.0) (2026-10-03)
+
+
+### Features
+
+* **web:** add Google Analytics behind a cookie consent banner ([7d72117](https://github.com/Mvth1s/Verto/commit/7d72117978fa30772612df38d0f3f7b20c96c412))
+
 # [1.9.0](https://github.com/Mvth1s/Verto/compare/v1.8.0...v1.9.0) (2026-06-04)
 
 

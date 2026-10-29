@@ -2,11 +2,12 @@ import { ref } from 'vue'
 
 export type ConsentChoice = 'granted' | 'denied'
 
-// Also read by the inline Google tag injected in index.html (vite.config.ts)
 const CONSENT_KEY = 'verto_consent'
+const GA_ID = 'G-VFWPEK2CB8'
 
 declare global {
   interface Window {
+    dataLayer?: unknown[]
     gtag?: (...args: unknown[]) => void
   }
 }
@@ -23,6 +24,33 @@ function readStoredChoice(): ConsentChoice | null {
 // Shared between the banner and the footer link
 const consent = ref<ConsentChoice | null>(readStoredChoice())
 const bannerVisible = ref(consent.value === null)
+
+// The Google tag is only downloaded once the visitor has accepted: nothing is sent to
+// Google before that. Production builds only, to keep dev out of the stats.
+function loadGoogleTag() {
+  if (!import.meta.env.PROD || window.gtag) return
+  window.dataLayer = window.dataLayer || []
+  window.gtag = function gtag() {
+    // gtag.js expects the `arguments` object, not an array
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments)
+  }
+  window.gtag('consent', 'default', {
+    analytics_storage: 'granted',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  })
+  window.gtag('js', new Date())
+  window.gtag('config', GA_ID)
+
+  const script = document.createElement('script')
+  script.async = true
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`
+  document.head.appendChild(script)
+}
+
+if (consent.value === 'granted') loadGoogleTag()
 
 // Removes the _ga cookies left by a previous consent
 function clearGaCookies() {
@@ -45,9 +73,14 @@ function setConsent(choice: ConsentChoice) {
     // storage unavailable: the choice holds for this visit only
   }
 
-  // gtag is absent in dev builds, where the Google tag is not injected
-  window.gtag?.('consent', 'update', { analytics_storage: choice })
-  if (choice === 'denied') clearGaCookies()
+  if (choice === 'granted') {
+    loadGoogleTag()
+    window.gtag?.('consent', 'update', { analytics_storage: 'granted' })
+  } else {
+    // gtag only exists if consent was granted earlier in this visit
+    window.gtag?.('consent', 'update', { analytics_storage: 'denied' })
+    clearGaCookies()
+  }
 }
 
 function openConsentBanner() {

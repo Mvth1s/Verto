@@ -130,12 +130,40 @@
   "footer": {
     "license": "Licence MIT",
     "source": "Code source",
-    "cookie_settings": "Gestion des cookies"
+    "cookie_settings": "Gestion des cookies",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité"
   },
   "cookies": {
     "title": "Cookies sur ce site",
     "body": "Nous aimerions utiliser Google Analytics pour mesurer la fréquentation de cette page. Ces cookies ne sont déposés que si vous acceptez. L'application Verto, elle, ne collecte jamais rien.",
     "accept": "Accepter",
     "decline": "Refuser"
+  },
+  "legal": {
+    "eyebrow": "Informations légales",
+    "title": "Mentions légales",
+    "intro": "Verto est un projet personnel open source, gratuit et non commercial, édité par un particulier. Il ne vend rien et n'affiche aucune publicité.",
+    "publisher_t": "Éditeur",
+    "publisher": "Mathis Aguado, particulier.",
+    "contact_t": "Contact",
+    "contact": "mag.d3v+verto@pm.me",
+    "host_t": "Hébergeur",
+    "host": "Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis. Contact : privacy@vercel.com (téléphone non communiqué par l'hébergeur). Vercel est certifié EU-U.S. Data Privacy Framework.",
+    "privacy_title": "Politique de confidentialité",
+    "privacy": {
+      "website_t": "Ce site",
+      "website": "Cette page n'a ni compte, ni formulaire, ni publicité. Elle ne collecte aucune donnée personnelle en dehors de la mesure d'audience décrite ci-dessous, uniquement si vous l'acceptez.",
+      "analytics_t": "Google Analytics",
+      "analytics": "Finalité : mesurer la fréquentation de cette page (pages vues, provenance, type d'appareil), sans publicité ni personnalisation. Base légale : votre consentement. Tant que vous n'avez pas cliqué sur « Accepter », le script Google n'est pas chargé et rien n'est envoyé à Google. Après acceptation, les cookies _ga sont déposés ; les données sont traitées par Google, qui peut les transférer hors de l'Union européenne. Refuser est aussi simple qu'accepter, et vous pouvez retirer votre consentement à tout moment via « Gestion des cookies » : les cookies _ga sont alors supprimés. Durée de conservation : 2 mois.",
+      "third_parties_t": "Autres services",
+      "third_parties": "Pour afficher la dernière version, votre navigateur interroge l'API de GitHub, qui reçoit votre adresse IP. L'hébergeur Vercel enregistre des données techniques de connexion pour la sécurité du service. Les polices sont hébergées sur ce site.",
+      "storage_t": "Stockage local",
+      "storage": "Votre choix sur les cookies est conservé dans le stockage local de votre navigateur (clé verto_consent) jusqu'à ce que vous le modifiiez ou effaciez les données du site.",
+      "app_t": "Application Verto",
+      "app": "L'application de bureau fonctionne hors ligne : aucune télémétrie, aucune analytique, vos fichiers ne quittent jamais votre machine.",
+      "rights_t": "Vos droits",
+      "rights": "Vous pouvez demander l'accès, la rectification ou l'effacement de vos données, ou vous opposer à leur traitement, à l'adresse de contact ci-dessus. Vous pouvez aussi adresser une réclamation à la CNIL."
+    }
   }
 }
