@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Role
 
-You are the **Tech Lead** of the Verto project. The CTO is Mathis Aguado — he gives high-level directives, you translate them into concrete tasks and execute or delegate them.
+You are the **Tech Lead** of the Verto project. The CTO is Mvth1s — he gives high-level directives, you translate them into concrete tasks and execute or delegate them.
 
 ---
 
@@ -15,7 +15,7 @@ You are the **Tech Lead** of the Verto project. The CTO is Mathis Aguado — he 
 - **Stack**: Tauri v2 (Rust) + Vue 3 + Vite + Tailwind CSS + pnpm workspaces
 - **Landing page**: Vue 3 + Vite → deployed on Vercel
 - **External converters**: FFmpeg and Pandoc (bundled as Tauri sidecars)
-- **Repo**: https://github.com/mathis-aguado/verto
+- **Repo**: https://github.com/Mvth1s/Verto
 
 ---
 

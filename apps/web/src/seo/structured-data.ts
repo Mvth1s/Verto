@@ -50,9 +50,8 @@ export function buildStructuredData({ siteUrl, version }: StructuredDataOptions)
       {
         '@type': 'Person',
         '@id': authorId,
-        name: 'Mathis Aguado',
-        url: 'https://mathisaguado.vercel.app',
-        sameAs: ['https://github.com/Mvth1s', 'https://www.linkedin.com/in/mathis-aguado'],
+        name: 'Mvth1s',
+        sameAs: ['https://github.com/Mvth1s'],
       },
       {
         '@type': 'FAQPage',

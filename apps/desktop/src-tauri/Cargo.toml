@@ -2,7 +2,7 @@
 name = "verto"
 version = "1.11.2"
 description = "Verto — convertisseur de fichiers local"
-authors = ["Mathis Aguado"]
+authors = ["Mvth1s"]
 edition = "2021"
 rust-version = "1.77.2"
 

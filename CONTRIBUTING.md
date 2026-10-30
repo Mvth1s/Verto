@@ -12,14 +12,14 @@ Thank you for your interest in contributing! Verto is an open-source project and
 
 ## Before you start
 
-- Check the [existing issues](https://github.com/mathis-aguado/verto/issues) to avoid duplicates.
+- Check the [existing issues](https://github.com/Mvth1s/Verto/issues) to avoid duplicates.
 - For large changes, open an issue first to discuss the approach.
 - Read [docs/architecture.md](./docs/architecture.md) to understand the project structure.
 
 ## Setup
 
 ```bash
-git clone https://github.com/mathis-aguado/verto.git
+git clone https://github.com/Mvth1s/Verto.git
 cd verto
 pnpm install
 pnpm tauri dev

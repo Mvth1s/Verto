@@ -187,4 +187,4 @@ Commit messages must follow [Conventional Commits](https://www.conventionalcommi
 
 ## License
 
-[MIT](./LICENSE) - Mathis Aguado, 2026
+[MIT](./LICENSE) - Mvth1s, 2026

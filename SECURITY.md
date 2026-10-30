@@ -11,7 +11,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Please report security issues by email to: **aguado.mathis@pm.me**
+Please report security issues by email to: **mag.d3v+verto@pm.me**
 
 Include:
 - A description of the vulnerability
